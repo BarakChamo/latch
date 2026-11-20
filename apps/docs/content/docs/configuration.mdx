@@ -1,31 +1,106 @@
 ---
 title: Configuration
-description: Compose checks and choose when they run.
+description: Define checks, filter by changed files, and choose how failures are reported.
 ---
 
-Create `latch.json` in the directory where commands should run.
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+import { TypeTable } from 'fumadocs-ui/components/type-table';
 
-```json
+Put `latch.json` in the directory where your checks should run. Use it for
+explicit commands, file filters, or defaults for [discovered scripts](/docs/project-scripts).
+
+## Examples
+
+<Tabs items={['One check', 'Filter by file type', 'Defaults only']}>
+
+<Tab value="One check">
+
+```json title="latch.json"
 {
-  "defaults": { "on_failure": "collect" },
+  "hooks": {
+    "turn_end": {
+      "commands": [["cargo", "fmt", "--all", "--", "--check"]]
+    }
+  }
+}
+```
+
+Run a Rust formatting check at turn end when the worktree changes.
+
+</Tab>
+
+<Tab value="Filter by file type">
+
+```json title="latch.json"
+{
   "hooks": {
     "after_edit": [
       { "commands": [["npm", "run", "lint"]] },
-      { "extensions": ["ts", "tsx"], "commands": [["npm", "run", "typecheck"]] }
+      { "extensions": ["md", "mdx"], "commands": [["npm", "run", "lint:md"]] },
+      {
+        "paths": ["src/**"],
+        "extensions": ["ts", "tsx"],
+        "commands": [["npm", "run", "typecheck"]]
+      }
     ]
   }
 }
 ```
 
-Each event accepts one object or an array. Matching entries run in order.
-You can filter an entry by worktree-relative `paths`, filename `extensions`,
-or both. Each entry inherits global defaults and can override them.
+A Markdown edit runs lint and Markdown lint. A TypeScript edit in `src/`
+runs lint and type checking. An edit that changes both runs all three in order.
 
-- `when` defaults to `workspace_changed`. Use `always` to run on every event
-  that passes the configured filters.
-- `on_success` defaults to `silent`. Use `output` to see successful output.
-- `on_failure` defaults to `collect`. Use `stop` to end the current command
-  list at its first failure.
+</Tab>
 
-Discovered scripts run after explicit entries with the global defaults.
-Set a hook to `[]` to disable it.
+<Tab value="Defaults only">
+
+```json title="latch.json"
+{
+  "defaults": {
+    "on_success": "output",
+    "on_failure": "stop"
+  }
+}
+```
+
+Use this with package scripts to show successful output and stop a command list at
+its first failure.
+
+</Tab>
+
+</Tabs>
+
+## File structure
+
+<TypeTable type={{
+  defaults: { type: 'object', description: 'Default values for when, on_success, and on_failure.' },
+  hooks: { type: 'object', description: 'Accepts after_edit and turn_end. Each event takes a hook object or an array of hook objects.' },
+  commands: { type: 'string[][]', description: 'Legacy shorthand for turn-end commands. Use it as an alternative to hooks.' },
+}} />
+
+## Hook fields
+
+<TypeTable type={{
+  commands: { type: 'string[][]', required: true, description: 'Each command is an executable followed by its arguments. Use an explicit shell for shell syntax.' },
+  when: { type: '"workspace_changed" | "always"', default: 'workspace_changed', description: 'The default compares against a Git baseline and runs when a comparison is unavailable. Always skips the change gate unless a file filter is set.' },
+  on_success: { type: '"silent" | "output"', default: 'silent', description: 'Output includes stdout and stderr from successful commands.' },
+  on_failure: { type: '"collect" | "stop"', default: 'collect', description: 'Collect finishes the command list and reports every failure. Stop ends the current list after its first failure. Later matching hook objects still run.' },
+  paths: { type: 'string[]', description: 'Case-sensitive globs relative to the Git worktree. Use / as the separator and ** to match across directories.' },
+  extensions: { type: 'string[]', description: 'Case-insensitive final filename suffixes, with an optional leading dot.' },
+}} />
+
+An object runs once if any changed file passes its filters. When both filters
+are set, the same file must match at least one pattern and one suffix. Renames
+can match either path. Empty filter lists are invalid.
+
+## Ordering and overrides
+
+A hook object inherits each setting it omits. Matching hook objects run in the
+order they appear. Discovered commands run together after explicit objects
+and inherit the global defaults.
+
+Set an event to `[]` to disable it, including discovery. Set `hooks` to
+`{}` to disable both events.
+
+Use `latch explain after_edit` or `latch explain turn_end` to see which
+commands and settings Latch resolved.

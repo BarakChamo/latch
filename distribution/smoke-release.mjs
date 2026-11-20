@@ -23,13 +23,22 @@ const platformTarball = join(archives, `${packageStem}-${process.platform}-${pro
 const scratch = mkdtempSync(join(tmpdir(), "latch release test "));
 
 try {
-  execFileSync(process.execPath, [npm, "run", "package:release", "--", "npm", scratch], {
-    cwd: root,
-    stdio: "inherit",
-  });
+  const wrapperName = `${packageStem}-${version}.tgz`;
+  let wrapper = join(archives, wrapperName);
+  if (!existsSync(wrapper)) {
+    execFileSync(process.execPath, [npm, "run", "package:release", "--", "npm", scratch], {
+      cwd: root,
+      stdio: "inherit",
+    });
+    wrapper = join(scratch, wrapperName);
+  }
   const prefix = join(scratch, "install");
   execFileSync(process.execPath, [npm, "install", "--global", "--offline", "--ignore-scripts", "--prefix",
-    prefix, join(scratch, `${packageStem}-${version}.tgz`), platformTarball], { stdio: "inherit" });
+    prefix, wrapper, platformTarball], { stdio: "inherit" });
+  const modules = execFileSync(process.execPath, [npm, "root", "--global", "--prefix", prefix], {
+    encoding: "utf8",
+  }).trim();
+  verifyCatalogs(join(modules, name));
 
   const bin = windows ? prefix : join(prefix, "bin");
   const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` };
@@ -63,10 +72,14 @@ try {
   const extracted = join(scratch, bundle);
   const binary = join(extracted, "bin", windows ? "latch.exe" : "latch");
   assert.equal(execFileSync(binary, ["--version"], { encoding: "utf8" }).trim(), `latch ${version}`);
-  for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
-    assert(existsSync(join(extracted, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
-  }
+  verifyCatalogs(extracted);
   console.log(`Verified the npm install and standalone archive for ${target}.`);
 } finally {
   rmSync(scratch, { recursive: true });
+}
+
+function verifyCatalogs(directory) {
+  for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
+    assert(existsSync(join(directory, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
+  }
 }

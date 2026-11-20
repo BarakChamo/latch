@@ -79,7 +79,11 @@ function packPlatform(target) {
   copyPlugins(bundle);
   cpSync(join(root, "distribution/native/README.md"), join(bundle, "README.md"));
   const filename = `${directory}.tar.gz`;
-  execFileSync("tar", ["-czf", join(output, filename), "-C", staging, directory], { stdio: "inherit" });
+  const archiveOptions = process.platform === "darwin" ? ["--no-xattrs"] : [];
+  execFileSync("tar", [...archiveOptions, "-czf", join(output, filename), "-C", staging, directory], {
+    env: { ...process.env, COPYFILE_DISABLE: "1" },
+    stdio: "inherit",
+  });
   const digest = createHash("sha256").update(readFileSync(join(output, filename))).digest("hex");
   writeFileSync(join(output, `${filename}.sha256`), `${digest}  ${filename}\n`);
 }

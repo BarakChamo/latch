@@ -1,20 +1,83 @@
 ---
-title: Project scripts
-description: Use your project's package manager to run checks without a Latch config file.
+title: Package scripts
+description: Run existing JavaScript or Python checks without writing a Latch config.
 ---
 
-| Manifest | After a native edit | At turn end |
-| --- | --- | --- |
-| `package.json` under `scripts` | `hook:afteredit` | `hook:turnend` |
-| `pyproject.toml` under `[project.scripts]` | `hook-afteredit` | `hook-turnend` |
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
-Latch reads the manifests from the command's working directory. For JavaScript,
-it picks npm, pnpm, Yarn, or Bun from `packageManager` or a lockfile. It uses
-npm by default. For packaged Python projects, it uses `uv run` to execute the
-entry point.
+Name a package script for the event you want. Latch reads the manifest in the
+harness or CLI working directory.
 
-If both manifests define a script for the same event, JavaScript runs first.
-The scripts use the global defaults in `latch.json`, if present.
+<Tabs items={['JavaScript and TypeScript', 'Python with uv']}>
 
-The Latch checkout includes a TypeScript example with Prettier and type
-checking and a Python example with Ruff and unit tests under `examples/`.
+<Tab value="JavaScript and TypeScript">
+
+```json title="package.json"
+{
+  "scripts": {
+    "hook:afteredit": "prettier --check src",
+    "hook:turnend": "tsc --noEmit"
+  }
+}
+```
+
+Install the project's dependencies first. Latch uses `packageManager` to select
+npm, pnpm, Yarn, or Bun. Without that field, it uses the local lockfile or
+defaults to npm. If lockfiles point to different managers, set `packageManager`
+explicitly.
+
+</Tab>
+
+<Tab value="Python with uv">
+
+```toml title="pyproject.toml"
+[project.scripts]
+hook-afteredit = "latch_python_example.checks:after_edit"
+hook-turnend = "latch_python_example.checks:turn_end"
+```
+
+Use a packaged Python project with a build system. Add entry points under
+`[project.scripts]` and install `uv` on the harness's `PATH`. Latch invokes
+them using `uv run`.
+
+</Tab>
+
+</Tabs>
+
+When both manifests define the same event, JavaScript runs before Python.
+The scripts inherit any [defaults in `latch.json`](/docs/configuration#ordering-and-overrides).
+
+## Try the examples
+
+From a Latch checkout, choose an example and run its checks.
+
+<Tabs items={['TypeScript', 'Python']}>
+
+<Tab value="TypeScript">
+
+```sh
+cd examples/typescript
+npm ci
+latch run after_edit
+latch run turn_end
+```
+
+Change the greeting to return a number to see the type checker report an error.
+
+</Tab>
+
+<Tab value="Python">
+
+```sh
+cd examples/python
+uv sync --locked
+latch run after_edit
+latch run turn_end
+```
+
+Add an unused import to see Ruff's output. Change the greeting to see a unit
+test fail.
+
+</Tab>
+
+</Tabs>

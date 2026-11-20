@@ -1,19 +1,38 @@
 ---
 title: Hooks and feedback
-description: Install a harness plugin and see when checks run.
+description: Understand what triggers a check and where each harness shows its result.
 ---
 
-Use the path to the Latch checkout or extracted release as `<latch-directory>`.
+Follow the [quickstart](/docs#2-enable-your-harness-plugin) to install the plugin
+for your harness.
 
-| Harness | Add the marketplace | Install |
+## When checks run
+
+| Event | Trigger | Default comparison |
 | --- | --- | --- |
-| Codex | `codex plugin marketplace add <latch-directory>` | `codex plugin add latch@latch-local`, then review the hooks using `/hooks`. |
-| Claude Code | `claude plugin marketplace add <latch-directory>` | `claude plugin install latch@latch-marketplace` |
-| GitHub Copilot CLI | `copilot plugin marketplace add <latch-directory>` | `copilot plugin install latch@latch-marketplace` |
+| `after_edit` | A native edit tool finishes. | Immediately before and after that edit. |
+| `turn_end` | The agent finishes a turn. | The start and end of the turn, including changes made through shell commands. |
 
-`after_edit` compares the Git worktree immediately before and after a native
-edit. `turn_end` compares against the start of the turn, so it also sees shell
-writes. Both detect new changes to files that were already dirty.
+A pre-existing dirty file triggers a check only if it changes again during
+the comparison window. Latch checks Git-visible files and runs the commands
+when a reliable comparison is unavailable.
 
-Edit reports appear with the tool result. Failed turn-end reports also
-appear on the next user prompt, once, without restarting the agent.
+| Harness | Native edit tools |
+| --- | --- |
+| Codex | `apply_patch` |
+| Claude Code | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` |
+| GitHub Copilot CLI | `create`, `edit`, `str_replace_editor`, `apply_patch` |
+
+## Where reports appear
+
+Edit reports are attached to the tool result in the same turn. Turn-end reports
+use the harness's hook feedback. Failed turn-end reports also appear once at
+the next prompt in the same session and working directory.
+
+| Harness | Turn-end feedback |
+| --- | --- |
+| Codex | App-server hook warning. The tested `codex exec --json` output omits it. |
+| Claude Code | Informational hook event. |
+| GitHub Copilot CLI | Hook warning. |
+
+A failed check finishes with the current turn. Latch never starts a repair pass.

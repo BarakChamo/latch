@@ -3,13 +3,23 @@ title: Quickstart
 description: Install Latch and run your first project check.
 ---
 
-Install Latch, enable your harness plugin, and run a check after a native
-edit. This walkthrough uses Git, Rust and Cargo, a Latch source checkout,
+import { Callout } from 'fumadocs-ui/components/callout';
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Run your first automatic check after an agent edits a file. You'll need Git
 and a signed-in Codex, Claude Code, or GitHub Copilot CLI.
 
 ## 1. Install the CLI
 
-Run this from the root of the Latch checkout in a macOS or Linux terminal.
+Choose an install method. Each sets `LATCH_DIR` to the directory containing
+the plugin catalogs. Run the remaining steps in the same terminal.
+
+<Tabs items={['Cargo', 'npm tarballs', 'Standalone archive']}>
+
+<Tab value="Cargo">
+
+Run these commands from the root of the Latch checkout in a macOS or Linux
+terminal with Rust and Cargo installed.
 
 ```sh
 export LATCH_DIR="$(pwd)"
@@ -18,18 +28,83 @@ export PATH="${CARGO_HOME:-$HOME/.cargo}/bin:$PATH"
 latch --version
 ```
 
-Keep using this terminal so your harness inherits the same `PATH`.
+</Tab>
+
+<Tab value="npm tarballs">
+
+Use Node.js 18 or newer. From the directory containing the wrapper tarball
+and the binary tarball for your platform, run the following. This example
+uses Linux x64. For ARM64 Linux or Apple Silicon, use the matching
+`linux-arm64` or `darwin-arm64` tarball.
+
+```sh
+npm install -g ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-linux-x64-0.1.0.tgz
+export LATCH_DIR="$(npm root -g)/@barakchamo/latch"
+export PATH="$(npm prefix -g)/bin:$PATH"
+latch --version
+```
+
+<Callout title="Preview packages">
+The npm registry package is pending publication. Use the tarballs from a
+[local build](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md)
+or a successful [Package release run](https://github.com/BarakChamo/latch/actions/workflows/package-release.yml).
+</Callout>
+
+</Tab>
+
+<Tab value="Standalone archive">
+
+Extract the archive for your platform. This example uses Linux x64.
+
+```sh
+tar -xzf latch-0.1.0-x86_64-unknown-linux-gnu.tar.gz
+export LATCH_DIR="$PWD/latch-0.1.0-x86_64-unknown-linux-gnu"
+export PATH="$LATCH_DIR/bin:$PATH"
+latch --version
+```
+
+The extracted directory includes the native CLI and all three plugin catalogs.
+See the [release guide](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md)
+for the archive names and checksums.
+
+</Tab>
+
+</Tabs>
 
 ## 2. Enable your harness plugin
 
-Run the two commands for your harness. The marketplace path points to the
-Latch checkout even when your project is in a different directory.
+Run the commands for your harness.
 
-| Harness | Add the marketplace | Install the plugin |
-| --- | --- | --- |
-| Codex | `codex plugin marketplace add "$LATCH_DIR"` | `codex plugin add latch@latch-local` |
-| Claude Code | `claude plugin marketplace add "$LATCH_DIR"` | `claude plugin install latch@latch-marketplace` |
-| GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_DIR"` | `copilot plugin install latch@latch-marketplace` |
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI']}>
+
+<Tab value="Codex">
+
+```sh
+codex plugin marketplace add "$LATCH_DIR"
+codex plugin add latch@latch-local
+```
+
+</Tab>
+
+<Tab value="Claude Code">
+
+```sh
+claude plugin marketplace add "$LATCH_DIR"
+claude plugin install latch@latch-marketplace
+```
+
+</Tab>
+
+<Tab value="GitHub Copilot CLI">
+
+```sh
+copilot plugin marketplace add "$LATCH_DIR"
+copilot plugin install latch@latch-marketplace
+```
+
+</Tab>
+
+</Tabs>
 
 ## 3. Run your first check
 

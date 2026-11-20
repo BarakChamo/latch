@@ -1,3 +1,11 @@
 {
-  "pages": ["index", "project-scripts", "configuration", "hooks", "troubleshooting"]
+  "pages": [
+    "---Start here---",
+    "index",
+    "project-scripts",
+    "---Reference---",
+    "configuration",
+    "hooks",
+    "troubleshooting"
+  ]
 }

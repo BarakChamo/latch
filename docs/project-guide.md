@@ -18,6 +18,7 @@ Template-Version: 1
 | `npm run check` | Full acceptance gate covering formatting, Clippy, and Cargo tests |
 | `npm run fmt` | Apply Rust formatting |
 | `npm run package:release -- <target-or-npm>` | Stage packages and archives as described in the release guide |
+| `npm run test:release -- <target>` | Verify the native archive and install the npm tarballs for the current platform |
 
 ## Workspace map
 

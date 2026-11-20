@@ -1,22 +1,39 @@
 ---
 title: CLI and troubleshooting
-description: Inspect a check, run it on demand, or find out why a hook is quiet.
+description: Inspect the checks Latch found and diagnose missing output.
 ---
+
+## Commands
 
 | Command | What it does |
 | --- | --- |
-| `latch explain after_edit` | Show commands, filters, and resolved settings without running them. |
-| `latch run after_edit` | Run the resolved edit checks immediately. |
-| `latch run turn_end` | Run the resolved turn-end checks immediately. |
-| `run_turn_end` | Run turn-end checks from the plugin's MCP tool and receive the report. |
+| `latch explain after_edit` | Show the edit commands, filters, and resolved settings. |
+| `latch explain turn_end` | Show the turn-end plan. `latch explain` is shorthand. |
+| `latch run after_edit` | Run all edit checks immediately. |
+| `latch run turn_end` | Run all turn-end checks immediately. `latch` is shorthand. |
+| `run_turn_end` | Run turn-end checks through the plugin's MCP tool and return their report. |
 
-Manual runs execute all entries for the requested event. Automatic hooks
-apply Git change detection and file filters.
+Manual runs bypass change detection and file filters. CLI exit codes are
+`0` for success, `1` for a check or configuration failure, and `2` for invalid usage.
 
-If a hook is quiet, check whether the edit changed Git-visible content,
-then confirm your harness loaded and enabled the plugin. A visible failure
-to launch a command usually means its executable is missing from the
-harness's `PATH`.
+## The hook is quiet
 
-Direct CLI runs exit with `0` for success, `1` for a failed check or
-configuration error, and `2` for invalid CLI usage.
+1. Run `latch explain` for the event from the project directory. Check
+   `configured`, the command list, and any file filters.
+2. Run the same event with `latch run`. Successful commands are silent by
+   default. Append `&& echo passed` in a POSIX shell to confirm success.
+3. Confirm your harness loaded the plugin and inherited a `PATH` where
+   `latch --version` works. In Codex, check that you trusted the hooks in `/hooks`.
+4. Make a Git-visible change using a supported native edit tool. The default
+   `after_edit` gate skips no-op edits. File filters can also skip a check.
+
+## A command failed to launch
+
+Check the executable in the command shown by `latch explain`. Install that
+runner or tool, then start your harness from a terminal that can find it.
+
+## A turn-end failure is missing from the chat
+
+Look for the harness's [turn-end feedback](/docs/hooks#where-reports-appear).
+The failed report should appear once on the next prompt in the same session and
+working directory.

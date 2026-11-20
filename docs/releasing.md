@@ -9,7 +9,9 @@ version changes. The packager verifies the versions before creating artifacts.
 Run the **Package release** workflow or push a matching `v<version>` tag.
 The workflow runs Cargo tests and prepares archives and npm tarballs for
 macOS and Linux on ARM64 and x64, and Windows on x64. Linux builds use glibc.
-The workflow uploads artifacts to the run for review.
+Before upload, each platform job installs both npm tarballs into a temporary
+prefix and checks version output, a passing check, and a failed check. It also
+verifies the standalone archive checksum and runs the extracted binary.
 
 To build artifacts locally, use your Rust host triple in place of
 `aarch64-apple-darwin`.
@@ -18,6 +20,7 @@ To build artifacts locally, use your Rust host triple in place of
 cargo build --release --locked -p latch --target aarch64-apple-darwin
 npm run package:release -- aarch64-apple-darwin
 npm run package:release -- npm
+npm run test:release -- aarch64-apple-darwin
 ```
 
 Each native archive includes the CLI, all marketplace catalogs, and the
