@@ -1,0 +1,96 @@
+---
+title: Quickstart
+description: Install Latch and run your first project check.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Try an automatic check in a disposable project. You’ll need Git and a
+[supported coding agent](/docs/plugins).
+
+## 1. Get the plugin bundle
+
+Get the private preview archive from the maintainer or
+[build it from the repository](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md#build-the-artifacts).
+Choose the file for your machine, extract it, and open a terminal in the
+extracted folder. The plugin includes Latch.
+
+| Your machine | Archive name ends with |
+| --- | --- |
+| Mac with Apple Silicon | `aarch64-apple-darwin.tar.gz` |
+| Mac with Intel | `x86_64-apple-darwin.tar.gz` |
+| Linux on Intel or AMD | `x86_64-unknown-linux-gnu.tar.gz` |
+| Linux on ARM64 | `aarch64-unknown-linux-gnu.tar.gz` |
+
+For terminal use, see the [standalone, npm, and Cargo installs](/docs/cli#install-the-cli).
+
+## 2. Enable the plugin
+
+Run one command for your agent from the extracted folder. Keep that folder
+on your machine and start a new agent session after installation.
+
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI']}>
+
+<Tab value="Codex">
+
+```sh
+./install codex
+```
+
+</Tab>
+
+<Tab value="Claude Code">
+
+```sh
+./install claude
+```
+
+</Tab>
+
+<Tab value="GitHub Copilot CLI">
+
+```sh
+./install copilot
+```
+
+</Tab>
+
+</Tabs>
+
+## 3. Run your first check
+
+Create a disposable Git project. Its check reports changes to `demo.txt`.
+
+```sh
+cd "$(mktemp -d)"
+git init -q
+printf 'ready\n' > demo.txt
+cat > latch.json <<'JSON'
+{
+  "hooks": {
+    "after_edit": {
+      "commands": [["git", "diff", "--exit-code", "HEAD", "--", "demo.txt"]]
+    }
+  }
+}
+JSON
+git add demo.txt latch.json
+git -c user.name="Latch Demo" -c user.email="latch@example.test" \
+  -c commit.gpgsign=false commit -qm "Add Latch demo"
+```
+
+Start a **new harness session** from this directory using `codex`, `claude`,
+or `copilot`. If the harness asks you to trust the demo directory, review
+and accept it. In Codex, open `/hooks` and review and trust the Latch hooks.
+Then give the agent this prompt.
+
+> Use your native edit tool to replace `ready` in `demo.txt` with
+> `changed`. Leave the change in place and finish the turn.
+
+The automatic edit hook reports **Latch checks failed** and shows a diff
+from `ready` to `changed`. This is the expected result. You can restore
+`demo.txt` with `git restore -- demo.txt`.
+
+In your own project, add a [package script](/docs/project-scripts) or
+[configure a command](/docs/configuration). See
+[plugin reference](/docs/plugins) to run checks from chat.

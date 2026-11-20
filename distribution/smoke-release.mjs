@@ -1,4 +1,4 @@
-// Exercises the packed npm launcher and standalone archive on their target platform.
+// Exercises the npm launcher, standalone archive, and bundled plugin entry points.
 
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
@@ -38,7 +38,7 @@ try {
   const modules = execFileSync(process.execPath, [npm, "root", "--global", "--prefix", prefix], {
     encoding: "utf8",
   }).trim();
-  verifyCatalogs(join(modules, name));
+  verifySharedFiles(join(modules, name));
 
   const bin = windows ? prefix : join(prefix, "bin");
   const env = { ...process.env, PATH: `${bin}${delimiter}${process.env.PATH ?? ""}` };
@@ -72,14 +72,76 @@ try {
   const extracted = join(scratch, bundle);
   const binary = join(extracted, "bin", windows ? "latch.exe" : "latch");
   assert.equal(execFileSync(binary, ["--version"], { encoding: "utf8" }).trim(), `latch ${version}`);
-  verifyCatalogs(extracted);
-  console.log(`Verified the npm install and standalone archive for ${target}.`);
+  verifySharedFiles(extracted);
+  if (!windows) verifyBundledPlugins(extracted, project);
+  console.log(`Verified the release packages for ${target}.`);
 } finally {
   rmSync(scratch, { recursive: true });
 }
 
-function verifyCatalogs(directory) {
+function verifySharedFiles(directory) {
+  assert.deepEqual(
+    readFileSync(join(directory, "latch.schema.json")),
+    readFileSync(join(root, "latch.schema.json")),
+  );
   for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
     assert(existsSync(join(directory, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
   }
+}
+
+function verifyBundledPlugins(extracted, project) {
+  const fixtureBin = join(scratch, "harness tools");
+  mkdirSync(fixtureBin);
+  const env = { ...process.env, PATH: fixtureBin };
+  // The installer uses system utilities, while the harness entry points need no CLI on PATH.
+  for (const host of ["codex", "copilot"]) {
+    writeFileSync(join(fixtureBin, host), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
+    execFileSync(join(extracted, "install"), [host], {
+      cwd: project,
+      env: { ...env, PATH: `${fixtureBin}:/usr/bin:/bin` },
+    });
+  }
+
+  const smokeMarker = "Bundled check ran";
+  writeFileSync(join(project, "latch.json"), JSON.stringify({
+    defaults: { on_success: "output" },
+    hooks: { after_edit: { commands: [[process.execPath, "-e", `console.log('${smokeMarker}')`]] } },
+  }));
+  for (const [harness, tool] of [["codex", "apply_patch"], ["claude-code", "Edit"], ["copilot", "edit"]]) {
+    const plugin = join(extracted, "plugins", harness);
+    const isCopilot = harness === "copilot";
+    const hooks = readJson(join(plugin, isCopilot ? "hooks.json" : "hooks/hooks.json")).hooks;
+    const command = isCopilot ? hooks.postToolUse[0].bash : hooks.PostToolUse[0].hooks[0].command;
+    const input = isCopilot
+      ? { sessionId: "smoke", cwd: project, toolName: tool }
+      : { hook_event_name: "PostToolUse", session_id: "smoke", turn_id: "turn", cwd: project, tool_name: tool };
+    const output = execFileSync("/bin/sh", ["-c", command], {
+      cwd: project,
+      env: { ...env, PLUGIN_ROOT: plugin, CLAUDE_PLUGIN_ROOT: plugin },
+      input: JSON.stringify(input),
+      encoding: "utf8",
+    });
+    assert(output.includes(smokeMarker), `${harness} did not run the bundled hook: ${output}`);
+
+    const mcp = readJson(join(plugin, ".mcp.json")).mcpServers.latch;
+    const expand = (value) => value.replace(/\$\{(?:CLAUDE_)?PLUGIN_ROOT\}/g, () => plugin);
+    const response = execFileSync(expand(mcp.command), mcp.args, {
+      cwd: project,
+      env,
+      input: JSON.stringify({
+        jsonrpc: "2.0", id: 1, method: "initialize",
+        params: {
+          protocolVersion: "2025-03-26", capabilities: {},
+          clientInfo: { name: "release-smoke", version: "1" },
+        },
+      }) + '\n{"jsonrpc":"2.0","method":"notifications/initialized"}\n',
+      encoding: "utf8",
+      timeout: 10_000,
+    });
+    assert(JSON.parse(response).result.capabilities.tools, `${harness} MCP startup failed`);
+  }
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"));
 }

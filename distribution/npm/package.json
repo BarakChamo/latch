@@ -6,5 +6,5 @@
   "license": "UNLICENSED",
   "engines": { "node": ">=18" },
   "bin": { "latch": "cli.cjs" },
-  "files": ["cli.cjs", "README.md", "plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"]
+  "files": ["cli.cjs", "README.md", "latch.schema.json", "plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"]
 }

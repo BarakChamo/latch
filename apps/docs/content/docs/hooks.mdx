@@ -3,8 +3,7 @@ title: Hooks and feedback
 description: Understand what triggers a check and where each harness shows its result.
 ---
 
-Follow the [quickstart](/docs#2-enable-your-harness-plugin) to install the plugin
-for your harness.
+See [Harness plugins](/docs/plugins) to install Latch and run checks from chat.
 
 ## When checks run
 
@@ -36,3 +35,7 @@ the next prompt in the same session and working directory.
 | GitHub Copilot CLI | Hook warning. |
 
 A failed check finishes with the current turn. Latch never starts a repair pass.
+
+If a failure preview omits details, the report includes a readable log path.
+The agent can search the file directly or use
+[the plugin tool](/docs/plugins#look-up-details-from-a-failure).

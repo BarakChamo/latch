@@ -4,10 +4,11 @@
   "type": "module",
   "scripts": {
     "hook:afteredit": "prettier --check src",
-    "hook:turnend": "tsc --noEmit"
+    "hook:turnend": "tsc --noEmit && vitest run --no-color"
   },
   "devDependencies": {
     "prettier": "3.10.1",
-    "typescript": "7.0.2"
+    "typescript": "7.0.2",
+    "vitest": "5.1.1"
   }
 }

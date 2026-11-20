@@ -1,4 +1,4 @@
-// Opens the quickstart at the docs site's root.
+// Opens the introduction at the docs site's root.
 
 import { redirect } from "next/navigation";
 

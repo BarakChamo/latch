@@ -1,0 +1,83 @@
+---
+title: Harness plugins
+description: Install and manage Latch in your harness, and run checks from chat.
+---
+
+The bundled Latch plugin includes the executable. It registers [automatic hooks](/docs/hooks) and exposes `run_turn_end` and `search_output`.
+Start the harness from the directory containing your
+`latch.json` or [package scripts](/docs/project-scripts).
+
+If your coding agent runs in a hosted environment, use the
+[cloud setup guide](/docs/cloud).
+
+## Install and manage the plugin
+
+Follow the [quickstart](/docs/quickstart) to get the bundle for macOS or
+Linux. Run the command for your agent from the extracted folder.
+
+| Harness | Install from the bundle |
+| --- | --- |
+| Codex | `./install codex` |
+| Claude Code | `./install claude` |
+| GitHub Copilot CLI | `./install copilot` |
+
+The installer registers the local marketplace and installs its Latch plugin.
+Keep the extracted folder so your harness can find the marketplace and the
+bundled executable. Your project’s tools, such as npm or uv, still need to
+be available to the harness.
+
+Start a new session after installation. In Codex, open `/hooks` and review
+and trust the Latch hooks.
+
+| Harness | Find the plugin | Uninstall Latch |
+| --- | --- | --- |
+| Codex | `codex plugin list` | `codex plugin remove latch@latch-local` |
+| Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-marketplace` |
+| GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-marketplace` |
+
+Use one installation method per project to avoid duplicate hooks.
+
+## Run checks from chat
+
+Ask your agent to call the Latch tool.
+
+> Use Latch’s `run_turn_end` tool in this project and tell me which checks failed.
+
+`run_turn_end` runs the configured `turn_end`
+commands immediately in the project's working directory, even when the
+worktree is unchanged. It uses the same command order and output settings
+as `latch run turn_end`. Failed checks return a tool error with diagnostics.
+A successful call is quiet unless `on_success` is set to `"output"`. Your
+harness may ask for approval because configured commands can modify files.
+
+In Copilot, the agent passes its current project directory to the tool. In
+Codex and Claude Code, the tool uses the session's working directory.
+
+For a manual `after_edit` run or a preview of the resolved configuration,
+use the [CLI commands](/docs/cli) in your terminal.
+
+## Look up details from a failure
+
+When a report includes a `Saved log` path, the agent can pass it and a
+literal query such as a test name to `search_output`. Copilot also passes
+the absolute project directory. With filesystem access to the cache, the
+agent can search the same file directly using its normal file tools.
+Both paths use the existing log without rerunning the check.
+Use [the CLI](/docs/cli#retrieve-saved-output) to replay both original streams.
+
+## Integration commands
+
+The plugin runs these commands for you. Each hook command reads the harness's
+event JSON from standard input. `latch mcp` speaks MCP over standard input and
+output.
+
+| Command | Used by |
+| --- | --- |
+| `latch hook codex` | Codex lifecycle hooks |
+| `latch hook claude-code` | Claude Code lifecycle hooks |
+| `latch hook copilot <event>` | Copilot CLI lifecycle hooks, such as `postToolUse` and `agentStop` |
+| `latch mcp` | Codex and Claude Code expose both Latch tools |
+| `latch mcp --require-project-directory` | Copilot exposes both tools with an explicit project directory |
+
+See [Hooks and feedback](/docs/hooks) for what triggers automatically and where
+results appear.

@@ -1,0 +1,94 @@
+---
+title: CLI reference
+description: Run project checks from a terminal and inspect their resolved configuration.
+---
+
+## Install the CLI
+
+The [plugin bundle](/docs/quickstart) includes Latch. To use the CLI directly,
+run `./bin/latch --version` from the extracted archive folder, or add that
+folder's `bin` directory to your `PATH`.
+
+To install from source, run this in the Latch checkout with Rust 1.88 or later.
+
+```sh
+cargo install --locked --path crates/latch
+latch --version
+```
+
+With Node.js 18 or newer, you can install the preview npm tarballs. Use the
+wrapper and the binary for your platform. This example uses Linux x64.
+
+```sh
+npm install -g ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-linux-x64-0.1.0.tgz
+latch --version
+```
+
+The registry package is pending publication. See the
+[release guide](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md)
+for artifact names and build instructions. To use the plugins from a source
+checkout or npm installation, use that checkout or installed npm package
+as the marketplace directory (`LATCH_DIR`) and keep the CLI on your `PATH`.
+
+| Harness | Register the marketplace | Install the plugin |
+| --- | --- | --- |
+| Codex | `codex plugin marketplace add "$LATCH_DIR"` | `codex plugin add latch@latch-local` |
+| Claude Code | `claude plugin marketplace add "$LATCH_DIR"` | `claude plugin install latch@latch-marketplace` |
+| GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_DIR"` | `copilot plugin install latch@latch-marketplace` |
+
+## Commands
+
+Run these commands from the directory containing your `latch.json` or
+[package scripts](/docs/project-scripts).
+
+| Command | What it does |
+| --- | --- |
+| `latch --version` | Print the installed version. |
+| `latch run after_edit` | Run all configured edit checks immediately. |
+| `latch run turn_end` or `latch` | Run all configured turn-end checks immediately. |
+| `latch explain after_edit` | Show the resolved edit commands, settings, and filters as JSON. |
+| `latch explain turn_end` or `latch explain` | Show the resolved turn-end configuration as JSON. |
+| `latch output <log-or-id> [--grep <text>]` | Replay a saved failure or search its original output. |
+| `latch output --prune` | Remove expired output across projects in your user cache now. |
+
+Manual runs bypass Git change detection and file filters. Successful output is
+quiet by default. Failed commands print their output, and
+[`on_failure`](/docs/configuration#hook-fields) controls how many commands run.
+`latch explain` never executes commands.
+
+| Exit code | Meaning |
+| --- | --- |
+| `0` | The operation succeeded. |
+| `1` | A check, configuration, or retrieval failed, including a search with zero matches. |
+| `2` | The command-line arguments were invalid. |
+
+For commands launched by a harness, see the
+[plugin reference](/docs/plugins#integration-commands).
+
+## Retrieve saved output
+
+When a failure report gives a `Saved log` path, open or search that
+`.log` file with your editor or your agent's file tools. For byte-for-byte
+replay on the original streams, pass the saved log path, filename, or ID
+to `latch output` from the same project.
+
+```sh
+latch output <id>
+latch output <id> --grep 'test_create_user'
+```
+
+Full replay sends the original bytes to stdout and stderr. Search matches a
+literal, case-sensitive string and returns up to 40 lines per stream, with
+long lines shortened around the match.
+
+The cache is under `$XDG_STATE_HOME/latch/output-v1`, or under
+`~/.local/state/latch/output-v1` by default. On Windows the fallback uses
+`%LOCALAPPDATA%` when available. Saved output may contain sensitive text
+printed by the check. Entries expire after seven days. Latch sweeps expired
+files across projects during normal use, with an hour between successful
+sweeps. Each project keeps up to 64 entries and 64 MiB.
+A command with more than 16 MiB of combined output still gets a preview
+with an explanation that full output could not be saved.
+
+Run `latch output --prune` to sweep immediately. On machines that rarely
+run Latch, schedule that command as the same user with the same state directory.

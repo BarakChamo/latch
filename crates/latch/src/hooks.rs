@@ -21,6 +21,23 @@ pub(crate) enum Harness {
 }
 
 impl Harness {
+    fn read_event(&self, input: impl io::Read) -> io::Result<Event> {
+        let event = match self {
+            Self::Copilot(event) => event.read(input),
+            _ => serde_json::from_reader::<_, Event>(input).map_err(io::Error::from),
+        }
+        .map_err(|error| io::Error::new(error.kind(), format!("invalid hook input: {error}")))?;
+        if !event.cwd.is_absolute()
+            || event.session_id.is_empty()
+            || self.turn_key(&event).is_none()
+        {
+            return Err(io::Error::other(
+                "hook requires a session ID, an absolute cwd, and a turn ID for Codex",
+            ));
+        }
+        Ok(event)
+    }
+
     fn home(&self) -> Option<PathBuf> {
         let (variable, default) = match self {
             Self::Codex => ("CODEX_HOME", ".codex"),
@@ -150,37 +167,20 @@ enum EventKind {
 }
 
 pub(crate) fn dispatch(harness: Harness) -> ExitCode {
-    let stdin = io::stdin().lock();
-    let input = match &harness {
-        Harness::Copilot(event) => event.read(stdin),
-        _ => serde_json::from_reader::<_, Event>(stdin).map_err(io::Error::from),
-    };
-    let event = match input {
-        Ok(event)
-            if event.cwd.is_absolute()
-                && !event.session_id.is_empty()
-                && harness.turn_key(&event).is_some() =>
-        {
-            event
-        }
-        Ok(_) => {
-            eprintln!(
-                "latch: hook requires a session ID, an absolute cwd, and a turn ID for Codex"
-            );
-            return invalid_input(&harness);
-        }
+    let event = match harness.read_event(io::stdin().lock()) {
+        Ok(event) => event,
         Err(error) => {
-            eprintln!("latch: invalid hook input: {error}");
+            eprintln!("latch: {error}");
             return invalid_input(&harness);
         }
     };
     let response = handle(&harness, event);
-    if matches!(harness, Harness::Copilot(CopilotEvent::Stop)) {
-        if let Some(message) = response.get("systemMessage").and_then(Value::as_str) {
-            // Copilot renders stderr from a stop-hook exit 2 as a warning without continuing.
-            eprintln!("{message}");
-            return ExitCode::from(2);
-        }
+    if matches!(harness, Harness::Copilot(CopilotEvent::Stop))
+        && let Some(message) = response.get("systemMessage").and_then(Value::as_str)
+    {
+        // Copilot renders stderr from a stop-hook exit 2 as a warning without continuing.
+        eprintln!("{message}");
+        return ExitCode::from(2);
     }
     match writeln!(io::stdout().lock(), "{response}") {
         Ok(()) => ExitCode::SUCCESS,
@@ -231,10 +231,9 @@ fn handle(harness: &Harness, event: Event) -> Value {
             if let Some(path) = edits
                 .as_deref()
                 .and_then(|dir| edit_path(dir, &event, tool_name))
+                && let Err(error) = capture_edit(&event.cwd, &path)
             {
-                if let Err(error) = capture_edit(&event.cwd, &path) {
-                    eprintln!("latch: could not save edit baseline: {error}");
-                }
+                eprintln!("latch: could not save edit baseline: {error}");
             }
             json!({})
         }
@@ -272,12 +271,11 @@ fn handle(harness: &Harness, event: Event) -> Value {
             let Some(feedback) = check_workspace(&event.cwd, HookName::TurnEnd, baseline) else {
                 return json!({});
             };
-            if feedback.failed {
-                if let Some(path) = pending_path(harness, &event) {
-                    if let Err(error) = store(&path, &feedback.message) {
-                        eprintln!("latch: could not save failure for the next prompt: {error}");
-                    }
-                }
+            if feedback.failed
+                && let Some(path) = pending_path(harness, &event)
+                && let Err(error) = store(&path, &feedback.message)
+            {
+                eprintln!("latch: could not save failure for the next prompt: {error}");
             }
             json!({ "systemMessage": feedback.message })
         }
@@ -432,7 +430,7 @@ fn check_workspace(
                 .is_none_or(|paths| paths.iter().any(|path| entry.filters.matches(path)))
     });
     let report = run::run(directory, matching);
-    let message = report.message();
+    let message = report.message(directory);
     if report.failed() {
         Some(Feedback {
             message: format!("Latch checks failed.\n{message}"),
@@ -445,5 +443,59 @@ fn check_workspace(
             message,
             failed: false,
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rejects_incomplete_and_malformed_hook_events() {
+        // Vary the required fields while starting from a valid native event.
+        let absolute = env::temp_dir();
+        let valid = json!({
+            "cwd": absolute, "session_id": "session", "turn_id": "turn",
+            "hook_event_name": "UserPromptSubmit",
+        });
+        assert!(
+            Harness::Codex
+                .read_event(valid.to_string().as_bytes())
+                .is_ok()
+        );
+        for (field, value) in [
+            ("cwd", json!("relative")),
+            ("session_id", json!("")),
+            ("turn_id", Value::Null),
+        ] {
+            let mut payload = valid.clone();
+            payload[field] = value;
+            let input = payload.to_string();
+            let error = Harness::Codex.read_event(input.as_bytes()).err().unwrap();
+            assert!(
+                error.to_string().contains("requires a session ID"),
+                "{error}"
+            );
+        }
+        let error = Harness::ClaudeCode.read_event(&b"{"[..]).err().unwrap();
+        assert!(
+            error.to_string().starts_with("invalid hook input:"),
+            "{error}"
+        );
+    }
+
+    #[test]
+    fn copilot_requires_event_specific_fields() {
+        let input = json!({"cwd": env::temp_dir(), "sessionId": "session"}).to_string();
+        for (event, expected) in [
+            (CopilotEvent::PreToolUse, "missing toolName"),
+            (CopilotEvent::PromptTransformed, "missing transformedPrompt"),
+        ] {
+            let error = Harness::Copilot(event)
+                .read_event(input.as_bytes())
+                .err()
+                .unwrap();
+            assert!(error.to_string().contains(expected), "{error}");
+        }
     }
 }

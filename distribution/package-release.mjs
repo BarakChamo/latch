@@ -20,7 +20,7 @@ const pluginManifests = [
   "plugins/claude-code/.claude-plugin/plugin.json",
   "plugins/copilot/plugin.json",
 ];
-const pluginFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"];
+const sharedFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin", "latch.schema.json"];
 const [target, destination = "dist"] = process.argv.slice(2);
 const output = resolve(destination);
 const packageManifest = readJson(join(root, "distribution/npm/package.json"));
@@ -44,7 +44,7 @@ try {
   if (target === "npm") {
     const packageRoot = join(staging, "wrapper");
     cpSync(join(root, "distribution/npm"), packageRoot, { recursive: true });
-    copyPlugins(packageRoot);
+    copySharedFiles(packageRoot);
     const optionalDependencies = Object.fromEntries(
       Object.values(targets).map(([os, cpu]) => [platformName(os, cpu), version]),
     );
@@ -76,7 +76,13 @@ function packPlatform(target) {
   const bin = join(bundle, "bin");
   mkdirSync(bin, { recursive: true });
   cpSync(join(packageRoot, executable), join(bin, executable));
-  copyPlugins(bundle);
+  copySharedFiles(bundle);
+  if (os !== "win32") {
+    bundlePluginExecutables(bundle, join(bin, executable));
+    const installer = join(bundle, "install");
+    cpSync(join(root, "distribution/native/install.sh"), installer);
+    chmodSync(installer, 0o755);
+  }
   cpSync(join(root, "distribution/native/README.md"), join(bundle, "README.md"));
   const filename = `${directory}.tar.gz`;
   const archiveOptions = process.platform === "darwin" ? ["--no-xattrs"] : [];
@@ -88,9 +94,44 @@ function packPlatform(target) {
   writeFileSync(join(output, `${filename}.sha256`), `${digest}  ${filename}\n`);
 }
 
-function copyPlugins(directory) {
-  for (const path of pluginFiles) {
+function copySharedFiles(directory) {
+  for (const path of sharedFiles) {
     cpSync(join(root, path), join(directory, path), { recursive: true });
+  }
+}
+
+function bundlePluginExecutables(bundle, binary) {
+  for (const [harness, variable] of [
+    ["codex", "PLUGIN_ROOT"],
+    ["claude-code", "CLAUDE_PLUGIN_ROOT"],
+    ["copilot", "PLUGIN_ROOT"],
+  ]) {
+    const plugin = join(bundle, "plugins", harness);
+    const executable = "$" + "{" + variable + "}/bin/latch";
+    mkdirSync(join(plugin, "bin"));
+    cpSync(binary, join(plugin, "bin", "latch"));
+
+    const copilot = harness === "copilot";
+    const hooksPath = join(plugin, copilot ? "hooks.json" : "hooks/hooks.json");
+    const hooks = readJson(hooksPath);
+    for (const event of Object.values(hooks.hooks)) {
+      const handlers = copilot ? event : event.flatMap((matcher) => matcher.hooks);
+      for (const handler of handlers) {
+        const field = copilot ? "bash" : "command";
+        if (!handler[field]?.startsWith("latch ")) {
+          throw new Error(`Expected a Latch command in ${hooksPath}.`);
+        }
+        handler[field] = handler[field].replace("latch ", `"${executable}" `);
+        if (copilot) delete handler.powershell;
+      }
+    }
+    writeJson(hooksPath, hooks);
+
+    if (harness !== "claude-code") continue; // The installer records the absolute MCP executable path.
+    const mcpPath = join(plugin, ".mcp.json");
+    const mcp = readJson(mcpPath);
+    mcp.mcpServers.latch.command = executable;
+    writeJson(mcpPath, mcp);
   }
 }
 

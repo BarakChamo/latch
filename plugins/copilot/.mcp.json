@@ -4,7 +4,8 @@
       "type": "stdio",
       "command": "latch",
       "args": [
-        "mcp"
+        "mcp",
+        "--require-project-directory"
       ]
     }
   }

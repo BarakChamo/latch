@@ -4,6 +4,8 @@ mod config;
 mod discovery;
 mod hooks;
 mod mcp;
+mod output;
+mod rtk;
 mod run;
 mod workspace;
 
@@ -16,7 +18,10 @@ use config::{HookEntries, HookEntry, HookName};
 use serde_json::{Map, Value, json};
 
 fn main() -> ExitCode {
-    let mut args = env::args_os().skip(1);
+    let mut args = env::args_os().skip(1).peekable();
+    if args.peek().is_none_or(|arg| arg != "output") {
+        output::prune_if_due();
+    }
     use config::HookName::TurnEnd;
     let selected = match args.next() {
         None => TurnEnd,
@@ -39,7 +44,40 @@ fn main() -> ExitCode {
             println!("latch {}", env!("CARGO_PKG_VERSION"));
             return ExitCode::SUCCESS;
         }
-        Some(arg) if arg == "mcp" && args.next().is_none() => return mcp::dispatch(),
+        Some(arg) if arg == "output" => {
+            let Some(id) = args.next().and_then(|id| id.into_string().ok()) else {
+                return usage();
+            };
+            if id == "--prune" {
+                return if args.next().is_none() {
+                    prune_output()
+                } else {
+                    usage()
+                };
+            }
+            let query = match args.next() {
+                None => None,
+                Some(flag) if flag == "--grep" => {
+                    let Some(query) = args.next().and_then(|query| query.into_string().ok()) else {
+                        return usage();
+                    };
+                    if args.next().is_some() {
+                        return usage();
+                    }
+                    Some(query)
+                }
+                _ => return usage(),
+            };
+            output::prune_if_due();
+            return replay_output(&id, query.as_deref());
+        }
+        Some(arg) if arg == "mcp" => match args.next().as_deref() {
+            None => return mcp::dispatch(mcp::ProjectDirectory::WorkingDirectory),
+            Some(option) if option == "--require-project-directory" && args.next().is_none() => {
+                return mcp::dispatch(mcp::ProjectDirectory::ToolArgument);
+            }
+            _ => return usage(),
+        },
         Some(arg) if arg == "hook" => {
             let harness = args.next();
             let event = args.next();
@@ -88,6 +126,35 @@ fn main() -> ExitCode {
     }
 }
 
+fn prune_output() -> ExitCode {
+    match output::prune_expired() {
+        Ok(removed) => {
+            println!("Removed {removed} expired output files.");
+            ExitCode::SUCCESS
+        }
+        Err(error) => {
+            eprintln!("latch: could not prune output: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
+fn replay_output(id: &str, query: Option<&str>) -> ExitCode {
+    match output::replay(
+        Path::new("."),
+        id,
+        query,
+        io::stdout().lock(),
+        io::stderr().lock(),
+    ) {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("latch: {error}");
+            ExitCode::FAILURE
+        }
+    }
+}
+
 fn explain(selected: config::HookName) -> ExitCode {
     let result = (|| -> Result<(), Box<dyn std::error::Error>> {
         let directory = env::current_dir()?;
@@ -133,6 +200,9 @@ fn explain_entry(selected: HookName, entry: HookEntry) -> Map<String, Value> {
         ("comparison".into(), json!(comparison)),
         ("on_success".into(), json!(entry.on_success)),
         ("on_failure".into(), json!(entry.on_failure)),
+        ("failure_output".into(), json!(entry.failure_output)),
+        ("tail_lines".into(), json!(entry.tail_lines)),
+        ("rtk_filter".into(), json!(entry.rtk_filter)),
         ("commands".into(), json!(entry.commands)),
         ("paths".into(), json!(entry.filters.paths)),
         ("extensions".into(), json!(entry.filters.extensions)),
@@ -141,7 +211,7 @@ fn explain_entry(selected: HookName, entry: HookEntry) -> Map<String, Value> {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch hook <codex|claude-code> | latch hook copilot <event> | latch mcp"
+        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch hook <codex|claude-code> | latch hook copilot <event> | latch mcp [--require-project-directory]"
     );
     ExitCode::from(2)
 }

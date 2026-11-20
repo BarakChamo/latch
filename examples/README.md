@@ -1,10 +1,12 @@
-# Latch examples
+# Try Latch in a project
 
-Install Latch, then run the commands from the example directory. To try
-automatic checks, open that directory with the Latch plugin enabled and
-edit a source file using the harness's native edit tool.
+Install Latch using the [quickstart](../apps/docs/content/docs/quickstart.mdx).
+Run the commands in the example's own directory with `latch` on your
+`PATH`. To try automatic checks, start a new session in that directory
+with the plugin enabled and ask your agent to make one of the edits below
+using its native edit tool.
 
-| Example | After an edit | At turn end |
-| --- | --- | --- |
-| [TypeScript](typescript/) | Prettier | TypeScript compiler |
-| [Python with uv](python/) | Ruff | Unit tests |
+| Example | After a native edit | At turn end | What it shows |
+| --- | --- | --- | --- |
+| [TypeScript](typescript/) | Prettier | Type checking and Vitest | Script discovery with npm and no `latch.json` |
+| [Python with uv](python/) | Ruff | Unit tests | Entry-point discovery with shared defaults in `latch.json` |

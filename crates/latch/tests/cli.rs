@@ -19,7 +19,38 @@ fn run_with_args(config: Option<&str>, args: &[&str]) -> Output {
         .expect("run latch")
 }
 
+#[test]
+fn schema_reference_is_editor_metadata() {
+    let config = r#"{"$schema":"./missing.schema.json","commands":[["check"]]}"#;
+    let output = run_with_args(Some(config), &["explain"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let explanation = String::from_utf8(output.stdout).unwrap();
+    assert!(explanation.contains("\"check\""));
+    assert!(!explanation.contains("missing.schema.json"));
+}
+
 #[cfg(unix)]
+#[test]
+fn compact_failure_output_keeps_direct_cli_output_on_its_original_streams() {
+    let output = run_latch(Some(
+        r#"{"defaults":{"failure_output":"compact"},"commands":[
+            ["sh","-c","yes 'verbose setup line' | head -500; echo 'error: cannot build' >&2; exit 7"]
+        ]}"#,
+    ));
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout)
+            .matches("verbose setup line")
+            .count(),
+        500
+    );
+    assert!(String::from_utf8_lossy(&output.stderr).contains("error: cannot build"));
+}
+
 #[test]
 fn runs_commands_in_order_and_discards_success_output() {
     // Given a second command that needs the first command's work.

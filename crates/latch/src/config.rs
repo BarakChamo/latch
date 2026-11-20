@@ -9,6 +9,8 @@ use std::{fmt, fs, io, path::Path};
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Config {
+    #[serde(rename = "$schema")]
+    _schema: Option<String>,
     commands: Option<Vec<Vec<String>>>,
     hooks: Option<Hooks>,
     #[serde(default)]
@@ -130,6 +132,9 @@ struct EntryConfig {
     when: Option<When>,
     on_success: Option<OnSuccess>,
     on_failure: Option<OnFailure>,
+    failure_output: Option<FailureOutput>,
+    tail_lines: Option<TailLines>,
+    rtk_filter: Option<RtkFilter>,
 }
 
 #[derive(Default, Deserialize)]
@@ -138,6 +143,9 @@ struct Settings {
     when: Option<When>,
     on_success: Option<OnSuccess>,
     on_failure: Option<OnFailure>,
+    failure_output: Option<FailureOutput>,
+    tail_lines: Option<TailLines>,
+    rtk_filter: Option<RtkFilter>,
 }
 
 #[derive(Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
@@ -163,10 +171,85 @@ pub(crate) enum OnFailure {
     Stop,
 }
 
+#[derive(Clone, Copy, Default, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum FailureOutput {
+    #[default]
+    Excerpt,
+    Compact,
+    Tail,
+    Rtk,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(try_from = "String")]
+pub(crate) struct RtkFilter(String);
+
+impl Default for RtkFilter {
+    fn default() -> Self {
+        Self("log".into())
+    }
+}
+
+impl TryFrom<String> for RtkFilter {
+    type Error = &'static str;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if !value.is_empty()
+            && value.len() <= 64
+            && value.as_bytes()[0].is_ascii_alphanumeric()
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+        {
+            Ok(Self(value))
+        } else {
+            Err("rtk_filter must be a filter name such as vitest or cargo-test")
+        }
+    }
+}
+
+impl RtkFilter {
+    pub(crate) fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(try_from = "usize")]
+pub(crate) struct TailLines(usize);
+
+impl Default for TailLines {
+    fn default() -> Self {
+        Self(20)
+    }
+}
+
+impl TryFrom<usize> for TailLines {
+    type Error = &'static str;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        if (1..=100).contains(&value) {
+            Ok(Self(value))
+        } else {
+            Err("tail_lines must be between 1 and 100")
+        }
+    }
+}
+
+impl TailLines {
+    pub(crate) fn get(self) -> usize {
+        self.0
+    }
+}
+
 pub(crate) struct HookEntry {
     pub(crate) when: When,
     pub(crate) on_success: OnSuccess,
     pub(crate) on_failure: OnFailure,
+    pub(crate) failure_output: FailureOutput,
+    pub(crate) tail_lines: TailLines,
+    pub(crate) rtk_filter: RtkFilter,
     pub(crate) filters: PathFilters,
     pub(crate) commands: Vec<Vec<String>>,
 }
@@ -344,6 +427,15 @@ fn resolve(
             .unwrap_or(When::WorkspaceChanged),
         on_success: hook.on_success.or(defaults.on_success).unwrap_or_default(),
         on_failure: hook.on_failure.or(defaults.on_failure).unwrap_or_default(),
+        failure_output: hook
+            .failure_output
+            .or(defaults.failure_output)
+            .unwrap_or_default(),
+        tail_lines: hook.tail_lines.or(defaults.tail_lines).unwrap_or_default(),
+        rtk_filter: hook
+            .rtk_filter
+            .or_else(|| defaults.rtk_filter.clone())
+            .unwrap_or_default(),
         filters,
         commands: hook.commands,
     })
@@ -415,4 +507,72 @@ fn validate_commands(name: HookName, commands: &[Vec<String>]) -> Result<(), Con
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hook_settings_override_defaults_independently() {
+        let defaults = Settings {
+            when: Some(When::Always),
+            on_failure: Some(OnFailure::Stop),
+            ..Settings::default()
+        };
+        let hook = EntryConfig {
+            on_success: Some(OnSuccess::Output),
+            commands: vec![vec!["verify".into(), "--quiet".into()]],
+            ..EntryConfig::default()
+        };
+        let resolved = resolve(HookName::TurnEnd, hook, &defaults).unwrap();
+        assert!(resolved.when == When::Always);
+        assert!(resolved.on_failure == OnFailure::Stop);
+        assert!(resolved.on_success == OnSuccess::Output);
+        assert_eq!(resolved.commands, [["verify", "--quiet"]]);
+        assert!(!resolved.needs_comparison());
+
+        let fallback = resolve(
+            HookName::TurnEnd,
+            EntryConfig::default(),
+            &Settings::default(),
+        )
+        .unwrap();
+        assert!(fallback.when == When::WorkspaceChanged);
+        assert!(fallback.on_failure == OnFailure::Collect);
+        assert!(fallback.on_success == OnSuccess::Silent);
+        assert!(fallback.needs_comparison());
+    }
+
+    #[test]
+    fn filters_combine_recursive_paths_and_normalized_final_extensions() {
+        let filters = compile_filters(
+            HookName::AfterEdit,
+            Some(vec!["src/**".into()]),
+            Some(vec![".TS".into(), "tsx".into()]),
+        )
+        .unwrap();
+        for (path, matches) in [
+            ("src/main.Ts", true),
+            ("src/deep/view.tsx", true),
+            ("Src/main.ts", false),
+            ("docs/example.ts", false),
+            ("src/file.ts.bak", false),
+            ("src/types", false),
+        ] {
+            assert_eq!(filters.matches(Path::new(path)), matches, "{path}");
+        }
+    }
+
+    #[test]
+    fn rejects_parent_globs_and_compound_extensions() {
+        assert!(matches!(
+            compile_filters(HookName::AfterEdit, Some(vec!["src/../**".into()]), None),
+            Err(ConfigError::InvalidPath(HookName::AfterEdit, path)) if path == "src/../**"
+        ));
+        assert!(matches!(
+            compile_filters(HookName::TurnEnd, None, Some(vec![".tar.gz".into()])),
+            Err(ConfigError::InvalidExtension(HookName::TurnEnd, suffix)) if suffix == ".tar.gz"
+        ));
+    }
 }

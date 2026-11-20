@@ -4,7 +4,7 @@ Template-Version: 1
 
 ## Stack
 
-- Rust 2024 with a declared minimum of 1.85. Development uses rustup stable and Cargo.
+- Rust 2024 with a declared minimum of 1.88. Development uses rustup stable and Cargo.
 - npm 11 installs Turborepo for development. The CLI uses Serde for JSON and the Rust MCP SDK for its local stdio tool.
 - `tenets.json` selects the Rust profile for the repository. Deployment targets are pending.
 
@@ -15,10 +15,13 @@ Template-Version: 1
 | `npm ci` | Install locked development tooling |
 | `cargo run --locked -p latch -- --version` | Check the CLI version during iteration |
 | `npm run build` | Build the Cargo workspace |
-| `npm run check` | Full acceptance gate covering formatting, Clippy, and Cargo tests |
+| `npm run check` | Full acceptance gate covering formatting, Clippy, Cargo tests, and JSON Schema validation |
 | `npm run fmt` | Apply Rust formatting |
 | `npm run package:release -- <target-or-npm>` | Stage packages and archives as described in the release guide |
 | `npm run test:release -- <target>` | Verify the native archive and install the npm tarballs for the current platform |
+| `npm run test:live -- <local-release.tar.gz>` | Verify a bundled plugin in signed-in harness sessions |
+| `latch output <id> [--grep <text>]` | Recover a failed command's saved stdout and stderr from its project |
+| `latch output --prune` | Remove expired output files across projects for the current user |
 
 ## Workspace map
 
@@ -43,6 +46,8 @@ exposes its Cargo tasks to Turborepo.
 
 - Use Cargo's test harness. Unit tests live with their source in `#[cfg(test)]` modules.
 - Local integration tests live in `crates/latch/tests/*.rs`. Tests that launch `sh` run on Unix.
+- Pull requests run `npm run check` on Ubuntu and macOS without harness credentials.
+- The [release guide](releasing.md#verify-a-real-harness-session) covers the archive smoke test and the opt-in live harness test.
 
 ## Documentation map
 
@@ -59,8 +64,9 @@ exposes its Cargo tasks to Turborepo.
 
 ## Data and runtime
 
-- `latch.json` in the command working directory owns explicit command lists, hook defaults, and per-hook path filters. Local `package.json` and `pyproject.toml` own discovered script definitions.
+- `latch.json` in the command working directory owns explicit command lists, hook defaults, and per-hook path filters. The editor contract is [`latch.schema.json`](../latch.schema.json), which ships in the native archive and npm wrapper. Local `package.json` and `pyproject.toml` own discovered script definitions.
 - Git and per-file SHA-256 fingerprints supply changed paths for harness hooks. Baselines are disposable state in `latch/baselines-v1` under each harness's config directory. Codex keys by session and turn, and Claude Code and Copilot CLI key by session. Edit baselines use a sibling per-turn directory and are consumed after the edit or discarded at a turn boundary. Pending turn-end failure reports are stored in `latch/pending-v1` by session and working directory until the next prompt consumes them.
+- Failure previews that omit output keep both original streams in one readable `r-<id>.log` file under `latch/output-v1` in the user state directory. The cache is scoped to the canonical command directory. CLI and MCP lookup accept the saved path, filename, or ID. Reads reject expired entries, saves enforce per-project limits, and CLI and MCP activity periodically sweeps expired files across projects.
 
 ## Change delivery
 

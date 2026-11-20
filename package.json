@@ -4,12 +4,15 @@
   "packageManager": "npm@11.19.1",
   "scripts": {
     "build": "turbo run build:rust",
-    "check": "turbo run format:check lint:rust test:rust",
+    "check": "turbo run format:check lint:rust test:rust && npm run test:schema",
     "fmt": "cargo fmt --all",
     "package:release": "node distribution/package-release.mjs",
-    "test:release": "node distribution/smoke-release.mjs"
+    "test:release": "node distribution/smoke-release.mjs",
+    "test:live": "node distribution/smoke-harnesses.mjs",
+    "test:schema": "node --test distribution/check-schema.mjs"
   },
   "devDependencies": {
+    "ajv": "8.20.0",
     "turbo": "2.11.13"
   },
   "workspaces": [

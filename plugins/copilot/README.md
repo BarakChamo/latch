@@ -34,6 +34,8 @@ Copilot may omit a tool-call ID from command-hook payloads. Latch pairs
 those calls by tool name and arguments and runs the check if pairing is
 ambiguous.
 
-The bundled `run_turn_end` tool runs all configured turn-end checks on demand. The
+The bundled `run_turn_end` tool takes the absolute `project_directory` from
+the agent and runs all configured turn-end checks there. Copilot starts the
+tool in the plugin directory. The
 [configuration reference](../../README.md#configuration) covers shared
 defaults, per-hook overrides, and output policies.

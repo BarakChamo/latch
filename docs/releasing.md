@@ -23,10 +23,30 @@ npm run package:release -- npm
 npm run test:release -- aarch64-apple-darwin
 ```
 
-Each native archive includes the CLI, all marketplace catalogs, and the
-three plugins. A SHA-256 checksum accompanies the archive. Extract it,
-put its `bin` directory on `PATH`, then add the extracted root as a local
-marketplace in your harness.
+Each native archive includes the CLI, the marketplace catalogs, and the
+three plugins. The archive and npm wrapper both include `latch.schema.json`. A SHA-256 checksum accompanies the archive. On macOS and
+Linux, the archive also contains an installer and a copy of Latch inside
+each plugin. The release smoke test verifies hooks and MCP startup with
+the standalone CLI absent from `PATH`.
+
+## Verify a real harness session
+
+With the native archive built and signed-in harness CLIs on your `PATH`, run
+the live test. Omit `--harness` to test Codex, Claude Code, and GitHub
+Copilot CLI together, or repeat the option to select multiple harnesses.
+
+```sh
+npm run test:live -- dist/latch-0.1.0-aarch64-apple-darwin.tar.gz
+npm run test:live -- dist/latch-0.1.0-aarch64-apple-darwin.tar.gz --harness copilot
+```
+
+The test installs the bundled plugin in temporary directories, sends a
+synthetic Git fixture to the selected harness services, and checks that
+one edit runs both checks once in order and surfaces both failure diagnostics.
+The test also retrieves a line that the compact preview omitted.
+It also checks that an explicit plugin tool call returns its output.
+Codex uses a temporary copy of its file-based credentials
+when available. The test removes its temporary files on exit.
 
 ## Publish the CLI
 
@@ -47,9 +67,13 @@ From source, users can also install with `cargo install --locked --path crates/l
 
 ## Distribute the plugins
 
-Each plugin includes its hook configuration and MCP tool configuration. Both
-invoke the same local `latch` binary, so install the CLI and make it available
-on the harness's `PATH` before enabling a plugin.
+On macOS and Linux, extract the native archive, then run `./install codex`,
+`./install claude`, or `./install copilot` from the extracted folder. Keep
+the folder in place. The installer registers the marketplace and installs
+the plugin. For Codex and Copilot it records the path to the bundled MCP executable.
+
+The source, npm, and Windows options use the same marketplace catalogs
+with a CLI on the harness's `PATH`.
 
 | Harness | Marketplace file | Installation |
 | --- | --- | --- |

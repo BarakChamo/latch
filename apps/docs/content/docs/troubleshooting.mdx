@@ -1,20 +1,9 @@
 ---
-title: CLI and troubleshooting
+title: Troubleshooting
 description: Inspect the checks Latch found and diagnose missing output.
 ---
 
-## Commands
-
-| Command | What it does |
-| --- | --- |
-| `latch explain after_edit` | Show the edit commands, filters, and resolved settings. |
-| `latch explain turn_end` | Show the turn-end plan. `latch explain` is shorthand. |
-| `latch run after_edit` | Run all edit checks immediately. |
-| `latch run turn_end` | Run all turn-end checks immediately. `latch` is shorthand. |
-| `run_turn_end` | Run turn-end checks through the plugin's MCP tool and return their report. |
-
-Manual runs bypass change detection and file filters. CLI exit codes are
-`0` for success, `1` for a check or configuration failure, and `2` for invalid usage.
+See the [CLI reference](/docs/cli) for command syntax and exit codes.
 
 ## The hook is quiet
 
@@ -22,8 +11,9 @@ Manual runs bypass change detection and file filters. CLI exit codes are
    `configured`, the command list, and any file filters.
 2. Run the same event with `latch run`. Successful commands are silent by
    default. Append `&& echo passed` in a POSIX shell to confirm success.
-3. Confirm your harness loaded the plugin and inherited a `PATH` where
-   `latch --version` works. In Codex, check that you trusted the hooks in `/hooks`.
+3. Confirm your harness loaded the plugin. If you installed the CLI separately,
+   check that `latch --version` works from the terminal you use to start it.
+   In Codex, check that you trusted the hooks in `/hooks`.
 4. Make a Git-visible change using a supported native edit tool. The default
    `after_edit` gate skips no-op edits. File filters can also skip a check.
 
@@ -31,6 +21,12 @@ Manual runs bypass change detection and file filters. CLI exit codes are
 
 Check the executable in the command shown by `latch explain`. Install that
 runner or tool, then start your harness from a terminal that can find it.
+
+## The agent cannot find the Latch tool
+
+Start a new harness session with the plugin installed. If you installed the
+CLI separately, verify that the session can launch `latch`. The plugin exposes
+[`run_turn_end`](/docs/plugins#run-checks-from-chat) through a local MCP server.
 
 ## A turn-end failure is missing from the chat
 

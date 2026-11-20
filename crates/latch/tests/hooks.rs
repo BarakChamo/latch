@@ -102,6 +102,7 @@ impl Project {
             .env("CODEX_HOME", self.harness_home.path())
             .env("CLAUDE_CONFIG_DIR", self.harness_home.path())
             .env("COPILOT_HOME", self.harness_home.path())
+            .env("XDG_STATE_HOME", self.harness_home.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -115,6 +116,56 @@ impl Project {
     fn checked(&self) -> bool {
         self.root.path().join(Path::new("checked")).exists()
     }
+}
+
+#[test]
+fn rejects_invalid_hook_events_without_blocking_copilot_edits() {
+    let project = Project::new();
+    let codex = project.invoke_hook(
+        &["codex"],
+        json!({
+            "cwd": project.root.path(), "session_id": "session",
+            "hook_event_name": "UserPromptSubmit"
+        }),
+    );
+    assert_eq!(codex.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&codex.stderr).contains("turn ID for Codex"));
+    let copilot = project.copilot("preToolUse", json!({}));
+    assert!(copilot.status.success());
+    assert!(copilot.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&copilot.stderr).contains("missing toolName"));
+    assert!(!project.checked());
+}
+
+#[test]
+fn compact_failure_output_preserves_late_diagnostics_and_other_failures() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"defaults":{"failure_output":"compact"},"hooks":{"turn_end":[
+            {"when":"always","commands":[
+                ["sh","-c","yes 'passing test' | head -500; printf '%s\\n' 'test parse_input ... FAILED' 'src/lib.rs:85: assertion failed' 'test result: FAILED. 1 failed'; exit 7"],
+                ["sh","-c","echo 'another failure' >&2; exit 8"]
+            ]},
+            {"when":"always","failure_output":"excerpt","commands":[
+                ["sh","-c","yes 'unrecognized log' | head -500; echo 'outside excerpt'; exit 9"]
+            ]}
+        ]}}"#,
+    );
+    let result = project.hook("Stop", "1", false);
+    let report = result["systemMessage"]
+        .as_str()
+        .expect("failed check report");
+    assert!(report.contains("test parse_input ... FAILED"), "{report}");
+    assert!(
+        report.contains("src/lib.rs:85: assertion failed"),
+        "{report}"
+    );
+    assert!(report.contains("test result: FAILED. 1 failed"), "{report}");
+    assert!(report.contains("another failure"), "{report}");
+    assert!(!report.contains("passing test"), "{report}");
+    assert!(report.contains("unrecognized log"), "{report}");
+    assert!(!report.contains("outside excerpt"), "{report}");
 }
 
 #[test]
