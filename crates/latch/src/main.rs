@@ -164,10 +164,12 @@ fn replay_output(id: &str, query: Option<&str>) -> ExitCode {
 fn explain(selected: config::HookName) -> ExitCode {
     let result = (|| -> Result<(), Box<dyn std::error::Error>> {
         let directory = env::current_dir()?;
-        let path = directory.join("latch.json");
-        let entries = config::load(&directory, selected)?;
+        let config::LoadedHook {
+            config_path,
+            entries,
+        } = config::load_with_source(&directory, selected)?;
         let mut response = Map::from_iter([
-            ("config".into(), json!(path)),
+            ("config".into(), json!(config_path)),
             ("hook".into(), json!(selected.name())),
             ("configured".into(), json!(entries.is_some())),
         ]);

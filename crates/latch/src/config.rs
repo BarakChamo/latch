@@ -4,7 +4,10 @@ use crate::discovery::{self, DiscoveryError};
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::de::{DeserializeSeed, MapAccess, SeqAccess, Visitor, value::MapAccessDeserializer};
 use serde::{Deserialize, Serialize};
-use std::{fmt, fs, io, path::Path};
+use std::{
+    fmt, fs, io,
+    path::{Path, PathBuf},
+};
 
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -341,11 +344,39 @@ pub(crate) fn load(
     directory: &Path,
     selected: HookName,
 ) -> Result<Option<HookEntries<HookEntry>>, ConfigError> {
-    let config: Config = match fs::read(directory.join("latch.json")) {
-        Ok(bytes) => serde_json::from_slice(&bytes).map_err(ConfigError::Parse)?,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Config::default(),
+    load_with_source(directory, selected).map(|loaded| loaded.entries)
+}
+
+pub(crate) struct LoadedHook {
+    pub(crate) config_path: Option<PathBuf>,
+    pub(crate) entries: Option<HookEntries<HookEntry>>,
+}
+
+/// Resolves the hook and reports the config file that was successfully read.
+pub(crate) fn load_with_source(
+    directory: &Path,
+    selected: HookName,
+) -> Result<LoadedHook, ConfigError> {
+    let path = directory.join("latch.json");
+    let (config_path, config) = match fs::read(&path) {
+        Ok(bytes) => (
+            Some(path),
+            serde_json::from_slice(&bytes).map_err(ConfigError::Parse)?,
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => (None, Config::default()),
         Err(error) => return Err(ConfigError::Read(error)),
     };
+    Ok(LoadedHook {
+        config_path,
+        entries: resolve_hook(directory, selected, config)?,
+    })
+}
+
+fn resolve_hook(
+    directory: &Path,
+    selected: HookName,
+    config: Config,
+) -> Result<Option<HookEntries<HookEntry>>, ConfigError> {
     let hooks = match (config.commands, config.hooks) {
         (Some(_), Some(_)) => return Err(ConfigError::ConflictingLists),
         (None, None) => Hooks::default(),

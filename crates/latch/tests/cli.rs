@@ -122,8 +122,11 @@ fn discovers_javascript_scripts_using_the_declared_manager_or_lockfile() {
         assert!(output.status.success(), "{output:?}");
         serde_json::from_slice::<serde_json::Value>(&output.stdout).unwrap()
     };
+    let discovered = explain("after_edit");
+    assert_eq!(discovered.get("config"), Some(&serde_json::Value::Null));
+    assert_eq!(discovered["configured"], true);
     assert_eq!(
-        explain("after_edit")["commands"],
+        discovered["commands"],
         serde_json::json!([["bun", "run", "hook:afteredit"]])
     );
     assert_eq!(explain("turn_end")["configured"], false);
@@ -137,6 +140,19 @@ fn discovers_javascript_scripts_using_the_declared_manager_or_lockfile() {
         explain("turn_end")["commands"],
         serde_json::json!([["pnpm", "run", "hook:turnend"]])
     );
+
+    fs::write(
+        root.join("latch.json"),
+        r#"{"defaults":{"on_success":"output"}}"#,
+    )
+    .unwrap();
+    let with_defaults = explain("turn_end");
+    let config = with_defaults["config"].as_str().unwrap();
+    assert_eq!(
+        std::path::Path::new(config).canonicalize().unwrap(),
+        root.join("latch.json").canonicalize().unwrap()
+    );
+    assert_eq!(with_defaults["on_success"], "output");
 }
 
 #[test]
