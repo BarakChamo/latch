@@ -10,6 +10,8 @@ your coding agent.
 | Codex | `./install codex` |
 | Claude Code | `./install claude` |
 | GitHub Copilot CLI | `./install copilot` |
+| OpenCode | `./install opencode` |
+| Pi | `./install pi` |
 
 Start a new session in your project. In Codex, review and trust the Latch
 hooks using `/hooks`. Keep this folder so the harness can find the local

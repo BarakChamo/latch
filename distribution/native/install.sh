@@ -36,8 +36,29 @@ case "${1:-}" in
     copilot plugin marketplace add "$root"
     copilot plugin install latch@latch-marketplace
     ;;
+  opencode)
+    command -v opencode >/dev/null
+    directory="${XDG_CONFIG_HOME:-"$HOME/.config"}/opencode/plugins"
+    mkdir -p -- "$directory"
+    target="$root/plugins/opencode/index.js"
+    link="$directory/latch.js"
+    if [ "$(readlink "$link" 2>/dev/null || true)" != "$target" ]; then
+      ln -s -- "$target" "$link"
+    fi
+    ;;
+  pi)
+    version=$(pi --version)
+    if ! printf '%s\n' "$version" | awk -F '[.+-]' '
+      $1 > 1 || ($1 == 1 && ($2 > 5 || ($2 == 5 && $3 >= 2))) { supported = 1 }
+      END { exit !supported }
+    '; then
+      printf 'Latch requires Pi 1.5.2 or later. Found %s.\n' "$version" >&2
+      exit 1
+    fi
+    pi install "$root/plugins/pi"
+    ;;
   *)
-    printf '%s\n' 'Usage: ./install codex|claude|copilot' >&2
+    printf '%s\n' 'Usage: ./install codex|claude|copilot|opencode|pi' >&2
     exit 2
     ;;
 esac

@@ -87,9 +87,15 @@ function verifySharedFiles(directory) {
   for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
     assert(existsSync(join(directory, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
   }
+  for (const entry of ["extension-hook.mjs", "opencode/index.js", "pi/index.ts"]) {
+    assert(existsSync(join(directory, "plugins", entry)), `Missing plugin file ${entry}`);
+  }
 }
 
 function verifyBundledPlugins(extracted, project) {
+  for (const host of ["opencode", "pi"]) {
+    assert(existsSync(join(extracted, "plugins", host, "bin", "latch")), `Missing ${host} bundled executable`);
+  }
   const fixtureBin = join(scratch, "harness tools");
   mkdirSync(fixtureBin);
   const env = { ...process.env, PATH: fixtureBin };

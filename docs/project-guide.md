@@ -20,6 +20,7 @@ Template-Version: 1
 | `npm run package:release -- <target-or-npm>` | Stage packages and archives as described in the release guide |
 | `npm run test:release -- <target>` | Verify the native archive and install the npm tarballs for the current platform |
 | `npm run test:live -- <local-release.tar.gz>` | Verify a bundled plugin in signed-in harness sessions |
+| `npm run test:extensions -- <local-release.tar.gz>` | Verify OpenCode and Pi using their CLIs and a scripted localhost model |
 | `latch output <id> [--grep <text>]` | Recover a failed command's saved stdout and stderr from its project |
 | `latch output --prune` | Remove expired output files across projects for the current user |
 
@@ -65,7 +66,7 @@ exposes its Cargo tasks to Turborepo.
 ## Data and runtime
 
 - `latch.json` in the command working directory owns explicit command lists, hook defaults, and per-hook path filters. The editor contract is [`latch.schema.json`](../latch.schema.json), which ships in the native archive and npm wrapper. Local `package.json` and `pyproject.toml` own discovered script definitions.
-- Git and per-file SHA-256 fingerprints supply changed paths for harness hooks. Baselines are disposable state in `latch/baselines-v1` under each harness's config directory. Codex keys by session and turn, and Claude Code and Copilot CLI key by session. Edit baselines use a sibling per-turn directory and are consumed after the edit or discarded at a turn boundary. Pending turn-end failure reports are stored in `latch/pending-v1` by session and working directory until the next prompt consumes them.
+- Git and per-file SHA-256 fingerprints supply changed paths for harness hooks. Baselines are disposable state in `latch/baselines-v1` under each harness's config directory. Codex, OpenCode, and Pi key by session and turn. Claude Code and Copilot CLI key by session. Edit baselines use a sibling per-turn directory and are consumed after the edit or discarded at a turn boundary. Pending turn-end failure reports are stored in `latch/pending-v1` by session and working directory until the next prompt consumes them.
 - Failure previews that omit output keep both original streams in one readable `r-<id>.log` file under `latch/output-v1` in the user state directory. The cache is scoped to the canonical command directory. CLI and MCP lookup accept the saved path, filename, or ID. Reads reject expired entries, saves enforce per-project limits, and CLI and MCP activity periodically sweeps expired files across projects.
 
 ## Change delivery

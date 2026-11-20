@@ -29,7 +29,7 @@ For terminal use, see the [standalone, npm, and Cargo installs](/docs/cli#instal
 Run one command for your agent from the extracted folder. Keep that folder
 on your machine and start a new agent session after installation.
 
-<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI']}>
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'OpenCode', 'Pi']}>
 
 <Tab value="Codex">
 
@@ -51,6 +51,22 @@ on your machine and start a new agent session after installation.
 
 ```sh
 ./install copilot
+```
+
+</Tab>
+
+<Tab value="OpenCode">
+
+```sh
+./install opencode
+```
+
+</Tab>
+
+<Tab value="Pi">
+
+```sh
+./install pi
 ```
 
 </Tab>
@@ -80,7 +96,7 @@ git -c user.name="Latch Demo" -c user.email="latch@example.test" \
 ```
 
 Start a **new harness session** from this directory using `codex`, `claude`,
-or `copilot`. If the harness asks you to trust the demo directory, review
+`copilot`, `opencode`, or `pi`. If the harness asks you to trust the demo directory, review
 and accept it. In Codex, open `/hooks` and review and trust the Latch hooks.
 Then give the agent this prompt.
 

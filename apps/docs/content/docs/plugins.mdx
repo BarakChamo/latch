@@ -20,20 +20,26 @@ Linux. Run the command for your agent from the extracted folder.
 | Codex | `./install codex` |
 | Claude Code | `./install claude` |
 | GitHub Copilot CLI | `./install copilot` |
+| OpenCode | `./install opencode` |
+| Pi | `./install pi` |
 
-The installer registers the local marketplace and installs its Latch plugin.
-Keep the extracted folder so your harness can find the marketplace and the
-bundled executable. Your project’s tools, such as npm or uv, still need to
-be available to the harness.
+The installer registers Latch with your harness. OpenCode uses a local
+plugin from its config directory and Pi uses its extension manager.
+Keep the extracted folder so your harness can find the bundled executable.
+Your project’s tools, such as npm or uv, still need to be available to the
+harness.
 
 Start a new session after installation. In Codex, open `/hooks` and review
-and trust the Latch hooks.
+and trust the Latch hooks. OpenCode uses the v1 plugin API (verified with
+1.18.31 and 1.19.6). Pi requires 1.5.2 or later with built-in MCP enabled.
 
 | Harness | Find the plugin | Uninstall Latch |
 | --- | --- | --- |
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-local` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-marketplace` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-marketplace` |
+| OpenCode | Look for `latch.js` in `${XDG_CONFIG_HOME:-$HOME/.config}/opencode/plugins`. | Remove that link. |
+| Pi | `pi list` | `pi remove <absolute bundle path>/plugins/pi` |
 
 Use one installation method per project to avoid duplicate hooks.
 
@@ -51,7 +57,8 @@ A successful call is quiet unless `on_success` is set to `"output"`. Your
 harness may ask for approval because configured commands can modify files.
 
 In Copilot, the agent passes its current project directory to the tool. In
-Codex and Claude Code, the tool uses the session's working directory.
+other harnesses, the tool uses the session's working directory. Pi exposes
+it as `mcp__latch__run_turn_end`.
 
 For a manual `after_edit` run or a preview of the resolved configuration,
 use the [CLI commands](/docs/cli) in your terminal.
@@ -76,7 +83,9 @@ output.
 | `latch hook codex` | Codex lifecycle hooks |
 | `latch hook claude-code` | Claude Code lifecycle hooks |
 | `latch hook copilot <event>` | Copilot CLI lifecycle hooks, such as `postToolUse` and `agentStop` |
-| `latch mcp` | Codex and Claude Code expose both Latch tools |
+| `latch hook opencode` | The OpenCode plugin forwards prompt, edit, and idle events |
+| `latch hook pi` | The Pi extension forwards prompt, edit, and settlement events |
+| `latch mcp` | Codex, Claude Code, OpenCode, and Pi expose both Latch tools |
 | `latch mcp --require-project-directory` | Copilot exposes both tools with an explicit project directory |
 
 See [Hooks and feedback](/docs/hooks) for what triggers automatically and where

@@ -1,7 +1,7 @@
 # Releasing Latch
 
 Keep the version in `crates/latch/Cargo.toml`, `distribution/npm/package.json`,
-and all three plugin manifests aligned. Update `Cargo.lock` when the Rust
+and the harness plugin manifests aligned. Update `Cargo.lock` when the Rust
 version changes. The packager verifies the versions before creating artifacts.
 
 ## Build the artifacts
@@ -23,9 +23,9 @@ npm run package:release -- npm
 npm run test:release -- aarch64-apple-darwin
 ```
 
-Each native archive includes the CLI, the marketplace catalogs, and the
-three plugins. The archive and npm wrapper both include `latch.schema.json`. A SHA-256 checksum accompanies the archive. On macOS and
-Linux, the archive also contains an installer and a copy of Latch inside
+Each native archive includes the CLI, marketplace catalogs, and harness
+plugins. The archive and npm wrapper both include `latch.schema.json`. A
+SHA-256 checksum accompanies the archive. On macOS and Linux, the archive also contains an installer and a copy of Latch inside
 each plugin. The release smoke test verifies hooks and MCP startup with
 the standalone CLI absent from `PATH`.
 
@@ -48,6 +48,20 @@ It also checks that an explicit plugin tool call returns its output.
 Codex uses a temporary copy of its file-based credentials
 when available. The test removes its temporary files on exit.
 
+### OpenCode and Pi
+
+Install OpenCode 1.18.31 or 1.19.6 and Pi 1.5.2 on your `PATH`, then run:
+
+```sh
+npm run test:extensions -- dist/latch-0.1.0-aarch64-apple-darwin.tar.gz
+```
+
+The test runs both real CLIs against a scripted localhost model with
+temporary profiles. It verifies that no-op edits skip checks, changed
+edits report diagnostics in the same turn, and a turn-end failure is
+available on the next prompt without an extra model call. It also invokes
+the bundled MCP tool and verifies its failure reaches the model.
+
 ## Publish the CLI
 
 Confirm the npm scope and project license for the first public release.
@@ -67,13 +81,13 @@ From source, users can also install with `cargo install --locked --path crates/l
 
 ## Distribute the plugins
 
-On macOS and Linux, extract the native archive, then run `./install codex`,
-`./install claude`, or `./install copilot` from the extracted folder. Keep
-the folder in place. The installer registers the marketplace and installs
-the plugin. For Codex and Copilot it records the path to the bundled MCP executable.
+On macOS and Linux, extract the native archive and follow the
+[bundle install instructions](../README.md#get-started). Keep the folder
+in place.
 
-The source, npm, and Windows options use the same marketplace catalogs
-with a CLI on the harness's `PATH`.
+The source, npm, and Windows options require the CLI on the harness's
+`PATH`. See the [OpenCode](../plugins/opencode/README.md) and
+[Pi](../plugins/pi/README.md) guides for their plugin setup.
 
 | Harness | Marketplace file | Installation |
 | --- | --- | --- |

@@ -6,8 +6,8 @@ tarball for your platform together. See the
 for the command. Run `latch --version` to verify the install, or
 `latch explain turn_end` in a project to inspect its checks.
 
-The package also contains the Codex, Claude Code, and Copilot CLI plugins
-and their marketplace catalogs. The marketplace root is
+The package also contains the Codex, Claude Code, Copilot CLI, OpenCode,
+and Pi plugins. The marketplace root for Codex, Claude Code, and Copilot is
 `$(npm root -g)/@barakchamo/latch` on shell-based installations. Add that
 directory as a local marketplace in your harness. The plugins use the same
 `latch` executable on `PATH` for hooks and the local `run_turn_end` tool.

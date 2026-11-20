@@ -21,18 +21,22 @@ when a reliable comparison is unavailable.
 | Codex | `apply_patch` |
 | Claude Code | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` |
 | GitHub Copilot CLI | `create`, `edit`, `str_replace_editor`, `apply_patch` |
+| OpenCode | `edit`, `write`, `apply_patch` |
+| Pi | `edit`, `write` |
 
 ## Where reports appear
 
 Edit reports are attached to the tool result in the same turn. Turn-end reports
-use the harness's hook feedback. Failed turn-end reports also appear once at
-the next prompt in the same session and working directory.
+follow the harness's lifecycle. A failed turn-end report is available to
+the agent on the next prompt in the same session.
 
 | Harness | Turn-end feedback |
 | --- | --- |
 | Codex | App-server hook warning. The tested `codex exec --json` output omits it. |
 | Claude Code | Informational hook event. |
 | GitHub Copilot CLI | Hook warning. |
+| OpenCode | TUI toast or headless stderr. Failed reports are added to the next prompt. |
+| Pi | A message in session history, visible to the next model request. |
 
 A failed check finishes with the current turn. Latch never starts a repair pass.
 

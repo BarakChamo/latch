@@ -9,7 +9,8 @@
     "package:release": "node distribution/package-release.mjs",
     "test:release": "node distribution/smoke-release.mjs",
     "test:live": "node distribution/smoke-harnesses.mjs",
-    "test:schema": "node --test distribution/check-schema.mjs"
+    "test:schema": "node --test distribution/check-schema.mjs",
+    "test:extensions": "node distribution/smoke-extensions.mjs"
   },
   "devDependencies": {
     "ajv": "8.20.0",

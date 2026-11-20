@@ -36,6 +36,11 @@ as the marketplace directory (`LATCH_DIR`) and keep the CLI on your `PATH`.
 | Claude Code | `claude plugin marketplace add "$LATCH_DIR"` | `claude plugin install latch@latch-marketplace` |
 | GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_DIR"` | `copilot plugin install latch@latch-marketplace` |
 
+With the CLI on your `PATH`, add the absolute path to
+`plugins/opencode/index.js` to the `plugin` list in your OpenCode v1 config.
+For Pi, run `pi install /absolute/path/to/plugins/pi`. Both paths are
+relative to the source checkout or the npm package directory.
+
 ## Commands
 
 Run these commands from the directory containing your `latch.json` or

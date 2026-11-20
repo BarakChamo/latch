@@ -16,6 +16,8 @@ Extract it and run the command for your agent.
 | Codex | `./install codex` |
 | Claude Code | `./install claude` |
 | GitHub Copilot CLI | `./install copilot` |
+| OpenCode | `./install opencode` |
+| Pi | `./install pi` |
 
 The plugin includes Latch. Keep the extracted folder and start a new
 session in your project. In Codex, review and trust the hooks with `/hooks`.

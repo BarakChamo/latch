@@ -11,3 +11,5 @@ The guides below cover the source plugins and their hook mappings.
 - [Codex](codex/README.md)
 - [Claude Code](claude-code/README.md)
 - [GitHub Copilot CLI](copilot/README.md)
+- [OpenCode](opencode/README.md)
+- [Pi](pi/README.md)
