@@ -1,0 +1,61 @@
+name: Package release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+jobs:
+  platform:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-15
+            target: aarch64-apple-darwin
+          - runner: macos-15-intel
+            target: x86_64-apple-darwin
+          - runner: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+          - runner: ubuntu-24.04-arm
+            target: aarch64-unknown-linux-gnu
+          - runner: windows-2025
+            target: x86_64-pc-windows-msvc
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: cargo test --locked --workspace --target ${{ matrix.target }}
+      - run: cargo build --release --locked -p latch --target ${{ matrix.target }}
+      - run: npm run package:release -- ${{ matrix.target }}
+      - run: npm run test:release -- ${{ matrix.target }}
+      - uses: actions/upload-artifact@v7
+        with:
+          name: latch-${{ matrix.target }}
+          path: dist/
+          if-no-files-found: error
+
+  npm-wrapper:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - run: npm run package:release -- npm
+      - uses: actions/upload-artifact@v7
+        with:
+          name: latch-npm
+          path: dist/
+          if-no-files-found: error

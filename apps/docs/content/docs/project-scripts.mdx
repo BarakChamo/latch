@@ -1,0 +1,20 @@
+---
+title: Project scripts
+description: Use your project's package manager to run checks without a Latch config file.
+---
+
+| Manifest | After a native edit | At turn end |
+| --- | --- | --- |
+| `package.json` under `scripts` | `hook:afteredit` | `hook:turnend` |
+| `pyproject.toml` under `[project.scripts]` | `hook-afteredit` | `hook-turnend` |
+
+Latch reads the manifests from the command's working directory. For JavaScript,
+it picks npm, pnpm, Yarn, or Bun from `packageManager` or a lockfile. It uses
+npm by default. For packaged Python projects, it uses `uv run` to execute the
+entry point.
+
+If both manifests define a script for the same event, JavaScript runs first.
+The scripts use the global defaults in `latch.json`, if present.
+
+The Latch checkout includes a TypeScript example with Prettier and type
+checking and a Python example with Ruff and unit tests under `examples/`.

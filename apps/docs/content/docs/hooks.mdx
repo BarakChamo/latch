@@ -1,0 +1,19 @@
+---
+title: Hooks and feedback
+description: Install a harness plugin and see when checks run.
+---
+
+Use the path to the Latch checkout or extracted release as `<latch-directory>`.
+
+| Harness | Add the marketplace | Install |
+| --- | --- | --- |
+| Codex | `codex plugin marketplace add <latch-directory>` | `codex plugin add latch@latch-local`, then review the hooks using `/hooks`. |
+| Claude Code | `claude plugin marketplace add <latch-directory>` | `claude plugin install latch@latch-marketplace` |
+| GitHub Copilot CLI | `copilot plugin marketplace add <latch-directory>` | `copilot plugin install latch@latch-marketplace` |
+
+`after_edit` compares the Git worktree immediately before and after a native
+edit. `turn_end` compares against the start of the turn, so it also sees shell
+writes. Both detect new changes to files that were already dirty.
+
+Edit reports appear with the tool result. Failed turn-end reports also
+appear on the next user prompt, once, without restarting the agent.

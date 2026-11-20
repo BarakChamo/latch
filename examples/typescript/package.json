@@ -1,0 +1,13 @@
+{
+  "name": "latch-typescript-example",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "hook:afteredit": "prettier --check src",
+    "hook:turnend": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "prettier": "3.10.1",
+    "typescript": "7.0.2"
+  }
+}

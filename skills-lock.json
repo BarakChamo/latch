@@ -1,0 +1,54 @@
+{
+  "version": 2,
+  "skills": {
+    "tenets": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets/SKILL.md",
+      "computedHash": "5e606bec0d560774bb1511842b9bea6c9e4331366152961dcb3c6857dbfa209a"
+    },
+    "tenets-audit": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets-audit/SKILL.md",
+      "computedHash": "59098d595a9d3122de7c500b1a19b61312d7426eac3a31062b66fea04ca0f67c"
+    },
+    "tenets-check": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets-check/SKILL.md",
+      "computedHash": "8fcf17df7ddf21d4cfcf814e7df1924099617c3816b994008fedf2e836af87b2"
+    },
+    "tenets-init": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets-init/SKILL.md",
+      "computedHash": "8591d027f1d2e241122dfe52f466d45bc3619a4350c3f0c4a2fb3fe151638cfd"
+    },
+    "tenets-plan": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets-plan/SKILL.md",
+      "computedHash": "ff00616808d83278fc6ff90b3de1b75f1e88548724228c00103e6d5203bfc66e"
+    },
+    "tenets-realign": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets-realign/SKILL.md",
+      "computedHash": "ef2919f12a3a5675f54a7046f4f8949ee5c73f5046334409857dddd70cb0761b"
+    },
+    "tenets-review": {
+      "source": "BarakChamo/tenets",
+      "commit": "ba6318fd14ea27d1bc10b89b696d3beb9137bc18",
+      "sourceType": "github",
+      "skillPath": "skills/tenets-review/SKILL.md",
+      "computedHash": "f56d9fee720598bd768af79a21b785796fe6e5c82e12e073cc7217dd745226c0"
+    }
+  }
+}

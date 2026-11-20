@@ -1,0 +1,22 @@
+---
+title: CLI and troubleshooting
+description: Inspect a check, run it on demand, or find out why a hook is quiet.
+---
+
+| Command | What it does |
+| --- | --- |
+| `latch explain after_edit` | Show commands, filters, and resolved settings without running them. |
+| `latch run after_edit` | Run the resolved edit checks immediately. |
+| `latch run turn_end` | Run the resolved turn-end checks immediately. |
+| `run_turn_end` | Run turn-end checks from the plugin's MCP tool and receive the report. |
+
+Manual runs execute all entries for the requested event. Automatic hooks
+apply Git change detection and file filters.
+
+If a hook is quiet, check whether the edit changed Git-visible content,
+then confirm your harness loaded and enabled the plugin. A visible failure
+to launch a command usually means its executable is missing from the
+harness's `PATH`.
+
+Direct CLI runs exit with `0` for success, `1` for a failed check or
+configuration error, and `2` for invalid CLI usage.

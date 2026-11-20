@@ -1,0 +1,15 @@
+[project]
+name = "latch-python-example"
+version = "0.1.0"
+requires-python = ">=3.9"
+
+[project.scripts]
+hook-afteredit = "latch_python_example.checks:after_edit"
+hook-turnend = "latch_python_example.checks:turn_end"
+
+[dependency-groups]
+dev = ["ruff>=0.15,<0.16"]
+
+[build-system]
+requires = ["uv_build>=0.13.9,<0.14"]
+build-backend = "uv_build"

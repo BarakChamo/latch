@@ -1,0 +1,6 @@
+{
+  "defaults": {
+    "on_success": "silent",
+    "on_failure": "collect"
+  }
+}

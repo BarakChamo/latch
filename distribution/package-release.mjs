@@ -1,0 +1,112 @@
+// Stages registry packages and archives containing the native CLI and harness plugins.
+
+import { execFileSync } from "node:child_process";
+import { createHash } from "node:crypto";
+import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
+
+const root = fileURLToPath(new URL("..", import.meta.url));
+const targets = {
+  "aarch64-apple-darwin": ["darwin", "arm64"],
+  "x86_64-apple-darwin": ["darwin", "x64"],
+  "aarch64-unknown-linux-gnu": ["linux", "arm64"],
+  "x86_64-unknown-linux-gnu": ["linux", "x64"],
+  "x86_64-pc-windows-msvc": ["win32", "x64"],
+};
+const pluginManifests = [
+  "plugins/codex/.codex-plugin/plugin.json",
+  "plugins/claude-code/.claude-plugin/plugin.json",
+  "plugins/copilot/plugin.json",
+];
+const pluginFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"];
+const [target, destination = "dist"] = process.argv.slice(2);
+const output = resolve(destination);
+const packageManifest = readJson(join(root, "distribution/npm/package.json"));
+const { name, version, license } = packageManifest;
+
+if (target !== "npm" && !Object.hasOwn(targets, target)) {
+  throw new Error(`Use npm or one of these targets: ${Object.keys(targets).join(", ")}`);
+}
+const metadata = JSON.parse(execFileSync("cargo", ["metadata", "--locked", "--no-deps", "--format-version", "1"], { cwd: root }));
+const rustPackage = metadata.packages.find((candidate) => candidate.name === "latch");
+if (rustPackage?.version !== version || pluginManifests.some((path) => readJson(join(root, path)).version !== version)) {
+  throw new Error("The Cargo, npm and plugin versions must match.");
+}
+if (process.env.GITHUB_REF_TYPE === "tag" && process.env.GITHUB_REF_NAME !== `v${version}`) {
+  throw new Error(`The release tag must be v${version}.`);
+}
+mkdirSync(output, { recursive: true });
+const staging = mkdtempSync(join(tmpdir(), "latch-release-"));
+
+try {
+  if (target === "npm") {
+    const packageRoot = join(staging, "wrapper");
+    cpSync(join(root, "distribution/npm"), packageRoot, { recursive: true });
+    copyPlugins(packageRoot);
+    const optionalDependencies = Object.fromEntries(
+      Object.values(targets).map(([os, cpu]) => [platformName(os, cpu), version]),
+    );
+    writeJson(join(packageRoot, "package.json"), { ...packageManifest, private: false, optionalDependencies });
+    npmPack(packageRoot);
+  } else {
+    packPlatform(target);
+  }
+} finally {
+  rmSync(staging, { recursive: true });
+}
+
+function packPlatform(target) {
+  const [os, cpu] = targets[target];
+  const executable = os === "win32" ? "latch.exe" : "latch";
+  const binary = join(metadata.target_directory, target, "release", executable);
+  const packageRoot = join(staging, "binary");
+  mkdirSync(packageRoot);
+  cpSync(binary, join(packageRoot, executable));
+  chmodSync(join(packageRoot, executable), 0o755);
+  writeJson(join(packageRoot, "package.json"), {
+    name: platformName(os, cpu), version, license, os: [os], cpu: [cpu], files: [executable],
+    ...(os === "linux" ? { libc: ["glibc"] } : {}),
+  });
+  npmPack(packageRoot);
+
+  const directory = `latch-${version}-${target}`;
+  const bundle = join(staging, directory);
+  const bin = join(bundle, "bin");
+  mkdirSync(bin, { recursive: true });
+  cpSync(join(packageRoot, executable), join(bin, executable));
+  copyPlugins(bundle);
+  cpSync(join(root, "distribution/native/README.md"), join(bundle, "README.md"));
+  const filename = `${directory}.tar.gz`;
+  execFileSync("tar", ["-czf", join(output, filename), "-C", staging, directory], { stdio: "inherit" });
+  const digest = createHash("sha256").update(readFileSync(join(output, filename))).digest("hex");
+  writeFileSync(join(output, `${filename}.sha256`), `${digest}  ${filename}\n`);
+}
+
+function copyPlugins(directory) {
+  for (const path of pluginFiles) {
+    cpSync(join(root, path), join(directory, path), { recursive: true });
+  }
+}
+
+function npmPack(directory) {
+  const npm = process.env.npm_execpath;
+  if (!npm) throw new Error("Run the packager via npm run package:release.");
+  execFileSync(process.execPath, [npm, "pack", "--pack-destination", output], {
+    cwd: directory,
+    stdio: "inherit",
+  });
+}
+
+function platformName(os, cpu) {
+  return `${name}-${os}-${cpu}`;
+}
+
+function readJson(path) {
+  return JSON.parse(readFileSync(path, "utf8"));
+}
+
+function writeJson(path, data) {
+  writeFileSync(path, `${JSON.stringify(data, null, 2)}\n`);
+}

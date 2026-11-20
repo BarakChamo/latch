@@ -1,0 +1,10 @@
+{
+  "$schema": "https://turborepo.dev/schema.json",
+  "envMode": "loose",
+  "tasks": {
+    "build:rust": { "cache": false },
+    "format:check": { "cache": false },
+    "lint:rust": { "cache": false },
+    "test:rust": { "cache": false }
+  }
+}

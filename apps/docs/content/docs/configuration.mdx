@@ -1,0 +1,31 @@
+---
+title: Configuration
+description: Compose checks and choose when they run.
+---
+
+Create `latch.json` in the directory where commands should run.
+
+```json
+{
+  "defaults": { "on_failure": "collect" },
+  "hooks": {
+    "after_edit": [
+      { "commands": [["npm", "run", "lint"]] },
+      { "extensions": ["ts", "tsx"], "commands": [["npm", "run", "typecheck"]] }
+    ]
+  }
+}
+```
+
+Each event accepts one object or an array. Matching entries run in order.
+You can filter an entry by worktree-relative `paths`, filename `extensions`,
+or both. Each entry inherits global defaults and can override them.
+
+- `when` defaults to `workspace_changed`. Use `always` to run on every event
+  that passes the configured filters.
+- `on_success` defaults to `silent`. Use `output` to see successful output.
+- `on_failure` defaults to `collect`. Use `stop` to end the current command
+  list at its first failure.
+
+Discovered scripts run after explicit entries with the global defaults.
+Set a hook to `[]` to disable it.

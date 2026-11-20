@@ -1,0 +1,11 @@
+{
+  "name": "@latch/cli",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build:rust": "cargo build --locked --workspace",
+    "format:check": "cargo fmt --all -- --check",
+    "lint:rust": "cargo clippy --locked --workspace --all-targets -- -D warnings",
+    "test:rust": "cargo test --locked --workspace"
+  }
+}

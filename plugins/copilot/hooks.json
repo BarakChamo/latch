@@ -1,0 +1,52 @@
+{
+  "version": 1,
+  "hooks": {
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": "latch hook copilot userPromptSubmitted",
+        "powershell": "latch hook copilot userPromptSubmitted"
+      }
+    ],
+    "userPromptTransformed": [
+      {
+        "type": "command",
+        "bash": "latch hook copilot userPromptTransformed",
+        "powershell": "latch hook copilot userPromptTransformed"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit|str_replace_editor|apply_patch",
+        "bash": "latch hook copilot postToolUse",
+        "powershell": "latch hook copilot postToolUse",
+        "timeoutSec": 120
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "latch hook copilot agentStop",
+        "powershell": "latch hook copilot agentStop",
+        "timeoutSec": 120
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "latch hook copilot sessionEnd",
+        "powershell": "latch hook copilot sessionEnd"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit|str_replace_editor|apply_patch",
+        "bash": "latch hook copilot preToolUse || true",
+        "powershell": "latch hook copilot preToolUse; exit 0",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

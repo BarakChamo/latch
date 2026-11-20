@@ -1,0 +1,10 @@
+{
+  "name": "@barakchamo/latch",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Run project checks from your coding harness or command line.",
+  "license": "UNLICENSED",
+  "engines": { "node": ">=18" },
+  "bin": { "latch": "cli.cjs" },
+  "files": ["cli.cjs", "README.md", "plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"]
+}
