@@ -18,6 +18,8 @@ pub(crate) enum Harness {
     Codex,
     ClaudeCode,
     Copilot(CopilotEvent),
+    OpenCode,
+    Pi,
 }
 
 impl Harness {
@@ -31,9 +33,12 @@ impl Harness {
             || event.session_id.is_empty()
             || self.turn_key(&event).is_none()
         {
-            return Err(io::Error::other(
-                "hook requires a session ID, an absolute cwd, and a turn ID for Codex",
-            ));
+            let requirement = if matches!(self, Self::OpenCode | Self::Pi) {
+                "hook requires a session ID, an absolute cwd, and a turn ID"
+            } else {
+                "hook requires a session ID, an absolute cwd, and a turn ID for Codex"
+            };
+            return Err(io::Error::other(requirement));
         }
         Ok(event)
     }
@@ -43,6 +48,14 @@ impl Harness {
             Self::Codex => ("CODEX_HOME", ".codex"),
             Self::ClaudeCode => ("CLAUDE_CONFIG_DIR", ".claude"),
             Self::Copilot(_) => ("COPILOT_HOME", ".copilot"),
+            Self::Pi => ("PI_CODING_AGENT_DIR", ".pi/agent"),
+            Self::OpenCode => {
+                let state = env::var_os("XDG_STATE_HOME")
+                    .map(PathBuf::from)
+                    .filter(|path| path.is_absolute())
+                    .or_else(|| env::home_dir().map(|home| home.join(".local/state")))?;
+                return Some(state.join("opencode"));
+            }
         };
         env::var_os(variable)
             .filter(|path| !path.is_empty())
@@ -58,12 +71,16 @@ impl Harness {
                 name,
                 "create" | "edit" | "str_replace_editor" | "apply_patch"
             ),
+            Self::OpenCode => matches!(name, "edit" | "write" | "apply_patch"),
+            Self::Pi => matches!(name, "edit" | "write"),
         }
     }
 
     fn turn_key<'a>(&self, event: &'a Event) -> Option<&'a str> {
         match self {
-            Self::Codex => event.turn_id.as_deref().filter(|id| !id.is_empty()),
+            Self::Codex | Self::OpenCode | Self::Pi => {
+                event.turn_id.as_deref().filter(|id| !id.is_empty())
+            }
             // Claude Code and Copilot pair foreground events by session ID.
             Self::ClaudeCode | Self::Copilot(_) => Some(""),
         }
@@ -182,7 +199,17 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
         eprintln!("{message}");
         return ExitCode::from(2);
     }
-    match writeln!(io::stdout().lock(), "{response}") {
+    let mut stdout = io::stdout().lock();
+    let result = if matches!(harness, Harness::OpenCode | Harness::Pi) {
+        // In-process extensions take text from stdout and attach it through their native API.
+        let message = response["systemMessage"]
+            .as_str()
+            .or_else(|| response["hookSpecificOutput"]["additionalContext"].as_str());
+        stdout.write_all(message.unwrap_or_default().as_bytes())
+    } else {
+        writeln!(stdout, "{response}")
+    };
+    match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(_) => ExitCode::FAILURE,
     }
@@ -271,7 +298,9 @@ fn handle(harness: &Harness, event: Event) -> Value {
             let Some(feedback) = check_workspace(&event.cwd, HookName::TurnEnd, baseline) else {
                 return json!({});
             };
+            // Pi commits the report directly to conversation history at turn end.
             if feedback.failed
+                && !matches!(harness, Harness::Pi)
                 && let Some(path) = pending_path(harness, &event)
                 && let Err(error) = store(&path, &feedback.message)
             {

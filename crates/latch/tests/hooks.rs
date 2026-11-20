@@ -102,6 +102,7 @@ impl Project {
             .env("CODEX_HOME", self.harness_home.path())
             .env("CLAUDE_CONFIG_DIR", self.harness_home.path())
             .env("COPILOT_HOME", self.harness_home.path())
+            .env("PI_CODING_AGENT_DIR", self.harness_home.path())
             .env("XDG_STATE_HOME", self.harness_home.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
@@ -115,6 +116,55 @@ impl Project {
 
     fn checked(&self) -> bool {
         self.root.path().join(Path::new("checked")).exists()
+    }
+}
+
+#[test]
+fn extensions_skip_no_ops_and_surface_changed_edit_and_turn_failures() {
+    for adapter in ["opencode", "pi"] {
+        let project = Project::new();
+        project.write(
+            "latch.json",
+            r#"{"hooks":{
+                "after_edit":{"commands":[["sh","-c","echo edit >&2; exit 1"]]},
+                "turn_end":{"commands":[["sh","-c","echo turn >> checked; echo turn >&2; exit 1"]]}
+            }}"#,
+        );
+        project.init();
+        project.write("tracked", "already dirty");
+        let hook = |event: &str, turn: &str| {
+            let payload = json!({
+                "hook_event_name": event, "session_id": "session", "cwd": project.root.path(),
+                "turn_id": turn, "tool_use_id": "edit-call", "tool_name": "edit",
+                "stop_hook_active": false,
+            });
+            let result = project.invoke_hook(&[adapter], payload);
+            assert!(result.status.success(), "{result:?}");
+            String::from_utf8(result.stdout).unwrap()
+        };
+
+        assert_eq!(hook("UserPromptSubmit", "first"), "");
+        hook("PreToolUse", "first");
+        assert_eq!(hook("PostToolUse", "first"), "");
+        assert_eq!(hook("Stop", "first"), "");
+
+        hook("UserPromptSubmit", "second");
+        hook("PreToolUse", "second");
+        project.write("tracked", "dirty with a new edit");
+        assert!(hook("PostToolUse", "second").contains("Latch checks failed."));
+        assert!(hook("Stop", "second").contains("Latch checks failed."));
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("checked")).unwrap(),
+            "turn\n"
+        );
+
+        let next = hook("UserPromptSubmit", "third");
+        if adapter == "opencode" {
+            assert!(next.contains("failed checks at the end of the previous turn"));
+        } else {
+            assert!(next.is_empty()); // Pi persists the turn-end report in its own history.
+        }
+        assert!(hook("UserPromptSubmit", "fourth").is_empty());
     }
 }
 

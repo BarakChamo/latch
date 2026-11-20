@@ -89,6 +89,12 @@ fn main() -> ExitCode {
                     (Some(name), None) if name == "claude-code" => {
                         return hooks::dispatch(hooks::Harness::ClaudeCode);
                     }
+                    (Some(name), None) if name == "opencode" => {
+                        return hooks::dispatch(hooks::Harness::OpenCode);
+                    }
+                    (Some(name), None) if name == "pi" => {
+                        return hooks::dispatch(hooks::Harness::Pi);
+                    }
                     (Some(name), Some(event)) if name == "copilot" => {
                         if let Some(event) = hooks::CopilotEvent::parse(event) {
                             return hooks::dispatch(hooks::Harness::Copilot(event));
@@ -211,7 +217,7 @@ fn explain_entry(selected: HookName, entry: HookEntry) -> Map<String, Value> {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch hook <codex|claude-code> | latch hook copilot <event> | latch mcp [--require-project-directory]"
+        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch hook <codex|claude-code|opencode|pi> | latch hook copilot <event> | latch mcp [--require-project-directory]"
     );
     ExitCode::from(2)
 }
