@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "after_edit": {
+      "extensions": ["rs"],
+      "commands": [["cargo", "fmt", "--all", "--", "--check"]]
+    },
+    "turn_end": {
+      "paths": ["**/*.rs", "**/Cargo.toml", "Cargo.lock", "rust-toolchain.toml"],
+      "commands": [
+        ["cargo", "fmt", "--all", "--", "--check"],
+        ["cargo", "clippy", "--locked", "--workspace", "--all-targets", "--", "-D", "warnings"]
+      ]
+    }
+  }
+}
