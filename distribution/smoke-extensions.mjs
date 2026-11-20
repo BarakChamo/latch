@@ -50,6 +50,10 @@ async function verify(host, bundle) {
     OPENCODE_DISABLE_LSP_DOWNLOAD: "1",
     OPENCODE_EXPERIMENTAL_DISABLE_FILEWATCHER: "1",
   };
+  const opencodeVersion = host === "opencode"
+    ? execFileSync(host, ["--version"], { cwd: project, env, encoding: "utf8" }).trim()
+    : "";
+  const isOpenCodeV2 = /^(?:opencode v?)?2\./.test(opencodeVersion);
   const fixture = join(project, "tracked.txt");
   const counter = join(project, "checks.log");
   writeFileSync(fixture, "ready\n");
@@ -88,8 +92,16 @@ async function verify(host, bundle) {
       if (marker === "TOOL" && !previous && runTool) {
         return reply(res, toolCall(runTool, {}));
       }
+      if (marker === "CHANGE" && isOpenCodeV2 && !previous) {
+        return reply(res, toolCall("patch", {
+          patchText: [
+            "*** Begin Patch", "*** Update File: tracked.txt", "@@",
+            "-already dirty", "+new edit to dirty file", "*** End Patch",
+          ].join("\n"),
+        }));
+      }
       if ((marker === "NOOP" || marker === "CHANGE") && !previous) {
-        const pathField = host === "pi" ? "path" : "filePath";
+        const pathField = host === "pi" || isOpenCodeV2 ? "path" : "filePath";
         return reply(res, toolCall("write", {
           [pathField]: fixture,
           content: marker === "NOOP" ? "already dirty\n" : "new edit to dirty file\n",
@@ -107,6 +119,21 @@ async function verify(host, bundle) {
       writeJson(join(profile, "models.json"), { providers: { fixture: {
         baseUrl: baseURL, api: "openai-completions", apiKey: "fixture-key", models: [{ id: "local" }],
       } } });
+    } else if (isOpenCodeV2) {
+      const model = {
+        name: "Fixture",
+        capabilities: { tools: true, input: ["text"], output: ["text"] },
+        limit: { context: 32768, output: 8192 },
+      };
+      writeJson(join(project, "opencode.json"), {
+        $schema: "https://opencode.ai/config.json",
+        providers: { fixture: {
+          package: "@opencode/ai/providers/openai-compatible",
+          name: "Fixture",
+          settings: { baseURL, apiKey: "fixture-key" },
+          models: { local: model, "gpt-latch": model },
+        } },
+      });
     } else {
       writeJson(join(project, "opencode.json"), {
         provider: { fixture: {
@@ -119,6 +146,8 @@ async function verify(host, bundle) {
         agent: { title: { disable: true } },
         $schema: "https://opencode.ai/config.json",
       });
+    }
+    if (host === "opencode") {
       execFileSync("git", ["add", "opencode.json"], { cwd: project, env });
       execFileSync("git", ["-c", "user.name=Latch Smoke", "-c", "user.email=latch@example.test",
         "-c", "commit.gpgsign=false", "commit", "-qm", "Add model configuration"], { cwd: project, env });
@@ -127,17 +156,21 @@ async function verify(host, bundle) {
     const piSession = randomUUID();
     let opencodeSession;
     const turn = async (marker) => {
+      // V2 exposes patch in place of edit/write for GPT-family models.
+      const opencodePatch = isOpenCodeV2 && marker === "FIXTURE_CHANGE";
       const args = host === "pi"
         ? ["--print", "--mode", "json", "--no-approve", "--model", "fixture/local", "--session-id", piSession, marker]
-        : ["run", "--format", "json", "--model", "fixture/local",
+        : [...(isOpenCodeV2 ? ["--standalone"] : []),
+          ...(opencodePatch ? ["--print-logs"] : []),
+          "run", "--format", "json", "--model", opencodePatch ? "fixture/gpt-latch" : "fixture/local",
+          ...(isOpenCodeV2 ? ["--auto", "--title", "Latch smoke"] : []),
           ...(opencodeSession ? ["--session", opencodeSession] : []), marker];
       const pending = exec(host, args, { cwd: project, env, timeout: 60_000 });
       pending.child.stdin.end();
       const result = await pending;
       if (host === "opencode" && !opencodeSession) {
-        opencodeSession = result.stdout.split("\n")
-          .map((line) => line.startsWith("{") ? JSON.parse(line).sessionID : undefined)
-          .find(Boolean);
+        const events = result.stdout.split("\n").filter((line) => line.startsWith("{")).map(JSON.parse);
+        opencodeSession = events.map((event) => event.sessionID ?? event.data?.sessionID).find(Boolean);
         assert(opencodeSession, `OpenCode did not report its session ID: ${result.stdout} ${result.stderr}`);
       }
       return result;
@@ -149,7 +182,7 @@ async function verify(host, bundle) {
     assert.equal(forTurn("NOOP").length, 2, `${host} did not complete the native no-op edit`);
     assert(!existsSync(counter), `${host} ran checks for an already-dirty no-op`);
     const changed = await turn("FIXTURE_CHANGE");
-    assert.equal(readFileSync(fixture, "utf8"), "new edit to dirty file\n");
+    assert.equal(readFileSync(fixture, "utf8"), "new edit to dirty file\n", changed.stdout);
     assert.equal(readFileSync(counter, "utf8"), "edit\nsecond-edit\nturn\n");
     assert.equal(forTurn("CHANGE").length, 2, `${host} continued the turn after the failed check`);
     const modelContext = JSON.stringify(forTurn("CHANGE")[1].model.messages);

@@ -50,7 +50,7 @@ when available. The test removes its temporary files on exit.
 
 ### OpenCode and Pi
 
-Install OpenCode 1.18.31 or 1.19.6 and Pi 1.5.2 on your `PATH`, then run:
+Install OpenCode and Pi 1.5.2 on your `PATH`, then run:
 
 ```sh
 npm run test:extensions -- dist/latch-0.1.0-aarch64-apple-darwin.tar.gz
@@ -61,6 +61,9 @@ temporary profiles. It verifies that no-op edits skip checks, changed
 edits report diagnostics in the same turn, and a turn-end failure is
 available on the next prompt without an extra model call. It also invokes
 the bundled MCP tool and verifies its failure reaches the model.
+Run it with the v1 CLI (1.18.31 or 1.19.6) and again with the v2 CLI
+(2.3.2) to verify both plugin APIs. Pass `opencode` after the archive to
+run just that harness.
 
 ## Publish the CLI
 

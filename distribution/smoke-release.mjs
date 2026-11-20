@@ -87,7 +87,7 @@ function verifySharedFiles(directory) {
   for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
     assert(existsSync(join(directory, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
   }
-  for (const entry of ["extension-hook.mjs", "opencode/index.js", "pi/index.ts"]) {
+  for (const entry of ["extension-hook.mjs", "opencode/index.js", "opencode/v2.js", "pi/index.ts"]) {
     assert(existsSync(join(directory, "plugins", entry)), `Missing plugin file ${entry}`);
   }
 }

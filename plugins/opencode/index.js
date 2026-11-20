@@ -1,12 +1,13 @@
-// Maps OpenCode v1 prompt, native-edit, and idle events to Latch.
+// Exposes one plugin entry point with the native OpenCode v1 and v2 adapters.
 
 import { randomUUID } from "node:crypto";
 import { latchExecutable, runHook } from "../extension-hook.mjs";
+import { setup } from "./v2.js";
 
 const edits = new Set(["edit", "write", "apply_patch"]);
 
 /** @type {import("@opencode-ai/plugin").Plugin} */
-export default async function latch({ client, directory }) {
+async function server({ client, directory }) {
   const executable = latchExecutable(import.meta.url);
   /** @type {Map<string, import("../extension-hook.mjs").Turn>} */
   const active = new Map();
@@ -94,3 +95,5 @@ export default async function latch({ client, directory }) {
     },
   };
 }
+
+export default { id: "latch", server, setup };

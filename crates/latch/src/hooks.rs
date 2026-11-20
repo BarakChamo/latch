@@ -71,7 +71,7 @@ impl Harness {
                 name,
                 "create" | "edit" | "str_replace_editor" | "apply_patch"
             ),
-            Self::OpenCode => matches!(name, "edit" | "write" | "apply_patch"),
+            Self::OpenCode => matches!(name, "edit" | "write" | "apply_patch" | "patch"),
             Self::Pi => matches!(name, "edit" | "write"),
         }
     }

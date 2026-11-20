@@ -21,7 +21,7 @@ when a reliable comparison is unavailable.
 | Codex | `apply_patch` |
 | Claude Code | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` |
 | GitHub Copilot CLI | `create`, `edit`, `str_replace_editor`, `apply_patch` |
-| OpenCode | `edit`, `write`, `apply_patch` |
+| OpenCode | `edit`, `write`, `apply_patch` (v1) or `patch` (v2) |
 | Pi | `edit`, `write` |
 
 ## Where reports appear
@@ -35,7 +35,8 @@ the agent on the next prompt in the same session.
 | Codex | App-server hook warning. The tested `codex exec --json` output omits it. |
 | Claude Code | Informational hook event. |
 | GitHub Copilot CLI | Hook warning. |
-| OpenCode | TUI toast or headless stderr. Failed reports are added to the next prompt. |
+| OpenCode v1 | TUI toast or headless stderr. Failed reports are added to the next prompt. |
+| OpenCode v2 | Server stderr. Failed reports appear in the next prompt's model context. Use `opencode --standalone --print-logs run "..."` to see the report immediately from the CLI. |
 | Pi | A message in session history, visible to the next model request. |
 
 A failed check finishes with the current turn. Latch never starts a repair pass.
