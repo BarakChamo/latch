@@ -314,10 +314,13 @@ fn handle(harness: &Harness, event: Event) -> Value {
 fn state_path(harness: &Harness, event: &Event) -> Option<PathBuf> {
     let home = harness.home()?;
     let turn_key = harness.turn_key(event)?;
+    let directory = event.cwd.canonicalize().ok()?;
     let mut key = Sha256::new();
     key.update((event.session_id.len() as u64).to_le_bytes());
     key.update(event.session_id.as_bytes());
+    key.update((turn_key.len() as u64).to_le_bytes());
     key.update(turn_key.as_bytes());
+    key.update(directory.as_os_str().as_encoded_bytes());
     Some(
         home.join("latch")
             .join("baselines-v1")

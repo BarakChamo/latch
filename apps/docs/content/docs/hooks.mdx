@@ -16,6 +16,12 @@ A pre-existing dirty file triggers a check only if it changes again during
 the comparison window. Latch checks Git-visible files and runs the commands
 when a reliable comparison is unavailable.
 
+Linked worktrees have their own change baselines, whether they sit inside
+the main checkout or beside it. Start Latch or your harness from the
+directory where you want to read config and run commands. Path filters are
+relative to that Git worktree’s root. Edits inside an untracked nested
+checkout do not trigger checks in the parent checkout.
+
 | Harness | Native edit tools |
 | --- | --- |
 | Codex | `apply_patch` |

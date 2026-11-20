@@ -119,6 +119,136 @@ impl Project {
     }
 }
 
+fn linked_worktree(project: &Project, path: &Path) {
+    project.git(&[
+        "worktree",
+        "add",
+        "--detach",
+        path.to_str().unwrap(),
+        "HEAD",
+    ]);
+}
+
+fn worktree_hook(project: &Project, directory: &Path, event: &str) -> Value {
+    project.send_hook(
+        "codex",
+        Some("shared-turn"),
+        json!({
+            "hook_event_name": event,
+            "session_id": "shared-session",
+            "cwd": directory,
+            "tool_name": "apply_patch",
+            "tool_use_id": "shared-edit",
+            "stop_hook_active": false,
+        }),
+    )
+}
+
+#[test]
+fn main_checkout_skips_changes_inside_an_unignored_nested_worktree() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"hooks":{
+            "after_edit":{"commands":[["sh","-c","echo edit >> checked"]]},
+            "turn_end":{"commands":[["sh","-c","echo turn >> checked"]]}
+        }}"#,
+    );
+    project.init();
+    let root = project.root.path();
+    let nested = root.join("nested linked checkout");
+    linked_worktree(&project, &nested);
+
+    worktree_hook(&project, root, "UserPromptSubmit");
+    worktree_hook(&project, root, "PreToolUse");
+    fs::write(
+        nested.join("tracked"),
+        "changed only in the nested worktree",
+    )
+    .unwrap();
+    worktree_hook(&project, root, "PostToolUse");
+    worktree_hook(&project, root, "Stop");
+    assert!(
+        !project.checked(),
+        "nested edits triggered the main checkout"
+    );
+
+    worktree_hook(&project, root, "UserPromptSubmit");
+    worktree_hook(&project, root, "PreToolUse");
+    project.write("tracked", "changed in the main checkout");
+    worktree_hook(&project, root, "PostToolUse");
+    worktree_hook(&project, root, "Stop");
+    assert_eq!(
+        fs::read_to_string(root.join("checked")).unwrap(),
+        "edit\nturn\n"
+    );
+}
+
+#[test]
+fn linked_worktrees_use_their_own_config_and_baselines() {
+    let project = Project::new();
+    project.init();
+    let root = project.root.path();
+    let nested = root.join("nested linked checkout");
+    let adjacent = tempfile::Builder::new()
+        .prefix("latch adjacent checkout ")
+        .tempdir_in(root.parent().unwrap())
+        .unwrap();
+    for (directory, label) in [(nested.as_path(), "nested"), (adjacent.path(), "adjacent")] {
+        linked_worktree(&project, directory);
+        fs::write(
+            directory.join("latch.json"),
+            json!({
+                "defaults": {"on_success": "output"},
+                "hooks": {
+                    "after_edit": {"paths": ["tracked"], "commands": [["sh", "-c", "echo edit >> checked"]]},
+                    "turn_end": {"paths": ["tracked"], "commands": [["sh", "-c", format!("echo turn >> checked; echo {label}")]]},
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .args(["run", "turn_end"])
+            .current_dir(directory)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        assert_eq!(output.stdout, format!("{label}\n").as_bytes());
+        fs::remove_file(directory.join("checked")).unwrap();
+        fs::write(directory.join("tracked"), "already dirty").unwrap();
+    }
+
+    // The same session, turn, and tool call IDs must not overwrite another worktree's state.
+    let nested = nested.as_path();
+    let adjacent = adjacent.path();
+    for (changed, unchanged) in [(nested, adjacent), (adjacent, nested)] {
+        for directory in [nested, adjacent] {
+            worktree_hook(&project, directory, "UserPromptSubmit");
+            worktree_hook(&project, directory, "PreToolUse");
+        }
+        fs::write(changed.join("tracked"), "edited an already-dirty file").unwrap();
+        for directory in [nested, adjacent] {
+            worktree_hook(&project, directory, "PostToolUse");
+            worktree_hook(&project, directory, "Stop");
+        }
+        assert_eq!(
+            fs::read_to_string(changed.join("checked")).unwrap(),
+            "edit\nturn\n"
+        );
+        assert!(
+            !unchanged.join("checked").exists(),
+            "no-op triggered {}",
+            unchanged.display()
+        );
+        fs::remove_file(changed.join("checked")).unwrap();
+    }
+    assert!(
+        !project.checked(),
+        "a linked worktree ran commands in the main checkout"
+    );
+}
+
 #[test]
 fn extensions_skip_no_ops_and_surface_changed_edit_and_turn_failures() {
     for adapter in ["opencode", "pi"] {
