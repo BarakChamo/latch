@@ -2,7 +2,7 @@
 
 For the private preview, install this wrapper tarball and the binary
 tarball for your platform together. See the
-[install guide](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/cli.mdx#install-the-cli)
+[install guide](https://github.com/BarakChamo/latch/blob/preview-0.1.0/apps/docs/content/docs/cli.mdx#install-the-cli)
 for the command. Run `latch --version` to verify the install, or
 `latch explain turn_end` in a project to inspect its checks.
 

@@ -3,75 +3,56 @@ title: Quickstart
 description: Install Latch and run your first project check.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-
-Try an automatic check in a disposable project. You’ll need Git and a
+Try an automatic check in a disposable Git project. You’ll need Git and a
 [supported coding agent](/docs/plugins).
 
-## 1. Get the plugin bundle
+## 1. Download Latch
 
-Get the private preview archive from the maintainer or
-[build it from the repository](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md#build-the-artifacts).
-Choose the file for your machine, extract it, and open a terminal in the
-extracted folder. The plugin includes Latch.
+Sign in to GitHub with an account that has access to the private Latch
+repository, then download the bundle for your machine. The bundle includes
+the CLI and plugins.
 
-| Your machine | Archive name ends with |
+| Your machine | Download |
 | --- | --- |
-| Mac with Apple Silicon | `aarch64-apple-darwin.tar.gz` |
-| Mac with Intel | `x86_64-apple-darwin.tar.gz` |
-| Linux on Intel or AMD | `x86_64-unknown-linux-gnu.tar.gz` |
-| Linux on ARM64 | `aarch64-unknown-linux-gnu.tar.gz` |
+| Mac with Apple Silicon | [macOS ARM64](https://github.com/BarakChamo/latch/releases/download/preview-0.1.0/latch-0.1.0-aarch64-apple-darwin.tar.gz) |
+| Mac with Intel | [macOS x64](https://github.com/BarakChamo/latch/releases/download/preview-0.1.0/latch-0.1.0-x86_64-apple-darwin.tar.gz) |
+| Linux on Intel or AMD | [Linux x64](https://github.com/BarakChamo/latch/releases/download/preview-0.1.0/latch-0.1.0-x86_64-unknown-linux-gnu.tar.gz) |
+| Linux on ARM64 | [Linux ARM64](https://github.com/BarakChamo/latch/releases/download/preview-0.1.0/latch-0.1.0-aarch64-unknown-linux-gnu.tar.gz) |
 
-For terminal use, see the [standalone, npm, and Cargo installs](/docs/cli#install-the-cli).
+If you’re unsure, run `uname -m` in a terminal. Choose ARM64 for
+`arm64` or `aarch64` and x64 for `x86_64`.
 
-## 2. Enable the plugin
+If GitHub shows 404, check that you accepted your repository invitation and
+are signed in with the invited account. If you received an archive separately,
+use that file. The [preview release](https://github.com/BarakChamo/latch/releases/tag/preview-0.1.0)
+also has checksums and npm tarballs. For a source build, see
+[other install methods](/docs/cli#install-the-cli).
 
-Run one command for your agent from the extracted folder. Keep that folder
-on your machine and start a new agent session after installation.
+## 2. Install the plugin
 
-<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'OpenCode', 'Pi']}>
-
-<Tab value="Codex">
-
-```sh
-./install codex
-```
-
-</Tab>
-
-<Tab value="Claude Code">
+Extract the bundle and open a terminal in its folder. On an Apple Silicon
+Mac, for example:
 
 ```sh
-./install claude
+cd ~/Downloads
+tar -xzf latch-0.1.0-aarch64-apple-darwin.tar.gz
+cd latch-0.1.0-aarch64-apple-darwin
+./bin/latch --version
 ```
 
-</Tab>
+Run the install command for your agent. Keep the extracted folder in place.
 
-<Tab value="GitHub Copilot CLI">
+| Agent | Install | Sign in or choose a model if needed |
+| --- | --- | --- |
+| Codex | `./install codex` | `codex login` |
+| Claude Code | `./install claude` | `claude auth login` or `/login` in Claude Code |
+| GitHub Copilot CLI | `./install copilot` | `copilot login` |
+| OpenCode | `./install opencode` | Run `/connect` in OpenCode, then choose a model with `/models`. |
+| Pi | `./install pi` | Run `/login` in Pi, then choose a model with `/model`. |
 
-```sh
-./install copilot
-```
-
-</Tab>
-
-<Tab value="OpenCode">
-
-```sh
-./install opencode
-```
-
-</Tab>
-
-<Tab value="Pi">
-
-```sh
-./install pi
-```
-
-</Tab>
-
-</Tabs>
+Use an interactive terminal for sign-in and approval prompts. If the
+terminal reports `TERM=dumb`, open a terminal app that supports interactive
+sessions before continuing.
 
 ## 3. Run your first check
 
@@ -95,17 +76,18 @@ git -c user.name="Latch Demo" -c user.email="latch@example.test" \
   -c commit.gpgsign=false commit -qm "Add Latch demo"
 ```
 
-Start a **new harness session** from this directory using `codex`, `claude`,
-`copilot`, `opencode`, or `pi`. If the harness asks you to trust the demo directory, review
-and accept it. In Codex, open `/hooks` and review and trust the Latch hooks.
-Then give the agent this prompt.
+Start a new session from the demo directory. If prompted, review and
+approve trust for the project first. In Codex, then review and approve the
+Latch hooks at the startup prompt. If the hook prompt doesn’t appear, open
+`/hooks` to review and approve them. Send the agent this prompt.
 
 > Use your native edit tool to replace `ready` in `demo.txt` with
 > `changed`. Leave the change in place and finish the turn.
 
 The automatic edit hook reports **Latch checks failed** and shows a diff
-from `ready` to `changed`. This is the expected result. You can restore
-`demo.txt` with `git restore -- demo.txt`.
+from `ready` to `changed`. This is the expected result. If the report includes a
+`Saved log` path, open that file to see the full output. Restore the demo
+with `git restore -- demo.txt`.
 
 In your own project, add a [package script](/docs/project-scripts) or
 [configure a command](/docs/configuration). See

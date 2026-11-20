@@ -5,15 +5,32 @@ description: Inspect the checks Latch found and diagnose missing output.
 
 See the [CLI reference](/docs/cli) for command syntax and exit codes.
 
+## The preview download returns 404
+
+Sign in to GitHub with the account that received the private preview
+invitation. Accept the invitation, then retry the
+[download for your machine](/docs/quickstart#1-download-latch).
+If you were sent the archive separately, extract that file instead.
+
+## The agent cannot sign in or start a turn
+
+Start a fresh session in an interactive terminal and follow the
+[sign-in steps for your agent](/docs/quickstart#2-install-the-plugin).
+In OpenCode, connect a provider and select a working model before testing
+Latch. If a model rejects your request, try another model you have access
+to and confirm it can answer a simple prompt.
+
 ## The hook is quiet
 
 1. Run `latch explain` for the event from the project directory. Check
-   `configured`, the command list, and any file filters.
+   `configured`, the command list, and any file filters. If `config` is
+   `null` and `configured` is `true`, Latch found a package script.
 2. Run the same event with `latch run`. Successful commands are silent by
    default. Append `&& echo passed` in a POSIX shell to confirm success.
 3. Confirm your harness loaded the plugin. If you installed the CLI separately,
    check that `latch --version` works from the terminal you use to start it.
-   In Codex, check that you trusted the hooks in `/hooks`.
+   In Codex, approve project trust first, then check that you trusted the
+   hooks in `/hooks`.
 4. Make a Git-visible change using a supported native edit tool. The default
    `after_edit` gate skips no-op edits. File filters can also skip a check.
 

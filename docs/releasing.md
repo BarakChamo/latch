@@ -29,6 +29,15 @@ SHA-256 checksum accompanies the archive. On macOS and Linux, the archive also c
 each plugin. The release smoke test verifies hooks and MCP startup with
 the standalone CLI absent from `PATH`.
 
+## Distribute a private preview
+
+Attach the tested bundles, their checksums, and the npm tarballs to the
+[private preview release](https://github.com/BarakChamo/latch/releases/tag/preview-0.1.0).
+The quickstart links to this tag. Point the preview tag at the source used
+to build the bundles. Invite testers to the private repository so GitHub
+lets them open the links. Use a new tag and update the quickstart when
+distributing a different preview version.
+
 ## Verify a real harness session
 
 With the native archive built and signed-in harness CLIs on your `PATH`, run

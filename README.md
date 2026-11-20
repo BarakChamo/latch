@@ -8,7 +8,8 @@ to the agent so you spend less time rerunning commands and pasting errors.
 ## Get started
 
 For the **private preview**, get the macOS or Linux bundle from the
-maintainer or [build it locally](docs/releasing.md#build-the-artifacts).
+[private preview release](https://github.com/BarakChamo/latch/releases/tag/preview-0.1.0)
+with your invited GitHub account, or [build it locally](docs/releasing.md#build-the-artifacts).
 Extract it and run the command for your agent.
 
 | Agent | Install from the extracted folder |
@@ -20,7 +21,8 @@ Extract it and run the command for your agent.
 | Pi | `./install pi` |
 
 The plugin includes Latch. Keep the extracted folder and start a new
-session in your project. In Codex, review and trust the hooks with `/hooks`.
+session in your project. In Codex, review project trust first, then approve
+the hooks at startup or in `/hooks`.
 The [quickstart](apps/docs/content/docs/quickstart.mdx) walks through a
 first automatic check.
 
