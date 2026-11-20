@@ -8,10 +8,12 @@ also runs the Rust test suite.
 
 Choose the **Actions** environment for a Copilot session on this
 repository. The `copilot-setup-steps` job builds the branch's Latch
-binary and installs it under the runner's home directory. GitHub
+binary and installs it under the checkout's ignored `target/` directory.
+This lets the setup process and hook runner use the same binary even
+when their home directories differ. GitHub
 reads `.github/hooks/latch.json` from the default branch. The hook
-wrapper uses that installed binary when running on Actions. Install
-the Latch plugin normally for a local Copilot CLI session.
+wrapper uses that binary once setup has installed it. For local
+Copilot CLI sessions, use the Latch plugin and skip the hosted setup step.
 
 To verify the setup, open a disposable Copilot session, make one
 deliberately misformatted Rust edit using the native edit tool, and
@@ -25,7 +27,7 @@ test edit before handing off the session.
 For an environment with a shell setup phase, add
 `sh distribution/cloud/setup.sh` after checkout. Then run the checks
 from the repository root with
-`"$HOME/.local/share/latch-cloud/bin/latch" run turn_end`.
+`target/latch-cloud/bin/latch run turn_end`.
 `npm ci && npm run check` runs the full repository gate.
 
 The hosted task must support command hooks to call Latch automatically.

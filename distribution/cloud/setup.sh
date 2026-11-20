@@ -4,5 +4,5 @@ set -eu
 
 cd "$(dirname "$0")/../.."
 cargo build --locked -p latch --target-dir target
-install -Dm755 target/debug/latch "$HOME/.local/share/latch-cloud/bin/latch"
-"$HOME/.local/share/latch-cloud/bin/latch" --version
+install -Dm755 target/debug/latch target/latch-cloud/bin/latch
+target/latch-cloud/bin/latch --version
