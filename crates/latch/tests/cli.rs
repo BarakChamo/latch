@@ -20,6 +20,16 @@ fn run_with_args(config: Option<&str>, args: &[&str]) -> Output {
 }
 
 #[test]
+fn help_succeeds_without_loading_project_configuration() {
+    for flag in ["--help", "-h"] {
+        let output = run_with_args(Some("invalid json"), &[flag]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stdout).contains("Usage: latch"));
+        assert!(output.stderr.is_empty(), "{output:?}");
+    }
+}
+
+#[test]
 fn schema_reference_is_editor_metadata() {
     let config = r#"{"$schema":"./missing.schema.json","commands":[["check"]]}"#;
     let output = run_with_args(Some(config), &["explain"]);

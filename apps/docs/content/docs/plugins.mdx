@@ -16,19 +16,21 @@ Set `LATCH_PLUGIN_DIR` to the extracted folder and add its `bin` directory
 to your shell’s `PATH`. For example, on Apple Silicon:
 
 ```sh
-export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.0-aarch64-apple-darwin"
+export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.1-aarch64-apple-darwin"
 export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
 ```
 
-For OpenCode v1, add the absolute path to
-`plugins/opencode/index.js` inside `LATCH_PLUGIN_DIR` to the `plugin`
-array in `opencode.json`. For OpenCode v2, add the absolute
-path to the `plugins/opencode` directory to the `plugins` array instead.
-Run the following to get the path to paste:
+For OpenCode, run the archive’s installer using
+`"$LATCH_PLUGIN_DIR/install" opencode`. For a project-specific
+registration, add the path below to the corresponding array in
+`opencode.json`.
 
-```sh
-printf '%s\n' "$LATCH_PLUGIN_DIR/plugins/opencode"
-```
+- **OpenCode v1** uses the `plugin` array and the file
+  `$LATCH_PLUGIN_DIR/plugins/opencode/index.js`.
+- **OpenCode v2** uses the `plugins` array and the directory
+  `$LATCH_PLUGIN_DIR/plugins/opencode`.
+
+Use the expanded absolute path in the JSON file.
 
 For Pi 1.5.2 or later with MCP enabled:
 
@@ -43,7 +45,7 @@ pi install "$LATCH_PLUGIN_DIR/plugins/pi"
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-tools` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-tools` |
-| OpenCode | See the project's or user's OpenCode configuration. | Remove the Latch entry. |
+| OpenCode | See the project's or user's OpenCode configuration. | Remove the Latch entry or the installer-created link in the OpenCode plugin directory. |
 | Pi | `pi list` | `pi remove "$LATCH_PLUGIN_DIR/plugins/pi"` |
 
 Use one installation method per project to avoid duplicate hooks.

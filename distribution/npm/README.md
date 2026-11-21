@@ -5,7 +5,7 @@ Download this wrapper and your platform’s binary tarball from
 Install both with npm from the downloads directory. For Apple Silicon:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-darwin-arm64-0.1.0.tgz
+npm install --global --offline ./barakchamo-latch-0.1.1.tgz ./barakchamo-latch-darwin-arm64-0.1.1.tgz
 latch --version
 ```
 

@@ -9,7 +9,7 @@ Latch runs your project’s checks automatically after coding-agent edits and at
 ## Install a plugin
 
 The plugins bundle Latch for macOS and glibc Linux on ARM64 and x64.
-Use an account with GitHub access to this repository.
+Install your agent’s CLI and sign in to the agent before starting the demo.
 
 ### Codex
 
@@ -18,8 +18,8 @@ codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
 codex plugin add latch@latch-tools
 ```
 
-Start a new session in your project. Open `/hooks` in Codex and approve
-the Latch hooks after reviewing them.
+Run `codex login` if needed. Start a new session in your project, open
+`/hooks`, and approve the Latch hooks after reviewing them.
 
 ### Claude Code
 
@@ -28,7 +28,7 @@ claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
 claude plugin install latch@latch-tools
 ```
 
-Start a new Claude Code session in your project.
+Run `claude auth login` if needed, then start a new session in your project.
 
 ### GitHub Copilot CLI
 
@@ -37,29 +37,54 @@ copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/ma
 copilot plugin install latch@latch-tools
 ```
 
-Start a new Copilot CLI session in your project.
+Run `copilot login` if needed, then start a new session in your project.
+This setup was tested with Copilot CLI 1.0.114.
 
 If you previously installed Latch from a local archive or npm package,
 remove that plugin in your harness before enabling the marketplace version.
 
 ## Run your first check
 
-Add `latch.json` to a Git project that already has a `typecheck` script:
+Create a disposable Git project. The check fails whenever `demo.txt`
+differs from the committed version. Git is the only tool it needs.
 
-```json
+```sh
+cd "$(mktemp -d)"
+git init -q
+printf 'ready\n' > demo.txt
+cat > latch.json <<'JSON'
 {
+  "defaults": { "on_success": "output" },
   "hooks": {
     "after_edit": {
-      "commands": [["npm", "run", "typecheck"]]
+      "commands": [["git", "diff", "--exit-code", "HEAD", "--", "demo.txt"]]
     }
   }
 }
+JSON
+git add demo.txt latch.json
+git -c user.name="Latch Demo" -c user.email="latch@example.test" \
+  -c commit.gpgsign=false commit -qm "Add Latch demo"
 ```
 
-Ask your agent to make an edit and leave it in place. If type checking fails,
-Latch puts the diagnostic alongside the edit result. A clean result stays
-quiet. Replace the command with any check you already run, such as
-`["uv", "run", "pytest"]` or `["cargo", "fmt", "--all", "--", "--check"]`.
+Start a new agent session in that directory. If your agent asks whether
+to trust the project or run the hooks, review and approve the demo hooks.
+Send this prompt:
+
+> Use your native file editing tool to replace `ready` with `changed` in
+> `demo.txt`. Leave the change in place and tell me what Latch reported.
+
+The edit should succeed and Latch should report a failed check with a Git
+diff. Now ask the agent to restore `ready` with its native edit tool. The
+demo’s `on_success` setting makes Latch report that the check succeeded.
+In plain `codex exec` output, the report reaches the model as tool context.
+Ask the agent to relay it or use the interactive session.
+
+For a standalone run in the same project, use
+[`latch run after_edit`](#install-the-standalone-cli). For your own
+project, replace the Git command with a check such as
+`["npm", "run", "typecheck"]` or `["uv", "run", "pytest"]`
+and omit `on_success` for quiet passing checks.
 
 ## Configure checks
 
@@ -110,7 +135,7 @@ the same session.
 
 Set `failure_output` to `excerpt` for the default preview, `compact` to
 keep diagnostic lines, `tail` for the last lines of each stream, or
-`rtk` to use a separately installed RTK filter. When the report includes
+`rtk` to use a separately installed [RTK](https://github.com/rtk-ai/rtk) filter. When the report includes
 a `Saved log` path, ask your agent to open it or call Latch’s
 `search_output` tool. You can also ask it to call `run_turn_end`
 to run the current project’s turn-end checks on demand.
@@ -118,15 +143,15 @@ to run the current project’s turn-end checks on demand.
 ## Install the standalone CLI
 
 Install the CLI when you want to run checks from your terminal or CI.
-Download your platform’s `latch-0.1.0-*.tar.gz` from
-[GitHub Releases](https://github.com/BarakChamo/latch/releases/tag/v0.1.0).
+Download your platform’s `latch-0.1.1-*.tar.gz` from
+[GitHub Releases](https://github.com/BarakChamo/latch/releases/tag/v0.1.1).
 From your downloads directory, extract it and install the binary. For
 Apple Silicon:
 
 ```sh
-tar -xzf latch-0.1.0-aarch64-apple-darwin.tar.gz
+tar -xzf latch-0.1.1-aarch64-apple-darwin.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 latch-0.1.0-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
+install -m 755 latch-0.1.1-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
 "$HOME/.local/bin/latch" --version
 ```
 
@@ -135,24 +160,62 @@ Use `x86_64-apple-darwin` for Intel Macs,
 `aarch64-unknown-linux-gnu` for Linux ARM64. Add `$HOME/.local/bin` to your
 `PATH` to run `latch` by name.
 
-- `latch run turn_end` runs checks immediately, even with no Git changes.
-- `latch explain after_edit` shows the commands and filters for that event.
-- `latch output <id> --grep <text>` searches a saved failure without rerunning the check.
+From the [demo project](#run-your-first-check), run the event you configured:
+
+```sh
+latch explain after_edit
+latch run after_edit
+```
+
+With `demo.txt` set to `ready`, the run exits `0`. With it set to
+`changed`, the run prints the diff and exits `1`. Manual runs execute
+immediately, even with no Git changes. Use `latch run turn_end` for a
+project that configures `turn_end`.
+
+To search a saved failure, copy the full path after `Saved log:` into
+`latch output "/path/from-the-report.log" --grep "text to find"`.
+Short output may fit in the report without a saved log.
+
+If you prefer npm, download the wrapper tarball and the binary tarball
+for your platform from the same release. For example, on Apple Silicon:
+
+```sh
+npm install --global --offline ./barakchamo-latch-0.1.1.tgz ./barakchamo-latch-darwin-arm64-0.1.1.tgz
+```
+
+For Intel Mac, Linux ARM64, or Linux x64, use the binary tarball with
+`darwin-x64`, `linux-arm64`, or `linux-x64` in its name.
 
 ## Other coding agents
 
-Latch also has integrations for OpenCode, Pi, OpenHands CLI, Kimi Code, and Grok Build. Cursor, Devin, and Kiro CLI V3
-are in preview. See the [integration guides on GitHub](https://github.com/BarakChamo/latch/tree/main/plugins)
+### OpenCode
+
+Download and extract the [standalone archive](#install-the-standalone-cli).
+In a terminal open to the extracted folder, run its installer:
+
+```sh
+./install opencode
+```
+
+Keep that folder in place. Restart OpenCode, connect a model provider if
+needed, and run the [first check](#run-your-first-check). The
+[OpenCode guide](https://github.com/BarakChamo/latch/tree/main/plugins/opencode)
+also shows project-specific configuration for v1 and v2.
+
+Latch also supports Pi, OpenHands CLI, Kimi Code, and Grok Build.
+Cursor, Devin, and Kiro CLI V3 are in preview. See the [integration guides on GitHub](https://github.com/BarakChamo/latch/tree/main/plugins)
 for those agents.
 
 ## Troubleshoot
 
-- **GitHub can’t clone the marketplace.** Sign in with an account that
-  has repository access. If you use GitHub CLI for Git credentials,
-  run `gh auth login` followed by `gh auth setup-git`, then retry.
-- **No checks run in Codex.** Start a new local session in the project,
-  review `/hooks`, and confirm `latch.json` is in the directory where
-  the agent works. Read-only turns and no-op edits are skipped by default.
+- **The agent asks you to sign in.** Use the sign-in command in
+  [your agent’s setup](#install-a-plugin), then restart the session.
+- **The hook is quiet.** Start a new session from the directory containing
+  `latch.json`. Review `/hooks` in Codex, or run `claude plugin list`
+  or `copilot plugin list` to check that Latch is enabled. Run the
+  [two-edit demo](#run-your-first-check) to check for failure and success.
+- **Copilot can’t find the Latch tools.** Run `copilot mcp list` and look
+  for `latch`. Update Copilot if the commands in this guide are unavailable.
 - **Using managed Codex Cloud?** The plugin runs local command hooks.
   In a hosted checkout you can install the standalone CLI and run
   `latch run turn_end` from its terminal or CI.

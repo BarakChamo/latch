@@ -1,5 +1,9 @@
 # Try Latch in a project
 
+For a first test with no project dependencies, start with the
+[Git-only demo](https://github.com/BarakChamo/latch#run-your-first-check).
+The projects below demonstrate package script discovery and language-specific checks.
+
 Install Latch using the [quickstart](../apps/docs/content/docs/quickstart.mdx).
 Run the commands in the example's own directory with `latch` on your
 `PATH`. To try automatic checks, start a new session in that directory

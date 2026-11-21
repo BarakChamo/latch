@@ -18,6 +18,8 @@ use std::process::ExitCode;
 use config::{HookEntries, HookEntry, HookName};
 use serde_json::{Map, Value, json};
 
+const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
+
 fn main() -> ExitCode {
     let mut args = env::args_os().skip(1).peekable();
     if args.peek().is_none_or(|arg| arg != "output") {
@@ -40,6 +42,10 @@ fn main() -> ExitCode {
                 return explain(selected);
             }
             selected
+        }
+        Some(arg) if (arg == "--help" || arg == "-h") && args.next().is_none() => {
+            println!("{USAGE}");
+            return ExitCode::SUCCESS;
         }
         Some(arg) if arg == "--version" && args.next().is_none() => {
             println!("latch {}", env!("CARGO_PKG_VERSION"));
@@ -229,8 +235,6 @@ fn explain_entry(selected: HookName, entry: HookEntry) -> Map<String, Value> {
 }
 
 fn usage() -> ExitCode {
-    eprintln!(
-        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]"
-    );
+    eprintln!("{USAGE}");
     ExitCode::from(2)
 }
