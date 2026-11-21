@@ -94,6 +94,7 @@ its first failure.
 ## File structure
 
 <TypeTable type={{
+  turn_end_feedback: { type: '"report" | "continue_once"', description: 'On current source builds, optionally give compatible agents one follow-up on a failed turn-end check. Defaults to report.' },
   defaults: { type: 'object', description: 'Default values for when, on_success, on_failure, failure_output, tail_lines, and rtk_filter.' },
   hooks: { type: 'object', description: 'Accepts after_edit and turn_end. Each event takes a hook object or an array of hook objects.' },
   commands: { type: 'string[][]', description: 'Legacy shorthand for turn-end commands. Use it as an alternative to hooks.' },

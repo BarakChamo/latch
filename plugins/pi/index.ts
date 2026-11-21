@@ -1,9 +1,9 @@
-// Uses Pi's final settlement boundary so diagnostics enter history without continuing the run.
+// Uses Pi's final settlement boundary to deliver validation results.
 
 import { randomUUID } from "node:crypto";
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import type { Turn } from "../extension-hook.mjs";
-import { latchExecutable, runHook } from "../extension-hook.mjs";
+import { latchExecutable, runHook, runStopHook } from "../extension-hook.mjs";
 
 const edits = new Set(["edit", "write"]);
 
@@ -41,11 +41,10 @@ export default function latch(pi: ExtensionAPI): void {
     if (!active || event.continue || event.outcome !== "completed") return;
     const turn = active;
     active = undefined;
-    const report = await runHook(executable, "pi", {
-      ...turn, hook_event_name: "Stop", stop_hook_active: false,
-    });
-    if (report) return {
-      entries: [...event.entries, { type: "custom_message", customType: "latch", content: report, display: true }],
+    const feedback = await runStopHook(executable, "pi", turn);
+    if (feedback.systemMessage) return {
+      entries: [...event.entries, { type: "custom_message", customType: "latch", content: feedback.systemMessage, display: true }],
+      ...(feedback.continue === true ? { continue: true } : {}),
     };
   });
 

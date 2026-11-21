@@ -12,7 +12,7 @@ const validate = new Ajv({ allowUnionTypes: true, strictTuples: false, strictReq
 test("accepts discovery defaults, legacy commands, and ordered filtered hooks", () => {
   for (const config of [
     readJson("../examples/python/latch.json"),
-    { commands: [["check", ""]] },
+    { commands: [["check", ""]], turn_end_feedback: "continue_once" },
     { commands: null, hooks: { after_edit: [] } },
     {
       defaults: { when: "always", on_success: "output", on_failure: "collect", failure_output: "rtk" },
@@ -32,6 +32,7 @@ test("accepts discovery defaults, legacy commands, and ordered filtered hooks", 
 test("rejects invalid types, hook shapes, filters, commands, and output settings", () => {
   for (const config of [
     { $schema: false },
+    { turn_end_feedback: "repeat" },
     { commands: [], hooks: {} },
     { commands: [[""]] },
     { commands: [["check", "\0"]] },

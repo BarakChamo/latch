@@ -79,6 +79,10 @@ npm run test:live -- dist/latch-0.1.2-aarch64-apple-darwin.tar.gz --harness copi
 The test installs the plugin in temporary directories, sends a
 synthetic Git fixture to the selected harness services, and checks that
 one edit runs both checks once in order and surfaces both failure diagnostics.
+To verify that a model actually sees an opt-in turn-end failure and that
+the checks run once, add `--continue-on-failure` to the live test. The
+fixture asks for a diagnostic marker that appears only in the check output.
+
 The test also retrieves a line that the compact preview omitted.
 It also checks that an explicit plugin tool call returns its output.
 Codex uses a temporary copy of its file-based credentials

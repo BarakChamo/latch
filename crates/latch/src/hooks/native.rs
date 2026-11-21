@@ -31,7 +31,7 @@ struct GrokInput {
     tool_use_id: Option<String>,
     tool_input: Option<Value>,
     #[serde(default)]
-    stop_hook_active: bool,
+    stop_hook_active: Option<bool>,
     #[serde(default)]
     is_backgrounded: bool,
     #[serde(rename = "hook_event_name")]
@@ -60,6 +60,7 @@ impl TryFrom<GrokInput> for Event {
                 CommandHookEvent::PostToolUse => EventKind::PostToolUse { tool_name: tool()? },
                 CommandHookEvent::Stop => EventKind::Stop {
                     stop_hook_active: input.stop_hook_active,
+                    extension_can_continue: false,
                 },
                 CommandHookEvent::SessionEnd => EventKind::SessionEnd,
             },
@@ -129,7 +130,8 @@ impl TryFrom<CursorInput> for Event {
                 CursorEvent::PostToolUse => EventKind::PostToolUse { tool_name: tool()? },
                 CursorEvent::Stop => match input.status {
                     Some(CursorStatus::Completed) => EventKind::Stop {
-                        stop_hook_active: false,
+                        stop_hook_active: None,
+                        extension_can_continue: false,
                     },
                     Some(CursorStatus::Aborted | CursorStatus::Error) => EventKind::Interrupt,
                     None => return Err(io::Error::other("missing status")),
@@ -175,7 +177,8 @@ impl From<OpenHandsInput> for Event {
                     tool_name: input.tool_name.unwrap_or_default(),
                 },
                 CommandHookEvent::Stop => EventKind::Stop {
-                    stop_hook_active: false,
+                    stop_hook_active: None,
+                    extension_can_continue: false,
                 },
                 CommandHookEvent::SessionEnd => EventKind::SessionEnd,
             },

@@ -6,6 +6,10 @@
   "additionalProperties": false,
   "properties": {
     "$schema": { "type": ["string", "null"], "description": "Schema location for editor support." },
+    "turn_end_feedback": {
+      "enum": ["report", "continue_once"],
+      "description": "Allow a supported harness to act on a failed turn-end check in one follow-up. The default is report."
+    },
     "defaults": {
       "type": "object",
       "$ref": "#/$defs/settings",

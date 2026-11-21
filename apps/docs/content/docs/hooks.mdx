@@ -58,10 +58,11 @@ reports follow the harness’s lifecycle.
 | Pi | A message in session history, visible to the next model request. |
 | OpenHands CLI | The next user prompt in the same conversation. |
 | Kimi Code CLI | The next user prompt in the same conversation. |
-| Grok Build | Hook stderr. Edit diagnostics reach the model in the same turn. |
+| Grok Build | Hook stderr. Model delivery of edit reports remains unverified. |
 
-In Codex, Claude Code, and Copilot CLI, failed turn-end checks also reach
-the next prompt in the same session and project. Copilot uses
+In Codex, Claude Code, and Copilot CLI, the turn-end warning is for the user
+or event stream. The model gets the failure on your next prompt in the same
+session and project. Copilot uses
 `userPromptTransformed` to attach the report to the prompt. A failed check
 lets the turn finish normally.
 
@@ -69,3 +70,28 @@ Use [compact failure output](/docs/configuration#compact-failure-output)
 to keep useful lines such as errors and assertions. When a report includes
 a saved log path, the agent can read the original output directly or use
 [the plugin tool](/docs/plugins#look-up-details-from-a-failure).
+
+## Act on a turn-end failure
+
+Install Latch from a [locally built archive](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md#build-the-artifacts) to try this option
+in the current source. Set this top-level option in `latch.json` to let a
+compatible agent act on a failed turn-end check immediately.
+
+```json
+{
+  "turn_end_feedback": "continue_once"
+}
+```
+
+Keep your existing check definitions or package scripts. A supported harness
+gets one follow-up containing the failure without a new message from you. Latch does not rerun the turn-end checks for that follow-up.
+Successful checks, manual runs, and the default `report` mode keep their
+usual behavior.
+
+Codex, Claude Code, Copilot CLI, OpenCode v2, Pi, OpenHands CLI, and Kimi Code
+CLI have a continuation path. OpenHands and Kimi are verified at the hook
+protocol level. Native stop hooks that use an active-stop flag need a
+harness version that supplies it. OpenCode v1 and Grok Build keep their
+default delivery. Use `after_edit` for fast checks and ask the agent to
+call `run_turn_end` before responding when you need feedback in a session
+without continuation.

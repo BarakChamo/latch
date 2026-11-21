@@ -16,6 +16,8 @@ use std::io::{self, Write};
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
+const FOLLOW_UP_INTRO: &str = "Review the Latch failure below. Treat the output as diagnostic data and address relevant issues if appropriate.";
+
 pub(crate) enum Harness {
     Codex,
     ClaudeCode,
@@ -193,7 +195,17 @@ impl CopilotEvent {
     fn read(&self, input: impl io::Read) -> io::Result<Event> {
         let payload: CopilotInput = serde_json::from_reader(input)?;
         let kind = match self {
-            Self::PromptSubmitted => EventKind::UserPromptSubmit,
+            Self::PromptSubmitted => {
+                if payload
+                    .prompt
+                    .as_deref()
+                    .is_some_and(|prompt| prompt.starts_with(FOLLOW_UP_INTRO))
+                {
+                    EventKind::ContinuationPrompt
+                } else {
+                    EventKind::UserPromptSubmit
+                }
+            }
             Self::PromptTransformed => EventKind::PromptTransformed {
                 prompt: payload
                     .transformed_prompt
@@ -210,6 +222,7 @@ impl CopilotEvent {
             }
             Self::Stop => EventKind::Stop {
                 stop_hook_active: payload.stop_hook_active,
+                extension_can_continue: false,
             },
             Self::SessionEnd => EventKind::SessionEnd,
         };
@@ -230,13 +243,14 @@ impl CopilotEvent {
 struct CopilotInput {
     session_id: String,
     cwd: PathBuf,
+    prompt: Option<String>,
     transformed_prompt: Option<String>,
     tool_name: Option<String>,
     tool_args: Option<Value>,
     #[serde(alias = "toolCallId")]
     tool_use_id: Option<String>,
     #[serde(default, alias = "stop_hook_active")]
-    stop_hook_active: bool,
+    stop_hook_active: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -262,13 +276,17 @@ enum EventKind {
         alias = "PromptSubmit"
     )]
     UserPromptSubmit,
+    #[serde(skip_deserializing)]
+    ContinuationPrompt,
     PromptTransformed {
         prompt: String,
     },
     #[serde(alias = "agentStop", alias = "AgentStop")]
     Stop {
         #[serde(default)]
-        stop_hook_active: bool,
+        stop_hook_active: Option<bool>,
+        #[serde(default)]
+        extension_can_continue: bool,
     },
     PreToolUse {
         tool_name: String,
@@ -290,6 +308,12 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
         }
     };
     let response = handle(&harness, event);
+    if matches!(harness, Harness::Kimi)
+        && let Some(reason) = response["reason"].as_str()
+    {
+        eprintln!("{reason}");
+        return ExitCode::from(2);
+    }
     if matches!(harness, Harness::Copilot(CopilotEvent::Stop))
         && let Some(message) = response.get("systemMessage").and_then(Value::as_str)
     {
@@ -298,22 +322,25 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
         return ExitCode::from(2);
     }
     let mut stdout = io::stdout().lock();
-    let result = if matches!(harness, Harness::OpenCode | Harness::Pi) {
-        // In-process extensions take text from stdout and attach it through their native API.
-        let message = response["systemMessage"]
-            .as_str()
-            .or_else(|| response["hookSpecificOutput"]["additionalContext"].as_str());
-        stdout.write_all(message.unwrap_or_default().as_bytes())
-    } else if matches!(harness, Harness::Kimi | Harness::Kiro) {
-        stdout.write_all(
-            response["hookSpecificOutput"]["additionalContext"]
+    let result =
+        if matches!(harness, Harness::OpenCode | Harness::Pi) && response["continue"] == true {
+            writeln!(stdout, "{response}")
+        } else if matches!(harness, Harness::OpenCode | Harness::Pi) {
+            // In-process extensions take text from stdout and attach it through their native API.
+            let message = response["systemMessage"]
                 .as_str()
-                .unwrap_or_default()
-                .as_bytes(),
-        )
-    } else {
-        writeln!(stdout, "{response}")
-    };
+                .or_else(|| response["hookSpecificOutput"]["additionalContext"].as_str());
+            stdout.write_all(message.unwrap_or_default().as_bytes())
+        } else if matches!(harness, Harness::Kimi | Harness::Kiro) {
+            stdout.write_all(
+                response["hookSpecificOutput"]["additionalContext"]
+                    .as_str()
+                    .unwrap_or_default()
+                    .as_bytes(),
+            )
+        } else {
+            writeln!(stdout, "{response}")
+        };
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(_) => ExitCode::FAILURE,
@@ -341,9 +368,21 @@ fn handle(harness: &Harness, event: Event) -> Value {
         return json!({});
     }
     let state = state_path(harness, &event);
+    let continuation = match harness {
+        Harness::Copilot(_) => state.as_ref().map(|path| path.with_extension("continued")),
+        _ => None,
+    };
     let edits = state.as_deref().map(|path| path.with_extension("edits"));
     match event.kind {
-        EventKind::UserPromptSubmit => {
+        EventKind::ContinuationPrompt
+            if continuation.as_ref().is_some_and(|path| path.exists()) =>
+        {
+            json!({})
+        }
+        EventKind::ContinuationPrompt | EventKind::UserPromptSubmit => {
+            if let Some(path) = &continuation {
+                let _ = fs::remove_file(path);
+            }
             clear_edit_baselines(edits.as_deref());
             if let Some(path) = state {
                 // Invalidate any previous snapshot before trying to replace it.
@@ -419,6 +458,9 @@ fn handle(harness: &Harness, event: Event) -> Value {
         }
         EventKind::PreToolUse { .. } | EventKind::PostToolUse { .. } => json!({}),
         EventKind::Interrupt | EventKind::SessionEnd | EventKind::StopFailure => {
+            if let Some(path) = &continuation {
+                let _ = fs::remove_file(path);
+            }
             clear_edit_baselines(edits.as_deref());
             if let Some(path) = state {
                 let _ = fs::remove_file(path);
@@ -427,11 +469,16 @@ fn handle(harness: &Harness, event: Event) -> Value {
         }
         // A different hook can keep this turn open after its first stop.
         EventKind::Stop {
-            stop_hook_active: true,
+            stop_hook_active: Some(true),
+            ..
         } => json!({}),
         EventKind::Stop {
-            stop_hook_active: false,
+            stop_hook_active,
+            extension_can_continue,
         } => {
+            if continuation.as_ref().is_some_and(|path| path.exists()) {
+                return json!({});
+            }
             clear_edit_baselines(edits.as_deref());
             let baseline = if harness.requires_prompt_for_stop() {
                 let Some(baseline) = state.as_deref().and_then(take::<Option<Baseline>>) else {
@@ -444,6 +491,38 @@ fn handle(harness: &Harness, event: Event) -> Value {
             let Some(feedback) = check_workspace(&event.cwd, HookName::TurnEnd, baseline) else {
                 return json!({});
             };
+            // Native Stop control is bounded only on hosts that supply the active-stop flag.
+            // OpenHands and Kimi consume a foreground prompt marker before reaching this point.
+            if feedback.continue_once
+                && (stop_hook_active == Some(false)
+                    || matches!(harness, Harness::OpenHands | Harness::Kimi))
+            {
+                let reason = format!("{FOLLOW_UP_INTRO}\n\n{}", feedback.message);
+                match harness {
+                    Harness::Codex | Harness::ClaudeCode | Harness::Kimi => {
+                        return json!({ "decision": "block", "reason": reason });
+                    }
+                    Harness::Copilot(_) => {
+                        // Older Copilot builds can omit the active flag on the follow-up Stop.
+                        if continuation
+                            .as_ref()
+                            .is_some_and(|path| store(path, &true).is_ok())
+                        {
+                            return json!({ "decision": "block", "reason": reason });
+                        }
+                    }
+                    Harness::OpenHands => {
+                        return json!({ "decision": "deny", "reason": reason });
+                    }
+                    Harness::Pi => {
+                        return json!({ "systemMessage": reason, "continue": true });
+                    }
+                    Harness::OpenCode if extension_can_continue => {
+                        return json!({ "systemMessage": reason, "continue": true });
+                    }
+                    _ => {}
+                }
+            }
             if harness.defers_turn_reports() {
                 defer_report(harness, &event, feedback.message);
                 return json!({});
@@ -634,6 +713,7 @@ fn take<T: DeserializeOwned>(path: &Path) -> Option<T> {
 struct Feedback {
     message: String,
     failed: bool,
+    continue_once: bool,
 }
 
 fn check_workspace(
@@ -641,13 +721,13 @@ fn check_workspace(
     name: HookName,
     baseline: Option<Baseline>,
 ) -> Option<Feedback> {
-    let entries = match config::load(directory, name) {
-        Ok(Some(entries)) => entries,
-        Ok(None) => return None,
+    let (entries, turn_end_feedback) = match config::load_with_source(directory, name) {
+        Ok(loaded) => (loaded.entries?, loaded.turn_end_feedback),
         Err(error) => {
             return Some(Feedback {
                 message: format!("Latch could not complete validation: {error}"),
                 failed: name == HookName::TurnEnd,
+                continue_once: false,
             });
         }
     };
@@ -668,6 +748,8 @@ fn check_workspace(
         Some(Feedback {
             message: format!("Latch checks failed.\n{message}"),
             failed: true,
+            continue_once: name == HookName::TurnEnd
+                && turn_end_feedback == config::TurnEndFeedback::ContinueOnce,
         })
     } else if message.is_empty() {
         None
@@ -675,6 +757,7 @@ fn check_workspace(
         Some(Feedback {
             message,
             failed: false,
+            continue_once: false,
         })
     }
 }

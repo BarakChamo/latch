@@ -1,6 +1,6 @@
 // Keeps OpenCode v2 feedback at native tool and session boundaries without queuing agent work.
 
-import { latchExecutable, runHook } from "../extension-hook.mjs";
+import { latchExecutable, runHook, runStopHook } from "../extension-hook.mjs";
 
 const edits = new Set(["edit", "write", "patch"]);
 
@@ -73,14 +73,14 @@ export async function setup(ctx) {
     const current = active.get(sessionID);
     if (!current) return;
     active.delete(sessionID);
-    // This awaited boundary finishes validation before the run exits. It must never admit another input.
-    const check = runHook(executable, "opencode", {
-      ...current.turn, hook_event_name: "Stop", stop_hook_active: false,
-    });
-    settling.set(sessionID, check);
+    const check = runStopHook(executable, "opencode", current.turn);
+    settling.set(sessionID, check.then(({ systemMessage }) => systemMessage ?? ""));
     try {
-      const report = await check;
-      if (report) console.error(report);
+      const { systemMessage, continue: followUp } = await check;
+      if (!systemMessage) return;
+      console.error(systemMessage);
+      // Synthetic input skips the prompt hook, so the follow-up has no new validation baseline.
+      if (followUp) await ctx.session.synthetic({ sessionID, text: systemMessage });
     } finally {
       settling.delete(sessionID);
     }

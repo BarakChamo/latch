@@ -22,26 +22,28 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 
 ## Compatibility
 
-These integrations ship for local sessions. The table shows when checks
-run and where failures are reported. “Next prompt” means your next message
-in the same session and project.
+These are the shipped integrations. The local columns describe the default
+reporting behavior. Same-turn context reaches the model with the edit
+result. A turn-end warning can be visible to you while the model is idle.
 
-| Harness | `after_edit` | `turn_end` |
-| --- | --- | --- |
-| Codex | Same-turn context after `apply_patch`. | App-server warning. The failure also reaches the next prompt. |
-| Claude Code | Same-turn context after native edits. | Informational hook event. The failure also reaches the next prompt. |
-| GitHub Copilot CLI | Same-turn context after native edits. | Hook warning. The failure also reaches the next prompt. |
-| OpenCode v1 | Same-turn context after native edits. | TUI toast or headless stderr. The failure also reaches the next prompt. |
-| OpenCode v2 | Same-turn context after native edits. | Server stderr. The failure also reaches the next prompt. |
-| Pi | Same-turn context after `edit` and `write`. | Session history, visible to the next model request. |
-| OpenHands CLI | Next prompt after a native file edit. | Next prompt. |
-| Kimi Code CLI | Turn-end checks only. | Next prompt. |
-| Grok Build | Same-turn context after native edits. | Hook stderr. |
+| Harness | Local verification | Local `after_edit` | Local `turn_end` | Managed cloud |
+| --- | --- | --- | --- | --- |
+| Codex | Live session | Model gets context after `apply_patch`. | UI or app-server warning. The model gets the failure on your next prompt. | Managed Codex Cloud has no Latch command hooks. Run Latch directly or in CI. |
+| Claude Code | Live session | Model gets context after native edits. | Informational hook event. The model gets the failure on your next prompt. | Single-repo sessions outside Claude Projects can load committed hooks. Install the binary in setup. Hosted feedback unverified. |
+| GitHub Copilot CLI | Live session | Model gets context after native edits. | Hook warning. The model gets the failure on your next prompt. | Copilot cloud agent requires repository hooks and runner setup. Same-turn context is documented by GitHub. Latch hosted feedback unverified. |
+| OpenCode v1 | Real CLI, scripted model | Model gets context after native edits. | TUI toast or headless stderr. The model gets the failure on your next prompt. | Managed service unverified. |
+| OpenCode v2 | Real CLI, scripted model | Model gets context after native edits. | Server stderr. The model gets the failure on your next prompt. | Managed service unverified. |
+| Pi | Real CLI, scripted model | Model gets context after `edit` and `write`. | Report enters session history. The model reads it on its next request. | Managed service unverified. |
+| OpenHands CLI | Hook protocol tested | Report reaches the next prompt after a native file edit. | Report reaches the next prompt. | Canvas and Cloud document repo hooks. Install Latch in the workspace. Hosted feedback unverified. |
+| Kimi Code CLI | Hook protocol tested | Turn-end checks only. | Report reaches the next prompt. | With remote tools, hooks still run beside the CLI and see its local checkout. Managed cloud feedback unverified. |
+| Grok Build | Hook protocol tested | Latch returns edit context. Model delivery unverified. | Hook stderr. | Grok Bot integration unverified. |
 
-The turn finishes normally on a failed check. See the
-[hook and feedback reference](/docs/hooks) for the exact edit tools and
-headless behavior. With MCP enabled, agents can also [run checks on demand
-or search saved logs](/docs/plugins#run-checks-from-chat).
+“Next prompt” means your next message in the same session and project.
+See [hook and feedback details](/docs/hooks) and [hosted setup](/docs/cloud).
+With MCP enabled, agents can [run checks on demand or search saved logs](/docs/plugins#run-checks-from-chat).
+
+To let a supported agent act on a turn-end failure before you send another
+message, see the [opt-in follow-up](/docs/hooks#act-on-a-turn-end-failure).
 
 ## Install a plugin
 

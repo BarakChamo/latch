@@ -13,16 +13,17 @@ import { parseArgs, promisify } from "node:util";
 
 const exec = promisify(execFile);
 const harnesses = ["codex", "claude", "copilot"];
-const { positionals, values: { harness, help, marketplace } } = parseArgs({
+const { positionals, values: { harness, help, marketplace, "continue-on-failure": continueOnFailure } } = parseArgs({
   allowPositionals: true,
   options: {
     harness: { type: "string", multiple: true },
     help: { type: "boolean" },
     marketplace: { type: "boolean" },
+    "continue-on-failure": { type: "boolean" },
   },
 });
 const selected = harness ?? harnesses;
-const usage = "Usage: npm run test:live -- <local-release.tar.gz> [--harness codex|claude|copilot] [--marketplace]";
+const usage = "Usage: npm run test:live -- <local-release.tar.gz> [--harness codex|claude|copilot] [--marketplace] [--continue-on-failure]";
 if (help) {
   console.log(usage);
   process.exit(0);
@@ -30,7 +31,9 @@ if (help) {
 assert(positionals.length === 1 && selected.every((name) => harnesses.includes(name)), usage);
 const [archive] = positionals;
 
-const prompt = "Use your native edit tool to replace ready in demo.txt with changed. Leave the edit in place. Then call the Latch run_turn_end MCP tool in this project once and report its output. Do not run shell commands yourself.";
+const prompt = continueOnFailure
+  ? "Use your native edit tool to replace ready in demo.txt with changed, then finish. If you receive a validation failure, quote its diagnostic marker verbatim in your final response. Leave the edit in place and do not run commands or call any MCP tools."
+  : "Use your native edit tool to replace ready in demo.txt with changed. Leave the edit in place. Then call the Latch run_turn_end MCP tool in this project once and report its output. Do not run shell commands yourself.";
 const firstFailure = "LATCH_LIVE_FIRST_FAILURE";
 const secondFailure = "LATCH_LIVE_SECOND_FAILURE";
 const toolOutput = "LATCH_LIVE_TOOL_RAN";
@@ -59,6 +62,16 @@ try {
     const log = join(fixture.project, "checks.log");
     assert(existsSync(log), `${name} did not run Latch`);
     const checkOrder = readFileSync(log, "utf8");
+    if (continueOnFailure) {
+      assert.equal(checkOrder, "turn\n", `${name} repeated validation after the failure`);
+      const messages = name === "codex" ? JSON.parse(events) : events.trim().split("\n").map(JSON.parse);
+      const replies = messages.filter((event) =>
+        (event.method === "item/completed" && event.params.item.type === "agentMessage")
+        || event.type === "assistant" || event.type === "assistant.message");
+      assert(JSON.stringify(replies).includes(firstFailure), `${name} never quoted the failure in an assistant reply`);
+      console.log(`${name}: model acted on the turn-end failure without another prompt or check`);
+      return;
+    }
     assert.equal(checkOrder, "edit-first\nedit-second\ntool\n", `${name} must run each check exactly once, in order. Observed ${JSON.stringify(checkOrder)}`);
     assert(events.includes("Latch checks failed."), `${name} did not surface the edit failure`);
     for (const diagnostic of [firstFailure, secondFailure]) {
@@ -93,7 +106,10 @@ function prepareFixture(name, bundle) {
   mkdirSync(profile, { mode: 0o700 });
   writeFileSync(join(project, "demo.txt"), "ready\n");
   writeFileSync(join(project, ".gitignore"), "checks.log\n");
-  writeFileSync(join(project, "latch.json"), JSON.stringify({
+  writeFileSync(join(project, "latch.json"), JSON.stringify(continueOnFailure ? {
+    turn_end_feedback: "continue_once",
+    hooks: { turn_end: { commands: [["sh", "-c", `echo turn >> checks.log; echo ${firstFailure} >&2; exit 1`]] } },
+  } : {
     hooks: {
       after_edit: {
         failure_output: name === "codex" ? "tail" : "compact",
@@ -168,7 +184,7 @@ async function runCopilot(fixture) {
   const env = { ...fixture.env, COPILOT_HOME: fixture.profile, COPILOT_CACHE_HOME: join(fixture.profile, "cache") };
   await install(fixture, env);
   const { stdout } = await exec("copilot", [
-    "--no-auto-update", "--no-color", "--no-custom-instructions", "--disable-builtin-mcps",
+    ...(continueOnFailure ? ["--trust-folder", "--sync-session=off"] : ["--no-auto-update"]), "--no-color", "--no-custom-instructions", "--disable-builtin-mcps",
     "--output-format", "json", "--allow-tool=write", "--allow-tool=latch(run_turn_end)",
     "-C", fixture.project, "-p", prompt,
   ], { cwd: fixture.project, env, timeout: 90_000, maxBuffer: 8_000_000 });

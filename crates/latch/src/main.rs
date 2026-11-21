@@ -206,6 +206,7 @@ fn explain(selected: config::HookName) -> ExitCode {
         let directory = env::current_dir()?;
         let config::LoadedHook {
             config_path,
+            turn_end_feedback,
             entries,
         } = config::load_with_source(&directory, selected)?;
         let mut response = Map::from_iter([
@@ -213,6 +214,9 @@ fn explain(selected: config::HookName) -> ExitCode {
             ("hook".into(), json!(selected.name())),
             ("configured".into(), json!(entries.is_some())),
         ]);
+        if selected == HookName::TurnEnd {
+            response.insert("turn_end_feedback".into(), json!(turn_end_feedback));
+        }
         match entries {
             None => {}
             Some(HookEntries::Single(entry)) => response.extend(explain_entry(selected, entry)),

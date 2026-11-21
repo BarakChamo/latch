@@ -30,8 +30,8 @@ config directory.
 Latch also runs validation if the Git index can hide edits, such as when
 paths are marked assume-unchanged or skip-worktree.
 
-Successful checks are quiet by default. On failure, Latch reports the diagnostics
-and lets the turn finish. The next prompt in the same session and working
+Successful checks are quiet by default. In the default mode, Latch reports
+the diagnostics and lets the turn finish. The next prompt in the same session and working
 directory receives the saved failure once. The stop and post-tool hooks
 allow up to 120 seconds for validation.
 

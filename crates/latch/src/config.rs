@@ -38,7 +38,17 @@ struct Config {
     commands: Option<Vec<Vec<String>>>,
     hooks: Option<Hooks>,
     #[serde(default)]
+    turn_end_feedback: TurnEndFeedback,
+    #[serde(default)]
     defaults: Settings,
+}
+
+#[derive(Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum TurnEndFeedback {
+    #[default]
+    Report,
+    ContinueOnce,
 }
 
 #[derive(Default, Deserialize)]
@@ -370,6 +380,7 @@ pub(crate) fn load(
 
 pub(crate) struct LoadedHook {
     pub(crate) config_path: Option<PathBuf>,
+    pub(crate) turn_end_feedback: TurnEndFeedback,
     pub(crate) entries: Option<HookEntries<HookEntry>>,
 }
 
@@ -389,6 +400,7 @@ pub(crate) fn load_with_source(
     };
     Ok(LoadedHook {
         config_path,
+        turn_end_feedback: config.turn_end_feedback,
         entries: resolve_hook(directory, selected, config)?,
     })
 }

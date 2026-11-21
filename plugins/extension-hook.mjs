@@ -17,7 +17,7 @@ export function latchExecutable(entryUrl) {
 }
 
 /** @typedef {{cwd: string, session_id: string, turn_id: string}} Turn */
-/** @typedef {{hook_event_name: "PreToolUse" | "PostToolUse", tool_name: string, tool_use_id: string} | {hook_event_name: "UserPromptSubmit" | "Interrupt"} | {hook_event_name: "Stop", stop_hook_active: false}} HookEvent */
+/** @typedef {{hook_event_name: "PreToolUse" | "PostToolUse", tool_name: string, tool_use_id: string} | {hook_event_name: "UserPromptSubmit" | "Interrupt"} | {hook_event_name: "Stop", stop_hook_active: false, extension_can_continue?: boolean}} HookEvent */
 
 /**
  * An empty result means there is no feedback. Hook transport errors go to stderr
@@ -42,4 +42,17 @@ export function runHook(executable, harness, event) {
     });
     child.stdin?.end(JSON.stringify(event));
   });
+}
+
+/**
+ * @param {string} executable
+ * @param {"opencode" | "pi"} harness
+ * @param {Turn} turn
+ * @returns {Promise<{systemMessage?: string, continue?: boolean}>}
+ */
+export async function runStopHook(executable, harness, turn) {
+  const output = await runHook(executable, harness, {
+    ...turn, hook_event_name: "Stop", stop_hook_active: false, extension_can_continue: true,
+  });
+  return output.startsWith("{") ? JSON.parse(output) : { systemMessage: output };
 }

@@ -1264,3 +1264,139 @@ fn devin_grok_and_kiro_render_edit_reports_in_their_native_protocols() {
         );
     }
 }
+
+#[test]
+fn opted_in_turn_failure_reaches_the_agent_without_rechecking() {
+    for host in [
+        "codex",
+        "claude-code",
+        "copilot",
+        "opencode",
+        "openhands",
+        "kimi",
+        "pi",
+    ] {
+        let project = Project::new();
+        project.write(
+            "latch.json",
+            r#"{"turn_end_feedback":"continue_once","defaults":{"when":"always"},
+                "commands":[["sh","-c","echo ran >> checked; echo important-diagnostic >&2; exit 1"]]}"#,
+        );
+        let invoke = |event, active| {
+            let mut payload = json!({
+                "hook_event_name": event, "event_type": event,
+                "session_id": "session", "sessionId": "session", "turn_id": "turn",
+                "cwd": project.root.path(), "working_dir": project.root.path(),
+            });
+            payload["stop_hook_active"] = json!(active);
+            payload["extension_can_continue"] = json!(host == "opencode");
+            if host == "copilot" {
+                let name = if event == "Stop" {
+                    "agentStop"
+                } else {
+                    "userPromptSubmitted"
+                };
+                project.invoke_hook(&[host, name], payload)
+            } else {
+                project.invoke_hook(&[host], payload)
+            }
+        };
+
+        assert!(invoke("UserPromptSubmit", false).status.success());
+        let report = invoke("Stop", false);
+        if host == "kimi" {
+            assert_eq!(report.status.code(), Some(2));
+            assert!(String::from_utf8_lossy(&report.stderr).contains("important-diagnostic"));
+        } else {
+            assert!(report.status.success(), "{host}: {report:?}");
+            let response: Value = serde_json::from_slice(&report.stdout).unwrap();
+            match host {
+                "pi" | "opencode" => {
+                    assert_eq!(response["continue"], true);
+                    assert!(
+                        response["systemMessage"]
+                            .as_str()
+                            .unwrap()
+                            .contains("important-diagnostic")
+                    );
+                }
+                _ => {
+                    let decision = if host == "openhands" { "deny" } else { "block" };
+                    assert_eq!(response["decision"], decision);
+                    assert!(
+                        response["reason"]
+                            .as_str()
+                            .unwrap()
+                            .contains("important-diagnostic")
+                    );
+                }
+            }
+        }
+        let active = !matches!(host, "kimi" | "openhands");
+        assert!(invoke("Stop", active).status.success(), "{host}");
+        let next_prompt = invoke("UserPromptSubmit", false);
+        assert!(!String::from_utf8_lossy(&next_prompt.stdout).contains("important-diagnostic"));
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("checked")).unwrap(),
+            "ran\n"
+        );
+    }
+}
+
+#[test]
+fn copilot_without_a_continuation_guard_keeps_a_nonblocking_warning() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","defaults":{"when":"always"},
+            "commands":[["sh","-c","exit 1"]]}"#,
+    );
+    let response = project.copilot("agentStop", json!({}));
+    assert_eq!(response.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&response.stderr).contains("Latch checks failed."));
+    assert!(response.stdout.is_empty());
+}
+
+#[test]
+fn copilot_ignores_its_own_follow_up_prompt_and_stale_stop_flag() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","defaults":{"when":"always"},
+            "commands":[["sh","-c","echo ran >> checked; exit 1"]]}"#,
+    );
+    let prompt = |text| project.copilot("userPromptSubmitted", json!({ "prompt": text }));
+    assert!(prompt("Run the task.").status.success());
+    let first = project.copilot("agentStop", json!({ "stop_hook_active": false }));
+    assert!(first.status.success());
+    let response: Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(response["decision"], "block");
+    assert!(
+        prompt(response["reason"].as_str().unwrap())
+            .status
+            .success()
+    );
+    for payload in [json!({}), json!({ "stop_hook_active": false })] {
+        let repeated = project.copilot("agentStop", payload);
+        assert!(repeated.status.success());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&repeated.stdout).unwrap(),
+            json!({})
+        );
+    }
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("checked")).unwrap(),
+        "ran\n"
+    );
+    assert!(prompt("Run another task.").status.success());
+    let next = project.copilot("agentStop", json!({ "stop_hook_active": false }));
+    assert!(next.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&next.stdout).unwrap()["decision"],
+        "block"
+    );
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("checked")).unwrap(),
+        "ran\nran\n"
+    );
+}

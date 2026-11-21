@@ -8,6 +8,12 @@ project’s check dependencies when the environment starts. The harness
 also needs to load the corresponding hook definitions before the first
 prompt for automatic checks to run.
 
+The [compatibility matrix](/docs#compatibility) distinguishes verified local
+feedback from provider-documented cloud hooks. The Claude and OpenHands
+setup paths below have no hosted Latch verification. The Copilot setup
+passed a Linux fixture, and the hosted task attempt returned 403.
+[Hosted Copilot test record](https://github.com/BarakChamo/latch/pull/1)
+
 ## Install in the environment
 
 Use a versioned Linux archive for the runner architecture. Stage the
@@ -56,7 +62,9 @@ job is unavailable. Use Actions for this recipe. [GitHub environment setup](http
 
 The cloud agent supports same-turn context after tool use. A delegated
 job may have only its initial prompt, so plan to see after-edit feedback
-and use CI to enforce checks before merge. To enable the explicit tool
+and use CI to enforce checks before merge. GitHub documents stop-hook
+continuation for hosted agents. Latch’s opt-in follow-up has local
+verification. To enable the explicit tool
 in the hosted GitHub agent, configure a local stdio server in the
 repository’s Copilot MCP settings. Use `bash` as the command with
 `["-c", "exec \"$HOME/.local/bin/latch\" mcp --require-project-directory"]`
@@ -73,6 +81,22 @@ feedback requires a Codex runtime where the command hooks can load and
 be trusted. If you run Codex CLI directly inside a cloud VM or container,
 follow the [plugin setup](/docs/plugins) inside that machine.
 [Codex cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments) · [Cloud orchestration hooks](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration)
+
+## OpenHands
+
+OpenHands documents repository hooks for Cloud, Canvas, and Enterprise.
+Provision Latch inside the workspace and commit the hook definitions in
+`.openhands/hooks.json`. Use the installed binary’s absolute path for the
+hook commands and verify model feedback in a hosted session.
+[OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
+
+## Other integrations
+
+Use the [local setup](/docs/plugins) on a VM you control if both the
+agent process and checkout run there. Managed-service feedback for
+OpenCode, Pi, Kimi Code, and Grok Build remains unverified. Kimi’s
+remote-tool hooks run beside the CLI and see its local files.
+[Kimi hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks)
 
 ## Verify a new environment
 

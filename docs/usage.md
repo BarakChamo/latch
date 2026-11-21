@@ -48,9 +48,59 @@ prompt” means the next message in the same session and project.
 | Pi | Same-turn context after `edit` or `write`. | Session history, visible to the next model request. |
 | OpenHands CLI | Next prompt after writes from `file_editor`. | Next prompt. |
 | Kimi Code CLI | Use `turn_end` for automatic checks. | Next prompt. |
-| Grok Build | Same-turn context after native writes, replacements, or patches. | Hook stderr. |
+| Grok Build | Latch returns edit context for native writes, replacements, or patches. Model delivery unverified. | Hook stderr. |
 
-A failed check does not start another turn or a repair pass. The terminal output of a headless run may omit hook context that the agent receives. See the [integration guides](../plugins/) for agent-specific hooks and setup.
+By default, a failed check lets the turn finish. For Codex, Claude Code, and
+Copilot, the warning at turn end is for the user or event stream. The model
+sees the report when you send the next prompt in the same project. The
+terminal output of a headless run may omit the UI warning. See the
+[integration guides](../plugins/) for agent-specific hooks and setup.
+
+## Act on a turn-end failure
+
+Install Latch from a [locally built archive](releasing.md#build-the-artifacts) to try this option
+in the current source. Set this top-level option in `latch.json` to let a
+compatible agent act on a failed turn-end check immediately.
+
+```json
+{
+  "turn_end_feedback": "continue_once"
+}
+```
+
+Keep your existing check definitions or package scripts. A supported harness
+gets one follow-up containing the failure without a new message from you. Latch does not rerun the turn-end checks for that follow-up.
+Successful checks, manual runs, and the default `report` mode keep their
+usual behavior.
+
+Codex, Claude Code, Copilot CLI, OpenCode v2, Pi, OpenHands CLI, and Kimi Code
+CLI have a continuation path. OpenHands and Kimi are verified at the hook
+protocol level. Native stop hooks that use an active-stop flag need a
+harness version that supplies it. OpenCode v1 and Grok Build keep their
+default delivery. Use `after_edit` for fast checks and ask the agent to
+call `run_turn_end` before responding when you need feedback in a session
+without continuation.
+
+## Hosted sessions
+
+| Harness | Automatic hook setup and evidence |
+| --- | --- |
+| Codex Cloud | Managed orchestration accepts admin-configured Global MCP hooks. Latch ships command hooks, so use `latch run turn_end` directly in the checkout or in CI. Running Codex CLI in a VM you control uses the local setup. |
+| Claude Code cloud | For a single-repository session outside a Claude Project, install the matching Linux binary in the environment setup and commit command hooks in `.claude/settings.json`. Use the installed binary’s absolute path. Hosted Latch execution and report delivery remain unverified. |
+| GitHub Copilot cloud agent | Select the Actions runner, provision Latch via `copilot-setup-steps`, and put the hooks in `.github/hooks/` on the default branch. Latch’s hosted wiring was exercised in a Linux fixture. The hosted task attempt returned 403. |
+| OpenHands Cloud and Canvas | The platforms document repository hooks in `.openhands/hooks.json`. Make Latch available inside the workspace and point the hook command at it. Hosted Latch execution and report delivery remain unverified. |
+
+For OpenCode, Pi, Kimi Code, and Grok Build, install the shipped integration
+where the agent process and checkout run. Managed-service reports remain
+unverified. Kimi’s remote-tool mode runs hooks beside the local CLI, so it
+does not validate a remote checkout from your local hooks.
+
+[Codex Cloud hook limits](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration) ·
+[Claude cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions) ·
+[Copilot Cloud hooks](https://docs.github.com/en/copilot/reference/hooks-reference) ·
+[Hosted Copilot attempt](https://github.com/BarakChamo/latch/pull/1) ·
+[OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks) ·
+[Kimi hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks)
 
 ## Package script discovery
 

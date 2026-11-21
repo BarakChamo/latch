@@ -83,8 +83,8 @@ async function verify(host, bundle) {
       for await (const chunk of req) body += chunk;
       const model = JSON.parse(body);
       const latest = model.messages.findLast((message) => message.role === "user"
-        && /FIXTURE_(NOOP|CHANGE|READ|TOOL)/.test(JSON.stringify(message.content)));
-      const marker = JSON.stringify(latest?.content)?.match(/FIXTURE_(NOOP|CHANGE|READ|TOOL)/)?.[1];
+        && /FIXTURE_(NOOP|CHANGE|READ|TOOL|CONTINUE)/.test(JSON.stringify(message.content)));
+      const marker = JSON.stringify(latest?.content)?.match(/FIXTURE_(NOOP|CHANGE|READ|TOOL|CONTINUE)/)?.[1];
       const previous = requests.findLast((request) => request.marker === marker);
       requests.push({ marker, model });
       const tools = model.tools?.map((tool) => tool.function.name) ?? [];
@@ -92,20 +92,23 @@ async function verify(host, bundle) {
       if (marker === "TOOL" && !previous && runTool) {
         return reply(res, toolCall(runTool, {}));
       }
-      if (marker === "CHANGE" && isOpenCodeV2 && !previous) {
+      if ((marker === "CHANGE" || marker === "CONTINUE") && isOpenCodeV2 && !previous) {
         return reply(res, toolCall("patch", {
           patchText: [
             "*** Begin Patch", "*** Update File: tracked.txt", "@@",
-            "-already dirty", "+new edit to dirty file", "*** End Patch",
+            ...(marker === "CHANGE" ? ["-already dirty", "+new edit to dirty file"]
+              : ["-new edit to dirty file", "+continued edit to dirty file"]), "*** End Patch",
           ].join("\n"),
         }));
       }
-      if ((marker === "NOOP" || marker === "CHANGE") && !previous) {
+      if ((marker === "NOOP" || marker === "CHANGE" || marker === "CONTINUE") && !previous) {
         const pathField = host === "pi" || isOpenCodeV2 ? "path" : "filePath";
-        return reply(res, toolCall("write", {
-          [pathField]: fixture,
-          content: marker === "NOOP" ? "already dirty\n" : "new edit to dirty file\n",
-        }));
+        const content = {
+          NOOP: "already dirty\n",
+          CHANGE: "new edit to dirty file\n",
+          CONTINUE: "continued edit to dirty file\n",
+        }[marker];
+        return reply(res, toolCall("write", { [pathField]: fixture, content }));
       }
       reply(res, { content: "Fixture reply." });
     } catch (error) {
@@ -157,7 +160,7 @@ async function verify(host, bundle) {
     let opencodeSession;
     const turn = async (marker) => {
       // V2 exposes patch in place of edit/write for GPT-family models.
-      const opencodePatch = isOpenCodeV2 && marker === "FIXTURE_CHANGE";
+      const opencodePatch = isOpenCodeV2 && ["FIXTURE_CHANGE", "FIXTURE_CONTINUE"].includes(marker);
       const args = host === "pi"
         ? ["--print", "--mode", "json", "--no-approve", "--model", "fixture/local", "--session-id", piSession, marker]
         : [...(isOpenCodeV2 ? ["--standalone"] : []),
@@ -205,6 +208,16 @@ async function verify(host, bundle) {
     const toolResult = calls[1].model.messages.findLast((message) => message.role === "tool");
     assert(JSON.stringify(toolResult).includes(turnMarker), `${host} dropped the explicit tool failure`);
     assert.equal(readFileSync(counter, "utf8"), "edit\nsecond-edit\nturn\nturn\n");
+    if (host === "pi" || isOpenCodeV2) {
+      const configPath = join(project, "latch.json");
+      const config = JSON.parse(readFileSync(configPath, "utf8"));
+      writeJson(configPath, { ...config, turn_end_feedback: "continue_once" });
+      await turn("FIXTURE_CONTINUE");
+      const continuation = forTurn("CONTINUE");
+      assert.equal(continuation.length, 3, `${host} should make one additional model request`);
+      assert(JSON.stringify(continuation[2].model.messages).includes("Review the Latch failure below"));
+      assert.equal(readFileSync(counter, "utf8"), "edit\nsecond-edit\nturn\nturn\nedit\nsecond-edit\nturn\n");
+    }
     console.log(`${host}: no-op, same-turn feedback, turn-end failure, next prompt, and MCP passed`);
   } finally {
     server.closeAllConnections();
