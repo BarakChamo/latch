@@ -3,34 +3,22 @@ title: Harness plugins
 description: Install and manage Latch in your harness, and run checks from chat.
 ---
 
-## Codex
+## Install from GitHub
 
-```sh
-codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
-codex plugin add latch@latch-tools
-```
+The [installation section of the Latch guide](/docs#install-a-plugin) has
+the marketplace commands for Codex, Claude Code, and GitHub Copilot CLI.
+Each of those plugins bundles Latch.
 
-The marketplace includes Latch. Start a new local session in your project
-and review the hooks in `/hooks`.
-
-## Claude Code, Copilot CLI, OpenCode, and Pi
+### OpenCode and Pi
 
 Download and extract the [standalone archive](/docs/cli#install-the-cli).
 Set `LATCH_PLUGIN_DIR` to the extracted folder and add its `bin` directory
-to your shell’s `PATH`. Keep the archive folder in place. On Apple Silicon,
-if you extracted it under `~/.local/share/latch`:
+to your shell’s `PATH`. For example, on Apple Silicon:
 
 ```sh
 export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.0-aarch64-apple-darwin"
 export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
 ```
-
-| Harness | Add the local marketplace | Enable Latch |
-| --- | --- | --- |
-| Claude Code | `claude plugin marketplace add "$LATCH_PLUGIN_DIR"` | `claude plugin install latch@latch-marketplace` |
-| GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_PLUGIN_DIR"` | `copilot plugin install latch@latch-marketplace` |
-
-### OpenCode and Pi
 
 For OpenCode v1, add the absolute path to
 `plugins/opencode/index.js` inside `LATCH_PLUGIN_DIR` to the `plugin`
@@ -53,8 +41,8 @@ pi install "$LATCH_PLUGIN_DIR/plugins/pi"
 | Harness | Find the plugin | Uninstall Latch |
 | --- | --- | --- |
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
-| Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-marketplace` |
-| GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-marketplace` |
+| Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-tools` |
+| GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-tools` |
 | OpenCode | See the project's or user's OpenCode configuration. | Remove the Latch entry. |
 | Pi | `pi list` | `pi remove "$LATCH_PLUGIN_DIR/plugins/pi"` |
 

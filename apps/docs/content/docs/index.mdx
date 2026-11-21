@@ -1,39 +1,46 @@
 ---
 title: Latch
-description: Run your project’s checks automatically when a coding agent edits files or finishes a turn.
+description: Run your project’s checks automatically after coding-agent edits and at the end of a turn.
 ---
-Run your project’s checks automatically when a coding agent edits files or
-finishes a turn. Passing checks stay quiet. Failures come back with the
-diagnostic and, when the output is shortened, a link to the saved log
-when available.
+Latch runs your project’s checks automatically after coding-agent edits and at the end of a turn.
 
-- [Install the Codex plugin](#install-the-codex-plugin)
-- [Run your first check](#run-your-first-check)
-- [Configure checks](#configure-checks)
-- [Read failures and saved logs](#read-failures-and-saved-logs)
-- [Install the standalone CLI](#install-the-standalone-cli)
-- [Other coding agents](#other-coding-agents)
-- [Troubleshoot](#troubleshoot)
-- [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest)
+[Install a plugin](#install-a-plugin) · [First check](#run-your-first-check) · [Configuration](#configure-checks) · [Standalone CLI](#install-the-standalone-cli) · [Troubleshooting](#troubleshoot) · [Releases](https://github.com/BarakChamo/latch/releases/latest)
 
-## Install the Codex plugin
+## Install a plugin
 
-In a terminal with Codex installed, run:
+The plugins bundle Latch for macOS and glibc Linux on ARM64 and x64.
+Use an account with GitHub access to this repository.
+
+### Codex
 
 ```sh
 codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
 codex plugin add latch@latch-tools
 ```
 
-The plugin includes Latch for macOS and glibc Linux on ARM64 and x64.
-You’ll need GitHub access to this repository. In the Codex desktop app,
-you can also add the marketplace with source `BarakChamo/latch` and Git
-ref `codex/marketplace`, then install **Latch** from that marketplace.
+Start a new session in your project. Open `/hooks` in Codex and approve
+the Latch hooks after reviewing them.
 
-Open a new Codex session in your project. Run `/hooks` and approve the
-Latch hooks after reviewing them. If you installed the older
-`latch@latch-local` plugin, remove it with `codex plugin remove latch@latch-local`
-to avoid running both copies.
+### Claude Code
+
+```sh
+claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
+claude plugin install latch@latch-tools
+```
+
+Start a new Claude Code session in your project.
+
+### GitHub Copilot CLI
+
+```sh
+copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+copilot plugin install latch@latch-tools
+```
+
+Start a new Copilot CLI session in your project.
+
+If you previously installed Latch from a local archive or npm package,
+remove that plugin in your harness before enabling the marketplace version.
 
 ## Run your first check
 
@@ -49,7 +56,7 @@ Add `latch.json` to a Git project that already has a `typecheck` script:
 }
 ```
 
-Ask Codex to make an edit and leave it in place. If type checking fails,
+Ask your agent to make an edit and leave it in place. If type checking fails,
 Latch puts the diagnostic alongside the edit result. A clean result stays
 quiet. Replace the command with any check you already run, such as
 `["uv", "run", "pytest"]` or `["cargo", "fmt", "--all", "--", "--check"]`.
@@ -97,8 +104,8 @@ commands. See the runnable [TypeScript and Python examples](https://github.com/B
 
 ## Read failures and saved logs
 
-In Codex, edit failures reach the agent during the turn. A turn-end
-failure lets the turn finish and is available on the next prompt in
+Codex, Claude Code, and Copilot CLI deliver edit failures during the turn.
+A turn-end failure lets the turn finish and is available on the next prompt in
 the same session.
 
 Set `failure_output` to `excerpt` for the default preview, `compact` to
@@ -134,8 +141,7 @@ Use `x86_64-apple-darwin` for Intel Macs,
 
 ## Other coding agents
 
-Latch also has integrations for Claude Code, Copilot CLI, OpenCode, Pi,
-OpenHands CLI, Kimi Code, and Grok Build. Cursor, Devin, and Kiro CLI V3
+Latch also has integrations for OpenCode, Pi, OpenHands CLI, Kimi Code, and Grok Build. Cursor, Devin, and Kiro CLI V3
 are in preview. See the [integration guides on GitHub](https://github.com/BarakChamo/latch/tree/main/plugins)
 for those agents.
 

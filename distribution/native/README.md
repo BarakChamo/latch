@@ -11,8 +11,8 @@ export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
 latch --version
 ```
 
-For the Codex marketplace commands and project setup, see the
-[Latch guide on GitHub](https://github.com/BarakChamo/latch#install-the-codex-plugin).
+For the marketplace commands and project setup, see the
+[Latch guide on GitHub](https://github.com/BarakChamo/latch#install-a-plugin).
 
 ## Configuration
 

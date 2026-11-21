@@ -1,4 +1,4 @@
-// Installs a local release archive and checks the edit hook and MCP tool in real harness sessions.
+// Checks bundled install, edit feedback, and MCP through real harness sessions.
 
 import assert from "node:assert/strict";
 import { execFileSync, spawn, execFile } from "node:child_process";
@@ -13,12 +13,16 @@ import { parseArgs, promisify } from "node:util";
 
 const exec = promisify(execFile);
 const harnesses = ["codex", "claude", "copilot"];
-const { positionals, values: { harness, help } } = parseArgs({
+const { positionals, values: { harness, help, marketplace } } = parseArgs({
   allowPositionals: true,
-  options: { harness: { type: "string", multiple: true }, help: { type: "boolean" } },
+  options: {
+    harness: { type: "string", multiple: true },
+    help: { type: "boolean" },
+    marketplace: { type: "boolean" },
+  },
 });
 const selected = harness ?? harnesses;
-const usage = "Usage: npm run test:live -- <local-release.tar.gz> [--harness codex|claude|copilot]";
+const usage = "Usage: npm run test:live -- <local-release.tar.gz> [--harness codex|claude|copilot] [--marketplace]";
 if (help) {
   console.log(usage);
   process.exit(0);
@@ -33,6 +37,7 @@ const toolOutput = "LATCH_LIVE_TOOL_RAN";
 const omittedOutput = "LATCH_LIVE_RETRIEVAL_MARKER";
 const scratch = mkdtempSync(join(tmpdir(), "latch live smoke "));
 const environment = { ...process.env };
+const marketplaceName = marketplace ? "latch-tools" : "latch-local";
 
 try {
   execFileSync("tar", ["-xzf", resolve(archive), "-C", scratch]);
@@ -118,28 +123,49 @@ function prepareFixture(name, bundle) {
 }
 
 async function install(fixture, env) {
-  await exec(join(fixture.bundle, "install"), [fixture.name], {
-    cwd: fixture.project, env, timeout: 30_000,
-  });
+  const options = { cwd: fixture.project, env, timeout: 45_000 };
+  if (!marketplace) {
+    await exec(join(fixture.bundle, "install"), [fixture.name], options);
+    return;
+  }
+
+  const host = fixture.name;
+  const marketplaceSource = {
+    codex: ["BarakChamo/latch", "--ref", "codex/marketplace"],
+    claude: ["BarakChamo/latch#codex/marketplace"],
+    copilot: ["https://github.com/BarakChamo/latch.git#codex/marketplace"],
+  };
+  await exec(host, ["plugin", "marketplace", "add", ...marketplaceSource[host]], options);
+  await exec(host, ["plugin", host === "codex" ? "add" : "install", "latch@latch-tools"], options);
 }
 
 async function runClaude(fixture) {
-  await install(fixture, { ...fixture.env, CLAUDE_CONFIG_DIR: fixture.profile });
-  const cache = join(fixture.profile, "plugins", "cache", "latch-marketplace", "latch");
+  const env = { ...fixture.env, CLAUDE_CONFIG_DIR: fixture.profile };
+  if (marketplace) {
+    const auth = join(environment.CLAUDE_CONFIG_DIR || join(homedir(), ".claude"), ".credentials.json");
+    if (existsSync(auth)) {
+      const destination = join(fixture.profile, ".credentials.json");
+      copyFileSync(auth, destination);
+      chmodSync(destination, 0o600);
+    }
+  }
+  await install(fixture, env);
+  const cache = join(fixture.profile, "plugins", "cache", marketplace ? "latch-tools" : "latch-marketplace", "latch");
   const versions = readdirSync(cache);
-  assert.equal(versions.length, 1, "Expected one Claude plugin version");
-  // Use the caller's Claude authentication, but load only this test's plugin and run without session persistence.
+  assert.equal(versions.length, 1, "Expected one Claude Code plugin version");
+  const activation = marketplace ? [] : ["--plugin-dir", join(cache, versions[0])];
   const { stdout } = await exec("claude", [
     "--print", "--verbose", "--output-format", "stream-json", "--include-hook-events",
-    "--no-session-persistence", "--setting-sources", "project", "--permission-mode", "acceptEdits",
-    "--tools", "Read,Edit,Write", "--allowedTools", "mcp__plugin_latch_latch__run_turn_end",
-    "--plugin-dir", join(cache, versions[0]), prompt,
-  ], { cwd: fixture.project, env: fixture.env, timeout: 90_000, maxBuffer: 8_000_000 });
+    "--no-session-persistence", "--setting-sources", marketplace ? "user,project" : "project",
+    "--permission-mode", "acceptEdits", "--tools", "Read,Edit,Write",
+    "--allowedTools", "mcp__plugin_latch_latch__run_turn_end",
+    ...activation, "--", prompt,
+  ], { cwd: fixture.project, env: marketplace ? env : fixture.env, timeout: 90_000, maxBuffer: 8_000_000 });
   return stdout;
 }
 
 async function runCopilot(fixture) {
-  const env = { ...fixture.env, COPILOT_HOME: fixture.profile };
+  const env = { ...fixture.env, COPILOT_HOME: fixture.profile, COPILOT_CACHE_HOME: join(fixture.profile, "cache") };
   await install(fixture, env);
   const { stdout } = await exec("copilot", [
     "--no-auto-update", "--no-color", "--no-custom-instructions", "--disable-builtin-mcps",
@@ -172,7 +198,7 @@ async function runCodex(fixture) {
     readFileSync(config, "utf8"),
     `[projects.${JSON.stringify(project)}]\ntrust_level = "trusted"`,
     ...trusted,
-    '[plugins."latch@latch-local".mcp_servers.latch]\ndefault_tools_approval_mode = "approve"',
+    `[plugins."latch@${marketplaceName}".mcp_servers.latch]\ndefault_tools_approval_mode = "approve"`,
   ].join("\n\n"));
   return withCodex(fixture, env, async ({ call, receive, send }) => {
     const { thread } = await call("thread/start", {

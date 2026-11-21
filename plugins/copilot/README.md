@@ -1,14 +1,14 @@
 # Latch for GitHub Copilot CLI
 
-Extract the release archive and put its `bin` directory on your `PATH`. Replace `/path/to/extracted-latch` below with the archive directory:
+Install Latch from the GitHub marketplace:
 
 ```sh
-copilot plugin marketplace add "/path/to/extracted-latch"
-copilot plugin install latch@latch-marketplace
+copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+copilot plugin install latch@latch-tools
 ```
 
-Start Copilot CLI in your project from a terminal where `latch --version`
-works. The [harness guide](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/plugins.mdx) also covers the standalone archive.
+Start a new session in your project. The plugin carries the Latch binary
+for macOS and glibc Linux on ARM64 and x64.
 
 Use a Copilot CLI version that supports `userPromptTransformed`. The
 [hook configuration](hooks.json) can also be installed under
@@ -34,5 +34,5 @@ ambiguous.
 The bundled `run_turn_end` tool takes the absolute `project_directory` from
 the agent and runs all configured turn-end checks there. Copilot starts the
 tool in the plugin directory. The
-[configuration reference](../../apps/docs/content/docs/configuration.mdx) covers shared
+[configuration reference](https://github.com/BarakChamo/latch#configure-checks) covers shared
 defaults, per-hook overrides, and output policies.

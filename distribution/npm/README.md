@@ -9,7 +9,7 @@ npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-d
 latch --version
 ```
 
-For the standalone CLI commands and native Codex plugin setup, see the
+For the standalone CLI commands and plugin setup, see the
 [Latch guide on GitHub](https://github.com/BarakChamo/latch#readme).
 
 ## Configuration

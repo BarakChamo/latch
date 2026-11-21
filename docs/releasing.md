@@ -42,19 +42,23 @@ release as a draft until the assets are in place. The quickstart links
 to the latest release. Access to a release follows the repository’s
 visibility.
 
-## Publish the Codex marketplace
+## Publish the plugin marketplace
 
 Build the marketplace from the four tested macOS and Linux release archives.
 The packager verifies the published checksums before it copies the binaries.
 
 ```sh
-node distribution/package-codex-marketplace.mjs dist /tmp/latch-codex-marketplace
+node distribution/package-marketplace.mjs dist /tmp/latch-plugin-marketplace
 ```
 
 Use a new output directory. Commit its generated files on the dedicated
 `codex/marketplace` branch. For updates, preserve that branch’s history
-and use the matching plugin version. Install from GitHub in a clean Codex
-profile and check edit feedback and MCP startup with no Latch on `PATH`.
+and use the matching plugin version. Install from GitHub in clean Codex, Claude Code, and Copilot CLI
+profiles and check edit feedback and MCP startup with no Latch on `PATH`.
+
+```sh
+npm run test:live -- dist/latch-0.1.0-aarch64-apple-darwin.tar.gz --marketplace
+```
 
 ## Verify a real harness session
 
