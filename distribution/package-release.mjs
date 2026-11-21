@@ -21,6 +21,7 @@ const pluginManifests = [
   "plugins/copilot/plugin.json",
   "plugins/opencode/package.json",
   "plugins/pi/package.json",
+  "plugins/kimi/kimi.plugin.json",
 ];
 const sharedFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin", "latch.schema.json"];
 const [target, destination = "dist"] = process.argv.slice(2);
@@ -103,7 +104,7 @@ function copySharedFiles(directory) {
 }
 
 function bundlePluginExecutables(bundle, binary) {
-  for (const harness of ["opencode", "pi"]) {
+  for (const harness of ["opencode", "pi", "kimi"]) {
     const bin = join(bundle, "plugins", harness, "bin");
     mkdirSync(bin);
     cpSync(binary, join(bin, "latch"));

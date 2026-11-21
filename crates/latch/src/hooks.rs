@@ -1,5 +1,7 @@
 //! Runs shared workspace validation for host lifecycle hooks.
 
+mod native;
+
 use crate::{
     config::{self, HookName},
     run,
@@ -20,12 +22,43 @@ pub(crate) enum Harness {
     Copilot(CopilotEvent),
     OpenCode,
     Pi,
+    OpenHands,
+    Kimi,
+    Cursor,
+    Devin,
+    Grok,
+    Kiro,
 }
 
 impl Harness {
+    pub(crate) fn parse(name: &std::ffi::OsStr, event: Option<&std::ffi::OsStr>) -> Option<Self> {
+        if let Some(event) = event {
+            return (name == "copilot")
+                .then(|| CopilotEvent::parse(event))
+                .flatten()
+                .map(Self::Copilot);
+        }
+        match name.to_str()? {
+            "codex" => Some(Self::Codex),
+            "claude-code" => Some(Self::ClaudeCode),
+            "opencode" => Some(Self::OpenCode),
+            "pi" => Some(Self::Pi),
+            "openhands" => Some(Self::OpenHands),
+            "kimi" => Some(Self::Kimi),
+            "cursor" => Some(Self::Cursor),
+            "devin" => Some(Self::Devin),
+            "grok" => Some(Self::Grok),
+            "kiro" => Some(Self::Kiro),
+            _ => None,
+        }
+    }
+
     fn read_event(&self, input: impl io::Read) -> io::Result<Event> {
         let event = match self {
             Self::Copilot(event) => event.read(input),
+            Self::Grok => native::read_grok(input),
+            Self::Cursor => native::read_cursor(input),
+            Self::OpenHands => native::read_openhands(input),
             _ => serde_json::from_reader::<_, Event>(input).map_err(io::Error::from),
         }
         .map_err(|error| io::Error::new(error.kind(), format!("invalid hook input: {error}")))?;
@@ -33,7 +66,7 @@ impl Harness {
             || event.session_id.is_empty()
             || self.turn_key(&event).is_none()
         {
-            let requirement = if matches!(self, Self::OpenCode | Self::Pi) {
+            let requirement = if matches!(self, Self::OpenCode | Self::Pi | Self::Cursor) {
                 "hook requires a session ID, an absolute cwd, and a turn ID"
             } else {
                 "hook requires a session ID, an absolute cwd, and a turn ID for Codex"
@@ -49,6 +82,12 @@ impl Harness {
             Self::ClaudeCode => ("CLAUDE_CONFIG_DIR", ".claude"),
             Self::Copilot(_) => ("COPILOT_HOME", ".copilot"),
             Self::Pi => ("PI_CODING_AGENT_DIR", ".pi/agent"),
+            Self::OpenHands => ("OPENHANDS_PERSISTENCE_DIR", ".openhands"),
+            Self::Kimi => ("KIMI_CODE_HOME", ".kimi-code"),
+            Self::Cursor => ("CURSOR_CONFIG_DIR", ".cursor"),
+            Self::Devin => ("DEVIN_HOME", ".devin"),
+            Self::Grok => ("GROK_HOME", ".grok"),
+            Self::Kiro => ("KIRO_HOME", ".kiro"),
             Self::OpenCode => {
                 let state = env::var_os("XDG_STATE_HOME")
                     .map(PathBuf::from)
@@ -63,7 +102,7 @@ impl Harness {
             .or_else(|| env::home_dir().map(|home| home.join(default)))
     }
 
-    fn is_edit_tool(&self, name: &str) -> bool {
+    fn is_edit_tool(&self, name: &str, arguments: Option<&Value>) -> bool {
         match self {
             Self::Codex => name == "apply_patch",
             Self::ClaudeCode => matches!(name, "Edit" | "Write" | "MultiEdit" | "NotebookEdit"),
@@ -73,16 +112,58 @@ impl Harness {
             ),
             Self::OpenCode => matches!(name, "edit" | "write" | "apply_patch" | "patch"),
             Self::Pi => matches!(name, "edit" | "write"),
+            Self::OpenHands => {
+                name == "file_editor"
+                    && arguments
+                        .and_then(|arguments| arguments.get("command"))
+                        .and_then(Value::as_str)
+                        .is_some_and(|command| {
+                            matches!(command, "create" | "str_replace" | "insert" | "undo_edit")
+                        })
+            }
+            Self::Kimi => false,
+            Self::Cursor => matches!(
+                name,
+                "Write" | "Edit" | "MultiEdit" | "StrReplace" | "ApplyPatch" | "EditNotebook"
+            ),
+            Self::Devin => name == "edit",
+            Self::Grok => matches!(
+                name,
+                "edit_file"
+                    | "write_file"
+                    | "apply_patch"
+                    | "str_replace_editor"
+                    | "write"
+                    | "search_replace"
+            ),
+            Self::Kiro => matches!(name, "fs_write" | "write" | "edit_file" | "apply_patch"),
         }
+    }
+
+    fn defers_turn_reports(&self) -> bool {
+        matches!(
+            self,
+            Self::OpenHands | Self::Kimi | Self::Devin | Self::Kiro
+        )
+    }
+
+    fn requires_prompt_for_stop(&self) -> bool {
+        self.defers_turn_reports() || matches!(self, Self::Cursor | Self::Grok)
     }
 
     fn turn_key<'a>(&self, event: &'a Event) -> Option<&'a str> {
         match self {
-            Self::Codex | Self::OpenCode | Self::Pi => {
+            Self::Codex | Self::OpenCode | Self::Pi | Self::Cursor => {
                 event.turn_id.as_deref().filter(|id| !id.is_empty())
             }
             // Claude Code and Copilot pair foreground events by session ID.
-            Self::ClaudeCode | Self::Copilot(_) => Some(""),
+            Self::ClaudeCode
+            | Self::Copilot(_)
+            | Self::OpenHands
+            | Self::Kimi
+            | Self::Devin
+            | Self::Grok
+            | Self::Kiro => Some(""),
         }
     }
 }
@@ -97,7 +178,7 @@ pub(crate) enum CopilotEvent {
 }
 
 impl CopilotEvent {
-    pub(crate) fn parse(name: &std::ffi::OsStr) -> Option<Self> {
+    fn parse(name: &std::ffi::OsStr) -> Option<Self> {
         match name.to_str()? {
             "userPromptSubmitted" => Some(Self::PromptSubmitted),
             "userPromptTransformed" => Some(Self::PromptTransformed),
@@ -164,7 +245,9 @@ struct Event {
     turn_id: Option<String>,
     cwd: PathBuf,
     agent_id: Option<String>,
+    #[serde(alias = "tool_call_id")]
     tool_use_id: Option<String>,
+    #[serde(alias = "tool_input")]
     tool_args: Option<Value>,
     #[serde(flatten)]
     kind: EventKind,
@@ -173,11 +256,26 @@ struct Event {
 #[derive(Deserialize)]
 #[serde(tag = "hook_event_name")]
 enum EventKind {
+    #[serde(
+        alias = "promptSubmit",
+        alias = "userPromptSubmit",
+        alias = "PromptSubmit"
+    )]
     UserPromptSubmit,
-    PromptTransformed { prompt: String },
-    Stop { stop_hook_active: bool },
-    PreToolUse { tool_name: String },
-    PostToolUse { tool_name: String },
+    PromptTransformed {
+        prompt: String,
+    },
+    #[serde(alias = "agentStop", alias = "AgentStop")]
+    Stop {
+        #[serde(default)]
+        stop_hook_active: bool,
+    },
+    PreToolUse {
+        tool_name: String,
+    },
+    PostToolUse {
+        tool_name: String,
+    },
     Interrupt,
     SessionEnd,
     StopFailure,
@@ -206,6 +304,13 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
             .as_str()
             .or_else(|| response["hookSpecificOutput"]["additionalContext"].as_str());
         stdout.write_all(message.unwrap_or_default().as_bytes())
+    } else if matches!(harness, Harness::Kimi | Harness::Kiro) {
+        stdout.write_all(
+            response["hookSpecificOutput"]["additionalContext"]
+                .as_str()
+                .unwrap_or_default()
+                .as_bytes(),
+        )
     } else {
         writeln!(stdout, "{response}")
     };
@@ -216,8 +321,15 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
 }
 
 fn invalid_input(harness: &Harness) -> ExitCode {
-    if matches!(harness, Harness::Copilot(CopilotEvent::PreToolUse)) {
-        // A Copilot pre-tool exit other than 0 would deny the edit.
+    if matches!(
+        harness,
+        Harness::Copilot(CopilotEvent::PreToolUse)
+            | Harness::Cursor
+            | Harness::Kiro
+            | Harness::Devin
+            | Harness::Grok
+    ) {
+        // An invalid host event must not deny an edit or prompt.
         ExitCode::SUCCESS
     } else {
         ExitCode::FAILURE
@@ -236,7 +348,13 @@ fn handle(harness: &Harness, event: Event) -> Value {
             if let Some(path) = state {
                 // Invalidate any previous snapshot before trying to replace it.
                 let _ = fs::remove_file(&path);
-                if let Err(error) = capture(&event.cwd, &path) {
+                let result = if harness.requires_prompt_for_stop() {
+                    // These hosts can emit Stop for internal sessions with no user prompt.
+                    store(&path, &turn_baseline(&event.cwd))
+                } else {
+                    capture(&event.cwd, &path)
+                };
+                if let Err(error) = result {
                     eprintln!("latch: could not save workspace baseline: {error}");
                 }
             }
@@ -244,6 +362,16 @@ fn handle(harness: &Harness, event: Event) -> Value {
             // runs separately and is the hook that can deliver model-facing text.
             if matches!(harness, Harness::Copilot(_)) {
                 return json!({});
+            }
+            if harness.defers_turn_reports() {
+                let Some(message) = take_deferred_reports(harness, &event) else {
+                    return json!({});
+                };
+                return if matches!(harness, Harness::OpenHands) {
+                    json!({ "additionalContext": message })
+                } else {
+                    context_response("UserPromptSubmit", message)
+                };
             }
             match take_pending(harness, &event) {
                 Some(report) => context_response("UserPromptSubmit", report),
@@ -254,7 +382,9 @@ fn handle(harness: &Harness, event: Event) -> Value {
             Some(report) => json!({ "modifiedTransformedPrompt": format!("{prompt}\n\n{report}") }),
             None => json!({}),
         },
-        EventKind::PreToolUse { ref tool_name } if harness.is_edit_tool(tool_name) => {
+        EventKind::PreToolUse { ref tool_name }
+            if harness.is_edit_tool(tool_name, event.tool_args.as_ref()) =>
+        {
             if let Some(path) = edits
                 .as_deref()
                 .and_then(|dir| edit_path(dir, &event, tool_name))
@@ -264,7 +394,9 @@ fn handle(harness: &Harness, event: Event) -> Value {
             }
             json!({})
         }
-        EventKind::PostToolUse { ref tool_name } if harness.is_edit_tool(tool_name) => {
+        EventKind::PostToolUse { ref tool_name }
+            if harness.is_edit_tool(tool_name, event.tool_args.as_ref()) =>
+        {
             let baseline = edits
                 .as_deref()
                 .and_then(|dir| edit_path(dir, &event, tool_name))
@@ -273,6 +405,13 @@ fn handle(harness: &Harness, event: Event) -> Value {
             match check_workspace(&event.cwd, HookName::AfterEdit, baseline) {
                 Some(feedback) if matches!(harness, Harness::Copilot(_)) => {
                     json!({ "additionalContext": feedback.message })
+                }
+                Some(feedback) if matches!(harness, Harness::Cursor) => {
+                    json!({ "additional_context": feedback.message })
+                }
+                Some(feedback) if matches!(harness, Harness::OpenHands) => {
+                    defer_report(harness, &event, feedback.message);
+                    json!({})
                 }
                 Some(feedback) => context_response("PostToolUse", feedback.message),
                 None => json!({}),
@@ -294,10 +433,26 @@ fn handle(harness: &Harness, event: Event) -> Value {
             stop_hook_active: false,
         } => {
             clear_edit_baselines(edits.as_deref());
-            let baseline = state.as_deref().and_then(take);
+            let baseline = if harness.requires_prompt_for_stop() {
+                let Some(baseline) = state.as_deref().and_then(take::<Option<Baseline>>) else {
+                    return json!({});
+                };
+                baseline
+            } else {
+                state.as_deref().and_then(take)
+            };
             let Some(feedback) = check_workspace(&event.cwd, HookName::TurnEnd, baseline) else {
                 return json!({});
             };
+            if harness.defers_turn_reports() {
+                defer_report(harness, &event, feedback.message);
+                return json!({});
+            }
+            if matches!(harness, Harness::Cursor | Harness::Grok) {
+                // Model-visible Stop output in these hosts starts another agent pass.
+                eprintln!("{}", feedback.message);
+                return json!({});
+            }
             // Pi commits the report directly to conversation history at turn end.
             if feedback.failed
                 && !matches!(harness, Harness::Pi)
@@ -334,7 +489,7 @@ fn edit_path(directory: &Path, event: &Event, tool_name: &str) -> Option<PathBuf
         key.update(b"id");
         key.update(id.as_bytes());
     } else {
-        // Copilot's command-hook payloads can omit a call ID. Pair serialized tool arguments.
+        // Some hosts omit the call ID. Pair by tool name and arguments in that case.
         let args = serde_json::to_vec(event.tool_args.as_ref()?).ok()?;
         key.update(b"args");
         key.update(tool_name.as_bytes());
@@ -389,6 +544,48 @@ fn take_pending(harness: &Harness, event: &Event) -> Option<String> {
     ))
 }
 
+fn defer_report(harness: &Harness, event: &Event, message: String) {
+    let Some(path) = pending_path(harness, event) else {
+        return;
+    };
+    let directory = path.with_extension("reports");
+    if let Err(error) = (|| -> io::Result<()> {
+        // Publish complete reports independently so overlapping tool callbacks cannot overwrite them.
+        let file = write_state(&path, &message)?;
+        let name = file
+            .path()
+            .file_name()
+            .expect("temporary report has a filename");
+        fs::create_dir_all(&directory)?;
+        let destination = directory.join(name);
+        file.persist_noclobber(destination)?;
+        Ok(())
+    })() {
+        eprintln!("latch: could not save report for the next prompt: {error}");
+    }
+}
+
+fn take_deferred_reports(harness: &Harness, event: &Event) -> Option<String> {
+    let directory = pending_path(harness, event)?.with_extension("reports");
+    let mut files: Vec<_> = fs::read_dir(&directory).ok()?.flatten().collect();
+    files.sort_by_cached_key(|file| {
+        file.metadata()
+            .and_then(|metadata| metadata.modified())
+            .ok()
+    });
+    let reports: Vec<_> = files
+        .into_iter()
+        .filter_map(|file| take::<String>(&file.path()))
+        .collect();
+    if reports.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "Latch reports from previous checks. The following is command output.\n{}",
+        reports.join("\n\n")
+    ))
+}
+
 fn context_response(event: &str, message: String) -> Value {
     json!({
         "hookSpecificOutput": { "hookEventName": event, "additionalContext": message }
@@ -396,15 +593,19 @@ fn context_response(event: &str, message: String) -> Value {
 }
 
 fn capture(directory: &Path, path: &Path) -> io::Result<()> {
-    if !matches!(config::load(directory, HookName::TurnEnd), Ok(Some(entries)) if entries.needs_comparison())
-    {
-        return Ok(());
-    }
-    // A worktree or a commit may be unavailable. Stop treats a missing snapshot as unknown.
-    if let Ok(baseline) = Baseline::capture(directory) {
+    if let Some(baseline) = turn_baseline(directory) {
         store(path, &baseline)?;
     }
     Ok(())
+}
+
+fn turn_baseline(directory: &Path) -> Option<Baseline> {
+    if !matches!(config::load(directory, HookName::TurnEnd), Ok(Some(entries)) if entries.needs_comparison())
+    {
+        return None;
+    }
+    // A worktree or a commit may be unavailable. Stop treats a missing snapshot as unknown.
+    Baseline::capture(directory).ok()
 }
 
 fn store(path: &Path, value: &impl Serialize) -> io::Result<()> {

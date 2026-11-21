@@ -46,6 +46,19 @@ case "${1:-}" in
       ln -s -- "$target" "$link"
     fi
     ;;
+  openhands|cursor|devin|grok|kiro)
+    case "$1" in
+      cursor) command -v cursor-agent >/dev/null || command -v agent >/dev/null ;;
+      kiro) command -v kiro-cli >/dev/null ;;
+      *) command -v "$1" >/dev/null ;;
+    esac
+    "$root/bin/latch" install "$@"
+    ;;
+  kimi)
+    command -v kimi >/dev/null
+    printf 'In Kimi Code, run: /plugins install %s\n' "$root/plugins/kimi"
+    exit 0
+    ;;
   pi)
     version=$(pi --version)
     if ! printf '%s\n' "$version" | awk -F '[.+-]' '
@@ -58,7 +71,7 @@ case "${1:-}" in
     pi install "$root/plugins/pi"
     ;;
   *)
-    printf '%s\n' 'Usage: ./install codex|claude|copilot|opencode|pi' >&2
+    printf '%s\n' 'Usage: ./install codex|claude|copilot|opencode|pi|openhands|kimi|cursor|devin|grok|kiro' >&2
     exit 2
     ;;
 esac

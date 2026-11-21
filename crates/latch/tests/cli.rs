@@ -385,3 +385,65 @@ fn invalid_path_filters_are_rejected_before_running_any_commands() {
         assert!(!diagnostic.contains("must-not-run"));
     }
 }
+
+#[cfg(unix)]
+#[test]
+fn openhands_setup_preserves_existing_hooks_and_is_idempotent() {
+    let project = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
+    let hooks = project.path().join(".openhands/hooks.json");
+    fs::create_dir(hooks.parent().unwrap()).unwrap();
+    fs::write(
+        &hooks,
+        r#"{"stop":[{"hooks":[{"command":"existing-check"}]}]}"#,
+    )
+    .unwrap();
+    for _ in 0..2 {
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.path())
+            .env("OPENHANDS_PERSISTENCE_DIR", home.path())
+            .args(["install", "openhands"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+    }
+    let config: serde_json::Value = serde_json::from_slice(&fs::read(hooks).unwrap()).unwrap();
+    assert_eq!(config["stop"][0]["hooks"][0]["command"], "existing-check");
+    assert_eq!(config["stop"].as_array().unwrap().len(), 2);
+    assert_eq!(config["pre_tool_use"][0]["matcher"], "file_editor");
+    let mcp: serde_json::Value =
+        serde_json::from_slice(&fs::read(home.path().join("mcp.json")).unwrap()).unwrap();
+    assert_eq!(
+        mcp["mcpServers"]["latch"]["args"],
+        serde_json::json!(["mcp", "--require-project-directory"])
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn cursor_devin_and_kiro_install_only_when_preview_is_selected() {
+    let project = tempfile::tempdir().unwrap();
+    for (host, path) in [
+        ("cursor", ".cursor/hooks.json"),
+        ("devin", ".devin/hooks.v1.json"),
+        ("kiro", ".kiro/hooks/latch.json"),
+    ] {
+        let run = |options: &[&str]| {
+            Command::new(env!("CARGO_BIN_EXE_latch"))
+                .current_dir(project.path())
+                .args(["install", host])
+                .args(options)
+                .output()
+                .unwrap()
+        };
+        let hooks = project.path().join(path);
+        assert_eq!(run(&[]).status.code(), Some(2));
+        assert!(!hooks.exists());
+        assert!(run(&["--preview"]).status.success());
+        assert!(
+            fs::read_to_string(hooks)
+                .unwrap()
+                .contains(&format!("hook {host}"))
+        );
+    }
+}

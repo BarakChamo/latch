@@ -67,6 +67,7 @@ exposes its Cargo tasks to Turborepo.
 
 - `latch.json` in the command working directory owns explicit command lists, hook defaults, and per-hook path filters. The editor contract is [`latch.schema.json`](../latch.schema.json), which ships in the native archive and npm wrapper. Local `package.json` and `pyproject.toml` own discovered script definitions.
 - Git and per-file SHA-256 fingerprints supply changed paths for harness hooks. Untracked embedded checkouts have their own Git boundary. Baselines are disposable state in `latch/baselines-v1` under each harness's config directory and are scoped by session and canonical working directory. Codex, OpenCode, and Pi also key by turn. Edit baselines use a sibling directory and are consumed after the edit or discarded at a turn boundary. Pending turn-end failure reports are stored in `latch/pending-v1` by session and working directory until the next prompt consumes them.
+- OpenHands and Kimi Code defer reports to the next prompt. Their Stop hooks only run after a foreground prompt registered a baseline. OpenHands keeps independent reports when multiple edits fail in the same turn.
 - Failure previews that omit output keep both original streams in one readable `r-<id>.log` file under `latch/output-v1` in the user state directory. The cache is scoped to the canonical command directory. CLI and MCP lookup accept the saved path, filename, or ID. Reads reject expired entries, saves enforce per-project limits, and CLI and MCP activity periodically sweeps expired files across projects.
 
 ## Change delivery

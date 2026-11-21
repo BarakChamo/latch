@@ -103,6 +103,12 @@ impl Project {
             .env("CLAUDE_CONFIG_DIR", self.harness_home.path())
             .env("COPILOT_HOME", self.harness_home.path())
             .env("PI_CODING_AGENT_DIR", self.harness_home.path())
+            .env("OPENHANDS_PERSISTENCE_DIR", self.harness_home.path())
+            .env("KIMI_CODE_HOME", self.harness_home.path())
+            .env("CURSOR_CONFIG_DIR", self.harness_home.path())
+            .env("DEVIN_HOME", self.harness_home.path())
+            .env("GROK_HOME", self.harness_home.path())
+            .env("KIRO_HOME", self.harness_home.path())
             .env("XDG_STATE_HOME", self.harness_home.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
@@ -1050,4 +1056,211 @@ fn a_rename_out_of_a_filtered_directory_still_triggers_checks() {
     project.git(&["mv", "src/source.ts", "moved.ts"]);
     project.hook("Stop", "1", false);
     assert!(project.checked());
+}
+
+#[test]
+fn openhands_and_kimi_deliver_collected_failures_on_the_next_prompt() {
+    for (host, tool) in [("openhands", "file_editor"), ("kimi", "Edit")] {
+        let has_edit_hook = host == "openhands";
+        let project = Project::new();
+        project.write(
+            "latch.json",
+            r#"{"defaults":{"on_failure":"collect","failure_output":"tail","tail_lines":1},"hooks":{
+                "after_edit":{"commands":[
+                    ["sh","-c","echo edit >> ignored; printf 'full-log-marker\\nedit-first\\n'; exit 3"],
+                    ["sh","-c","echo edit-second; exit 4"]
+                ]},
+                "turn_end":{"commands":[
+                    ["sh","-c","echo stop >> ignored; printf 'full-stop-log\nstop-failed\n'; exit 5"],
+                    ["sh","-c","echo stop-second; exit 6"]
+                ]}
+            }}"#,
+        );
+        project.init();
+        project.write("tracked", "already dirty");
+        let send = |event| {
+            let fields = json!({"session_id":"session","tool_name":tool,
+                "tool_input":{"path":"tracked","command":"str_replace"}});
+            let mut payload = fields;
+            if host == "openhands" {
+                payload["event_type"] = json!(event);
+                payload["working_dir"] = json!(project.root.path());
+            } else {
+                payload["hook_event_name"] = json!(event);
+                payload["cwd"] = json!(project.root.path());
+                payload["stop_hook_active"] = json!(false);
+            }
+            let output = project.invoke_hook(&[host], payload);
+            assert!(output.status.success(), "{host}: {output:?}");
+            String::from_utf8(output.stdout).unwrap()
+        };
+
+        send("Stop"); // An internal session can stop without a foreground prompt.
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        send("PostToolUse");
+        send("Stop");
+        assert!(
+            !project.root.path().join("ignored").exists(),
+            "{host} ran checks for an unchanged turn"
+        );
+
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        project.write("tracked", "new edit to dirty file");
+        send("PostToolUse");
+        let stop = send("Stop");
+        if host == "openhands" {
+            assert_eq!(serde_json::from_str::<Value>(&stop).unwrap(), json!({}));
+        } else {
+            assert!(stop.trim().is_empty());
+        }
+
+        let next_prompt = send("UserPromptSubmit");
+        let markers = if has_edit_hook {
+            &["edit-first", "edit-second", "stop-failed", "stop-second"][..]
+        } else {
+            &["stop-failed", "stop-second"][..]
+        };
+        for &marker in markers {
+            assert!(
+                next_prompt.contains(marker),
+                "{host} lost {marker}: {next_prompt}"
+            );
+        }
+        assert!(!send("UserPromptSubmit").contains("stop-failed"));
+        let preview = next_prompt.replace("\\n", "\n");
+        let log_path = preview
+            .lines()
+            .find_map(|line| line.strip_prefix("Saved log: "))
+            .unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.root.path())
+            .env("XDG_STATE_HOME", project.harness_home.path())
+            .args(["output", log_path, "--grep", "full-"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stdout).contains("full-"));
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+            if has_edit_hook {
+                "edit\nstop\n"
+            } else {
+                "stop\n"
+            }
+        );
+    }
+}
+
+#[test]
+fn cursor_keeps_edit_feedback_in_the_current_turn_and_allows_stop() {
+    let project = Project::new();
+    project.write("latch.json", r#"{"hooks":{
+        "after_edit":{"commands":[["sh","-c","echo edit >> ignored; echo cursor-edit-failure; exit 1"]]},
+        "turn_end":{"commands":[["sh","-c","echo stop >> ignored; echo cursor-stop-failure; exit 2"]]}
+    }}"#);
+    project.init();
+    project.write("tracked", "already dirty");
+    let send = |event, generation| {
+        let output = project.invoke_hook(
+            &["cursor"],
+            json!({
+                "hook_event_name": event,
+                "conversation_id": "cursor-session",
+                "generation_id": generation,
+                "workspace_roots": [project.root.path()],
+                "tool_name": "Write",
+                "tool_use_id": "tool-call",
+                "status": "completed"
+            }),
+        );
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).unwrap();
+        (response, String::from_utf8(output.stderr).unwrap())
+    };
+    send("beforeSubmitPrompt", "noop");
+    send("preToolUse", "noop");
+    assert_eq!(send("postToolUse", "noop").0, json!({}));
+    send("stop", "noop");
+    assert!(!project.root.path().join("ignored").exists());
+
+    send("beforeSubmitPrompt", "edit");
+    send("preToolUse", "edit");
+    project.write("tracked", "new content in dirty file");
+    assert!(
+        send("postToolUse", "edit").0["additional_context"]
+            .as_str()
+            .unwrap()
+            .contains("cursor-edit-failure")
+    );
+    let (stop, diagnostic) = send("stop", "edit");
+    assert_eq!(stop, json!({}), "Stop must not request continuation");
+    assert!(diagnostic.contains("cursor-stop-failure"));
+    send("stop", "edit");
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+        "edit\nstop\n"
+    );
+}
+
+#[test]
+fn devin_grok_and_kiro_render_edit_reports_in_their_native_protocols() {
+    for (host, tool) in [
+        ("devin", "edit"),
+        ("grok", "edit_file"),
+        ("kiro", "fs_write"),
+    ] {
+        let project = Project::new();
+        project.write("latch.json", r#"{"hooks":{
+            "after_edit":{"commands":[["sh","-c","echo edit >> ignored; echo native-edit-failure; exit 1"]]},
+            "turn_end":{"commands":[["sh","-c","echo stop >> ignored; echo native-stop-failure; exit 2"]]}
+        }}"#);
+        project.init();
+        project.write("tracked", "already dirty");
+        let send = |event| {
+            let payload = if host == "grok" {
+                json!({"hook_event_name":event,"sessionId":"session","cwd":project.root.path(),
+                    "toolName":tool, "toolUseId":"tool-call", "toolInput":{"path":"tracked"},
+                    "session_id":"session", "tool_name":tool, "tool_use_id":"tool-call",
+                    "tool_input":{"path":"tracked"}})
+            } else {
+                json!({"hook_event_name":event,"session_id":"session","cwd":project.root.path(),
+                    "tool_name":tool, "tool_use_id":"tool-call", "tool_input":{"path":"tracked"}})
+            };
+            let output = project.invoke_hook(&[host], payload);
+            assert!(output.status.success(), "{host}: {output:?}");
+            (
+                String::from_utf8(output.stdout).unwrap(),
+                String::from_utf8(output.stderr).unwrap(),
+            )
+        };
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        assert!(!send("PostToolUse").0.contains("native-edit-failure"));
+        send("Stop");
+        assert!(!project.root.path().join("ignored").exists());
+
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        project.write("tracked", "new content in dirty file");
+        let (report, _) = send("PostToolUse");
+        match host {
+            "devin" | "grok" => assert!(serde_json::from_str::<Value>(&report).unwrap()["hookSpecificOutput"]["additionalContext"].as_str().unwrap().contains("native-edit-failure")),
+            _ => assert!(report.starts_with("Latch checks failed.") && report.contains("native-edit-failure")),
+        }
+        let (stop, diagnostic) = send("Stop");
+        assert!(!stop.contains("decision"));
+        assert!(!stop.contains("native-stop-failure"));
+        if host == "grok" {
+            assert!(diagnostic.contains("native-stop-failure"));
+        } else {
+            assert!(send("UserPromptSubmit").0.contains("native-stop-failure"));
+        }
+        send("Stop");
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+            "edit\nstop\n"
+        );
+    }
 }

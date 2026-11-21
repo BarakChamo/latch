@@ -87,32 +87,71 @@ function verifySharedFiles(directory) {
   for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
     assert(existsSync(join(directory, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
   }
-  for (const entry of ["extension-hook.mjs", "opencode/index.js", "opencode/v2.js", "pi/index.ts"]) {
+  for (const entry of ["extension-hook.mjs", "opencode/index.js", "opencode/v2.js", "pi/index.ts", "kimi/kimi.plugin.json"]) {
     assert(existsSync(join(directory, "plugins", entry)), `Missing plugin file ${entry}`);
   }
 }
 
 function verifyBundledPlugins(extracted, project) {
-  for (const host of ["opencode", "pi"]) {
+  for (const host of ["opencode", "pi", "kimi"]) {
     assert(existsSync(join(extracted, "plugins", host, "bin", "latch")), `Missing ${host} bundled executable`);
   }
   const fixtureBin = join(scratch, "harness tools");
   mkdirSync(fixtureBin);
   const env = { ...process.env, PATH: fixtureBin };
   // The installer uses system utilities, while the harness entry points need no CLI on PATH.
-  for (const host of ["codex", "copilot"]) {
+  for (const host of ["codex", "copilot", "openhands", "grok"]) {
     writeFileSync(join(fixtureBin, host), "#!/bin/sh\nexit 0\n", { mode: 0o755 });
     execFileSync(join(extracted, "install"), [host], {
       cwd: project,
-      env: { ...env, PATH: `${fixtureBin}:/usr/bin:/bin` },
+      env: { ...env, PATH: `${fixtureBin}:/usr/bin:/bin`, OPENHANDS_PERSISTENCE_DIR: join(scratch, "openhands home") },
     });
   }
+
+  const openhandsHooks = readJson(join(project, ".openhands/hooks.json"));
+  assert.match(openhandsHooks.stop[0].hooks[0].command, /\/bin\/latch' hook openhands/);
+  const kimi = join(extracted, "plugins", "kimi");
+  const kimiManifest = readJson(join(kimi, "kimi.plugin.json"));
+  assert.equal(kimiManifest.hooks.find(({ event }) => event === "Stop").command, "./bin/latch hook kimi");
+  assert.equal(execFileSync(join(kimi, kimiManifest.mcpServers.latch.command), ["--version"], {
+    cwd: kimi, env, encoding: "utf8",
+  }).trim(), `latch ${version}`);
 
   const smokeMarker = "Bundled check ran";
   writeFileSync(join(project, "latch.json"), JSON.stringify({
     defaults: { on_success: "output" },
-    hooks: { after_edit: { commands: [[process.execPath, "-e", `console.log('${smokeMarker}')`]] } },
+    hooks: {
+      after_edit: { commands: [[process.execPath, "-e", `console.log('${smokeMarker}')`]] },
+      turn_end: { when: "always", commands: [[process.execPath, "-e", `console.log('${smokeMarker}')`]] },
+    },
   }));
+  const stateHome = join(scratch, "harness state");
+  const runCommandHook = (command, cwd, input) => execFileSync("/bin/sh", ["-c", command], {
+    cwd, env: { ...env, HOME: stateHome, OPENHANDS_PERSISTENCE_DIR: stateHome, KIMI_CODE_HOME: stateHome },
+    input: JSON.stringify(input), encoding: "utf8",
+  });
+  const openHandsEvent = { session_id: "open-hands-smoke", working_dir: project };
+  runCommandHook(openhandsHooks.post_tool_use[0].hooks[0].command, project, {
+    ...openHandsEvent, event_type: "PostToolUse", tool_name: "file_editor", tool_input: { command: "create" },
+  });
+  const openHandsReport = runCommandHook(openhandsHooks.user_prompt_submit[0].hooks[0].command, project, {
+    ...openHandsEvent, event_type: "UserPromptSubmit",
+  });
+  assert(JSON.parse(openHandsReport).additionalContext.includes(smokeMarker));
+  const kimiEvent = { session_id: "kimi-smoke", cwd: project };
+  const runKimiHook = (event) => runCommandHook(kimiManifest.hooks.find((hook) => hook.event === event).command,
+    kimi, { ...kimiEvent, hook_event_name: event });
+  assert.equal(runKimiHook("UserPromptSubmit"), "");
+  assert.equal(runKimiHook("Stop"), "");
+  assert(runKimiHook("UserPromptSubmit").includes(smokeMarker));
+
+  const grokHooks = readJson(join(project, ".grok/hooks/latch.json")).hooks;
+  const grokReport = runCommandHook(grokHooks.PostToolUse[0].hooks[0].command, project, {
+    hook_event_name: "PostToolUse", sessionId: "grok-smoke", session_id: "grok-smoke",
+    cwd: project, toolName: "write", tool_name: "write",
+  });
+  assert(JSON.parse(grokReport).hookSpecificOutput.additionalContext.includes(smokeMarker));
+
   for (const [harness, tool] of [["codex", "apply_patch"], ["claude-code", "Edit"], ["copilot", "edit"]]) {
     const plugin = join(extracted, "plugins", harness);
     const isCopilot = harness === "copilot";

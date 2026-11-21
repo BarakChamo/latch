@@ -13,3 +13,8 @@ The guides below cover the source plugins and their hook mappings.
 - [GitHub Copilot CLI](copilot/README.md)
 - [OpenCode](opencode/README.md)
 - [Pi](pi/README.md)
+- [OpenHands CLI](openhands/README.md)
+- [Kimi Code CLI](kimi/README.md)
+
+See the [local adapter status and installation guide](../apps/docs/content/docs/plugins.mdx#additional-local-integrations)
+for Cursor, Devin, Grok Build, and Kiro CLI V3.

@@ -12,6 +12,14 @@ your coding agent.
 | GitHub Copilot CLI | `./install copilot` |
 | OpenCode | `./install opencode` |
 | Pi | `./install pi` |
+| OpenHands CLI | From your project, run `/path/to/bundle/install openhands`. |
+| Kimi Code CLI | Run `./install kimi`, then paste the printed command into Kimi Code. |
+
+From a Grok Build project, run `/path/to/bundle/install grok` and trust
+the folder in Grok with `/hooks-trust`. The bundle also includes preview
+adapters for Cursor, Devin, and Kiro CLI V3. From the project, run
+`/path/to/bundle/install <cursor|devin|kiro> --preview`.
+These adapters have protocol tests and are still undergoing real-session validation.
 
 Start a new session in your project. In Codex, review and trust the Latch
 hooks using `/hooks`. Keep this folder so the harness can find the local

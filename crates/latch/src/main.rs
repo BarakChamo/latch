@@ -3,6 +3,7 @@
 mod config;
 mod discovery;
 mod hooks;
+mod install;
 mod mcp;
 mod output;
 mod rtk;
@@ -78,30 +79,40 @@ fn main() -> ExitCode {
             }
             _ => return usage(),
         },
+        Some(arg) if arg == "install" => {
+            let Some(target) = args
+                .next()
+                .as_deref()
+                .and_then(|name| name.to_str())
+                .and_then(install::Target::parse)
+            else {
+                return usage();
+            };
+            let option = args.next();
+            if args.next().is_some() || option.as_deref().is_some_and(|arg| arg != "--preview") {
+                return usage();
+            }
+            if target.is_preview() && option.is_none() {
+                eprintln!("latch: this harness is in preview. Pass --preview to install it.");
+                return ExitCode::from(2);
+            }
+            return match install::install(target) {
+                Ok(()) => ExitCode::SUCCESS,
+                Err(error) => {
+                    eprintln!("latch: could not install integration: {error}");
+                    ExitCode::FAILURE
+                }
+            };
+        }
         Some(arg) if arg == "hook" => {
             let harness = args.next();
             let event = args.next();
-            if args.next().is_none() {
-                match (harness.as_deref(), event.as_deref()) {
-                    (Some(name), None) if name == "codex" => {
-                        return hooks::dispatch(hooks::Harness::Codex);
-                    }
-                    (Some(name), None) if name == "claude-code" => {
-                        return hooks::dispatch(hooks::Harness::ClaudeCode);
-                    }
-                    (Some(name), None) if name == "opencode" => {
-                        return hooks::dispatch(hooks::Harness::OpenCode);
-                    }
-                    (Some(name), None) if name == "pi" => {
-                        return hooks::dispatch(hooks::Harness::Pi);
-                    }
-                    (Some(name), Some(event)) if name == "copilot" => {
-                        if let Some(event) = hooks::CopilotEvent::parse(event) {
-                            return hooks::dispatch(hooks::Harness::Copilot(event));
-                        }
-                    }
-                    _ => {}
-                }
+            if args.next().is_none()
+                && let Some(host) = harness
+                    .as_deref()
+                    .and_then(|name| hooks::Harness::parse(name, event.as_deref()))
+            {
+                return hooks::dispatch(host);
             }
             return usage();
         }
@@ -219,7 +230,7 @@ fn explain_entry(selected: HookName, entry: HookEntry) -> Map<String, Value> {
 
 fn usage() -> ExitCode {
     eprintln!(
-        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch hook <codex|claude-code|opencode|pi> | latch hook copilot <event> | latch mcp [--require-project-directory]"
+        "Usage: latch [--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]"
     );
     ExitCode::from(2)
 }
