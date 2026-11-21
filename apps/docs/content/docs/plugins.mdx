@@ -3,58 +3,80 @@ title: Harness plugins
 description: Install and manage Latch in your harness, and run checks from chat.
 ---
 
-The bundled Latch plugin includes the executable. It registers [automatic hooks](/docs/hooks) and exposes `run_turn_end` and `search_output`.
-Start the harness from the directory containing your
-`latch.json` or [package scripts](/docs/project-scripts).
+Install Latch using the [released npm packages or standalone archive](/docs/cli#install-the-cli)
+before enabling a plugin. Start your agent from a terminal where
+`latch --version` works. For agent sessions hosted elsewhere, see
+[cloud setup](/docs/cloud).
 
-If your coding agent runs in a hosted environment, use the
-[cloud setup guide](/docs/cloud).
+## Enable your plugin
 
-## Install and manage the plugin
+Point your agent to the directory containing the released plugin files.
+For a global npm install:
 
-Follow the [quickstart](/docs/quickstart) to get the bundle for macOS or
-Linux. Run the command for your agent from the extracted folder.
+```sh
+export LATCH_PLUGIN_DIR="$(npm root -g)/@barakchamo/latch"
+```
 
-| Harness | Install from the bundle |
-| --- | --- |
-| Codex | `./install codex` |
-| Claude Code | `./install claude` |
-| GitHub Copilot CLI | `./install copilot` |
-| OpenCode | `./install opencode` |
-| Pi | `./install pi` |
+For the standalone archive, set `LATCH_PLUGIN_DIR` to the extracted
+directory (the `LATCH_HOME` from the [standalone instructions](/docs/cli#install-the-cli)).
+For a Cargo install, use the Latch checkout as `LATCH_PLUGIN_DIR`.
 
-The installer registers Latch with your harness. OpenCode uses a local
-plugin from its config directory and Pi uses its extension manager.
-Keep the extracted folder so your harness can find the bundled executable.
-Your project’s tools, such as npm or uv, still need to be available to the
-harness.
+### Codex, Claude Code, and Copilot CLI
 
-Start a new session after installation. In Codex, open `/hooks` and review
-and trust the Latch hooks. The OpenCode plugin was verified with 1.18.31,
-1.19.6, and 2.3.2. Pi requires 1.5.2 or later with built-in MCP enabled.
+Run both commands for your agent.
+
+| Harness | Add the local marketplace | Enable Latch |
+| --- | --- | --- |
+| Codex | `codex plugin marketplace add "$LATCH_PLUGIN_DIR"` | `codex plugin add latch@latch-local` |
+| Claude Code | `claude plugin marketplace add "$LATCH_PLUGIN_DIR"` | `claude plugin install latch@latch-marketplace` |
+| GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_PLUGIN_DIR"` | `copilot plugin install latch@latch-marketplace` |
+
+Start a new session in the project containing your
+[`latch.json`](/docs/configuration) or [package scripts](/docs/project-scripts).
+In Codex, review and trust the Latch hooks in `/hooks`.
+
+### OpenCode and Pi
+
+For OpenCode v1, add the absolute path to
+`plugins/opencode/index.js` inside `LATCH_PLUGIN_DIR` to the `plugin`
+array in `opencode.json`. For OpenCode v2, add the absolute
+path to the `plugins/opencode` directory to the `plugins` array instead.
+Run the following to get the path to paste:
+
+```sh
+printf '%s\n' "$LATCH_PLUGIN_DIR/plugins/opencode"
+```
+
+For Pi 1.5.2 or later with MCP enabled:
+
+```sh
+pi install "$LATCH_PLUGIN_DIR/plugins/pi"
+```
+
+### Find or remove a plugin
 
 | Harness | Find the plugin | Uninstall Latch |
 | --- | --- | --- |
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-local` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-marketplace` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-marketplace` |
-| OpenCode | Look for `latch.js` in `${XDG_CONFIG_HOME:-$HOME/.config}/opencode/plugins`. | Remove that link. |
-| Pi | `pi list` | `pi remove <absolute bundle path>/plugins/pi` |
+| OpenCode | See the project's or user's OpenCode configuration. | Remove the Latch entry. |
+| Pi | `pi list` | `pi remove "$LATCH_PLUGIN_DIR/plugins/pi"` |
 
 Use one installation method per project to avoid duplicate hooks.
 
 ## Additional local integrations
 
-Use the same release bundle for the integrations below. The preview installers require the `--preview` flag.
+From your project, use the installed `latch` command to register workspace hooks. Kimi Code uses the plugin directory from the standalone archive.
 
 | Harness | Setup | Feedback |
 | --- | --- | --- |
-| OpenHands CLI | From your project, run `/path/to/bundle/install openhands`. | Native file edits and changed turns run checks. The next prompt receives reports. |
-| Kimi Code CLI | Run `./install kimi` in the bundle, paste the printed command into Kimi Code, and approve installation. | Changed turns run checks. The next prompt receives reports. |
-| Cursor CLI (preview) | From your project, run `/path/to/bundle/install cursor --preview`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
-| Devin CLI (preview) | From your project, run `/path/to/bundle/install devin --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
-| Grok Build | From your project, run `/path/to/bundle/install grok`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
-| Kiro CLI V3 (preview) | From your project, run `/path/to/bundle/install kiro --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
+| OpenHands CLI | Run `latch install openhands`. | Native file edits and changed turns run checks. The next prompt receives reports. |
+| Kimi Code CLI | In Kimi Code, run `/plugins install /absolute/path/to/extracted-latch/plugins/kimi` and approve installation. | Changed turns run checks. The next prompt receives reports. |
+| Cursor CLI (preview) | Run `latch install cursor --preview`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
+| Devin CLI (preview) | Run `latch install devin --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
+| Grok Build | Run `latch install grok`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
+| Kiro CLI V3 (preview) | Run `latch install kiro --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
 
 The preview adapters have automated hook protocol tests. Treat their
 feedback as provisional until verified in a session. For Grok Build, review

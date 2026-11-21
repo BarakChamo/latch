@@ -11,18 +11,28 @@ full log.
 
 ## Get started
 
-Download the bundle for your machine and extract it. The bundle includes
-the CLI and harness integrations. For example, to set up Codex:
+Download the npm wrapper and your platform’s binary package from
+[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
+Install both tarballs together with Node.js 18 or newer. For Apple Silicon:
 
 ```sh
-./install codex
+npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-darwin-arm64-0.1.0.tgz
+latch --version
 ```
 
-Start a new session in your project and approve the hooks when prompted.
-Choose your setup in the [harness guide](apps/docs/content/docs/plugins.mdx)
-for Claude Code, Copilot CLI, OpenCode, Pi, OpenHands, Kimi Code, or Grok Build.
-The [compatibility guide](apps/docs/content/docs/hooks.mdx) shows when
-each harness delivers feedback.
+Run the command from the directory containing both files. For Linux or
+an Intel Mac, use the [matching platform package](apps/docs/content/docs/cli.mdx#install-the-cli).
+
+If you use Codex, register the installed npm package as a local plugin source:
+
+```sh
+codex plugin marketplace add "$(npm root -g)/@barakchamo/latch"
+codex plugin add latch@latch-local
+```
+
+Start Codex in your project and review the hooks in `/hooks`. For another
+agent, see the [harness guide](apps/docs/content/docs/plugins.mdx).
+The release also provides a [standalone CLI](apps/docs/content/docs/cli.mdx#install-the-cli).
 
 ## Run the checks your project already has
 

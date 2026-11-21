@@ -1,20 +1,23 @@
 # Latch for Codex
 
-Install the CLI and make sure `latch` and `git` are on the Codex process's
-`PATH`. From the Latch checkout, run:
+Install Latch from the [released npm tarballs](../../apps/docs/content/docs/cli.mdx#install-the-cli)
+and make sure `latch --version` works in your terminal. Then run:
 
 ```sh
-cargo install --locked --path crates/latch
-codex plugin marketplace add "$(pwd)"
+codex plugin marketplace add "$(npm root -g)/@barakchamo/latch"
 codex plugin add latch@latch-local
 ```
+
+For the standalone archive, pass the extracted directory to
+`codex plugin marketplace add`. Start Codex from a terminal with
+`latch` and `git` on its executable path.
 
 The package uses `.codex-plugin/plugin.json` so Codex CLI 0.154.0 discovers
 its bundled hooks. If you installed an earlier copy with the root
 `plugin.json` manifest, remove and reinstall `latch@latch-local`.
 
 Start Codex from the directory containing your project's
-[Latch configuration or package scripts](../../README.md#configuration).
+[Latch configuration or package scripts](../../apps/docs/content/docs/configuration.mdx).
 Review and trust the plugin hooks in Codex using `/hooks`. The
 [hook configuration](hooks/hooks.json) can also be installed directly as a
 project's `.codex/hooks.json`. Merge the event entries if that file already
@@ -51,5 +54,5 @@ allow up to 120 seconds for validation.
 The bundled `run_turn_end` tool runs the same checks on demand. It takes no
 arguments and returns failure diagnostics as a tool result visible to the agent.
 Codex may ask for approval because the configured commands can modify files.
-See the [configuration reference](../../README.md#configuration) for defaults,
+See the [configuration reference](../../apps/docs/content/docs/configuration.mdx) for defaults,
 per-hook overrides, and output policies.

@@ -1,9 +1,10 @@
 # Kimi Code CLI
 
-Run `/path/to/bundle/install kimi` to get the plugin path. Paste the printed
-`/plugins install` command into Kimi Code, approve the installation, and
-start a new session. Kimi copies the bundled Latch executable into its
-managed plugin directory.
+Download and extract the standalone archive from
+[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
+In Kimi Code, enter `/plugins install /absolute/path/to/extracted-latch/plugins/kimi`.
+Approve the installation and start a new session. Kimi copies the
+bundled Latch executable to its managed plugin directory.
 
 The plugin runs `turn_end` on changed turns and sends output to the next
 user prompt in the same conversation. Its MCP tools take an absolute

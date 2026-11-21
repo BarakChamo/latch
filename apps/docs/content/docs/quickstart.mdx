@@ -7,54 +7,39 @@ Run one automatic check in a disposable Git project. You’ll see what
 Latch reports when an edit fails, then you can reuse the same setup
 with your own formatter, linter, or test suite.
 
-## 1. Get the bundle
+## 1. Install Latch from the release
 
-Download the archive for your machine from the
-[latest release](https://github.com/BarakChamo/latch/releases/latest).
-The archive includes Latch and its harness integrations. GitHub requires
-access to the Latch repository to download the assets.
+With Node.js 18 or later, download these two files from
+[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest):
 
-| Platform | Archive suffix |
-| --- | --- |
-| Mac with Apple Silicon | `aarch64-apple-darwin.tar.gz` |
-| Mac with Intel | `x86_64-apple-darwin.tar.gz` |
-| Linux on Intel or AMD | `x86_64-unknown-linux-gnu.tar.gz` |
-| Linux on ARM64 | `aarch64-unknown-linux-gnu.tar.gz` |
+- `barakchamo-latch-0.1.0.tgz`
+- The [platform tarball](/docs/cli#install-the-cli) for your machine
 
-Run `uname -m` if you are unsure. `arm64` and `aarch64` mean ARM64.
-Use [CLI installation](/docs/cli#install-the-cli) for the standalone binary,
-npm tarballs, or a source build.
-
-## 2. Install the plugin
-
-Extract the bundle and open a terminal in its folder. On an Apple Silicon
-Mac, for example:
+Open a terminal in the directory containing both files. This command
+uses the Apple Silicon tarball. Substitute the second filename for your platform.
 
 ```sh
-cd ~/Downloads
-tar -xzf latch-0.1.0-aarch64-apple-darwin.tar.gz
-cd latch-0.1.0-aarch64-apple-darwin
-./bin/latch --version
+npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-darwin-arm64-0.1.0.tgz
+latch --version
 ```
 
-Run the install command for your agent. Keep the extracted folder in place.
+GitHub requires access to the Latch repository to download the files.
+For a standalone executable or a Cargo build, use the
+[CLI install guide](/docs/cli#install-the-cli).
 
-| Agent | Install | Sign in or choose a model if needed |
-| --- | --- | --- |
-| Codex | `./install codex` | `codex login` |
-| Claude Code | `./install claude` | `claude auth login` or `/login` in Claude Code |
-| GitHub Copilot CLI | `./install copilot` | `copilot login` |
-| OpenCode | `./install opencode` | Run `/connect` in OpenCode, then choose a model with `/models`. |
-| Pi | `./install pi` | Run `/login` in Pi, then choose a model with `/model`. |
+## 2. Enable Latch in your agent
 
-OpenHands CLI, Kimi Code CLI, and Grok Build have their own
-[setup instructions](/docs/plugins#additional-local-integrations).
-For OpenHands and Grok Build, run the installer from the Git project you
-create in step 3. For Kimi Code, change the demo event to `turn_end`.
+For Codex, use the CLI to add the installed package as a local plugin source:
 
-Use an interactive terminal for sign-in and approval prompts. If the
-terminal reports `TERM=dumb`, open a terminal app that supports interactive
-sessions before continuing.
+```sh
+codex plugin marketplace add "$(npm root -g)/@barakchamo/latch"
+codex plugin add latch@latch-local
+```
+
+For Claude Code, Copilot CLI, OpenCode, Pi, or another supported agent,
+follow its [setup instructions](/docs/plugins). OpenHands and Grok Build
+register hooks from the Git project you create in the next step. For
+Kimi Code, change the example event to `turn_end`.
 
 ## 3. Run your first check
 
@@ -78,8 +63,9 @@ git -c user.name="Latch Demo" -c user.email="latch@example.test" \
   -c commit.gpgsign=false commit -qm "Add Latch demo"
 ```
 
-Start a new session from the demo directory. If prompted, review and
-approve trust for the project first. In Codex, then review and approve the
+Start your agent from the demo directory. For Codex, run `codex` there.
+If prompted, review and
+approve trust for the project first. In Codex, review and approve the
 Latch hooks at the startup prompt. If the hook prompt doesn’t appear, open
 `/hooks` to review and approve them. Send the agent this prompt.
 
@@ -88,8 +74,8 @@ Latch hooks at the startup prompt. If the hook prompt doesn’t appear, open
 
 The report says **Latch checks failed** and shows a diff from `ready`
 to `changed`. In OpenHands or Kimi Code, send another prompt to see the
-report. [Feedback timing by harness](/docs/hooks#where-reports-appear) This is the expected result. If the report includes a
-`Saved log` path, open that file to see the full output. Restore the demo
+report. If the report includes a `Saved log` path, open that file to see
+the full output. [Feedback timing by harness](/docs/hooks#where-reports-appear) Restore the demo
 with `git restore -- demo.txt`.
 
 In your own project, add a [package script](/docs/project-scripts) or

@@ -1,17 +1,14 @@
 # Latch for Claude Code
 
-Install the CLI from the Latch checkout and make sure `latch` and `git` are
-on Claude Code's `PATH`.
+After installing the released npm tarballs, register the plugin:
 
 ```sh
-cargo install --locked --path crates/latch
+claude plugin marketplace add "$(npm root -g)/@barakchamo/latch"
+claude plugin install latch@latch-marketplace
 ```
 
-From the project directory, load the plugin for the session:
-
-```sh
-claude --plugin-dir /absolute/path/to/latch/plugins/claude-code
-```
+Start Claude Code in your project from a terminal where `latch --version`
+works. The [harness guide](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/plugins.mdx) also covers the standalone archive.
 
 The [hook configuration](hooks/hooks.json) can also be merged into the
 project's `.claude/settings.json`. Use one installation method per project.
@@ -25,7 +22,7 @@ project's `.claude/settings.json`. Use one installation method per project.
 | `StopFailure` / `SessionEnd` | Discard any pending baseline. |
 
 Latch compares Git-visible files across the worktree, including untracked,
-nonignored files. It resolves [checks](../../README.md#configuration) from the
+nonignored files. It resolves [checks](../../apps/docs/content/docs/configuration.mdx) from the
 hook event's working directory. Baselines live in
 `$CLAUDE_CONFIG_DIR/latch/baselines-v1`, with `~/.claude` as the default
 config directory.
@@ -40,5 +37,5 @@ allow up to 120 seconds for validation.
 
 The bundled `run_turn_end` tool runs the same checks on demand. It takes no
 arguments and returns failure diagnostics as a tool result visible to the agent.
-See the [configuration reference](../../README.md#configuration) for defaults,
+See the [configuration reference](../../apps/docs/content/docs/configuration.mdx) for defaults,
 per-hook overrides, and output policies.

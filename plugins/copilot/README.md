@@ -1,17 +1,14 @@
 # Latch for GitHub Copilot CLI
 
-Install the CLI from the Latch checkout and make sure `latch` and `git` are
-on Copilot's `PATH`.
+After installing the released npm tarballs, register the plugin:
 
 ```sh
-cargo install --locked --path crates/latch
+copilot plugin marketplace add "$(npm root -g)/@barakchamo/latch"
+copilot plugin install latch@latch-marketplace
 ```
 
-From the project directory, load the local plugin:
-
-```sh
-copilot --plugin-dir /absolute/path/to/latch/plugins/copilot
-```
+Start Copilot CLI in your project from a terminal where `latch --version`
+works. The [harness guide](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/plugins.mdx) also covers the standalone archive.
 
 Use a Copilot CLI version that supports `userPromptTransformed`. The
 [hook configuration](hooks.json) can also be installed under
@@ -37,5 +34,5 @@ ambiguous.
 The bundled `run_turn_end` tool takes the absolute `project_directory` from
 the agent and runs all configured turn-end checks there. Copilot starts the
 tool in the plugin directory. The
-[configuration reference](../../README.md#configuration) covers shared
+[configuration reference](../../apps/docs/content/docs/configuration.mdx) covers shared
 defaults, per-hook overrides, and output policies.

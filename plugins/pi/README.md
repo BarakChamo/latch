@@ -2,13 +2,15 @@
 
 Use Pi 1.5.2 or later with its built-in MCP support enabled.
 
-Run `./install pi` from the macOS or Linux Latch bundle. It registers the
-extension with `pi install`. Keep the extracted bundle and restart Pi.
-To uninstall, run `pi remove /absolute/path/to/bundle/plugins/pi` with
-the same path you installed.
+After installing the released npm tarballs, register the extension:
 
-For a source or npm install, put `latch` on Pi's `PATH` and run
-`pi install /absolute/path/to/plugins/pi`.
+```sh
+pi install "$(npm root -g)/@barakchamo/latch/plugins/pi"
+```
+
+If you use the standalone archive, pass the absolute path to its
+`plugins/pi` directory. Use the same path with `pi remove` to uninstall.
+Restart Pi from a terminal where `latch --version` works.
 
 Latch adds diagnostics to results from Pi's `edit` and `write` tools.
 After the agent settles, Latch adds the turn-end report to session

@@ -1,7 +1,6 @@
 # OpenHands CLI
 
-From the Git project you want to validate, run `/path/to/bundle/install openhands`.
-If you installed Latch separately, use `latch install openhands` from that project.
+After [installing Latch](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/plugins.mdx), run `latch install openhands` from the Git project you want to validate.
 
 This adds workspace hooks to `.openhands/hooks.json` and registers Latch in
 the OpenHands user MCP configuration. It preserves other hook and server

@@ -7,31 +7,50 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 ## Install the CLI
 
-<Tabs items={['Standalone', 'npm tarballs', 'Cargo']}>
-
-<Tab value="Standalone">
-
-The [plugin bundle](/docs/quickstart) includes Latch. To use the CLI from
-any directory in your current terminal, run this from the extracted folder.
-
-```sh
-export PATH="$PWD/bin:$PATH"
-latch --version
-```
-
-</Tab>
+<Tabs items={['npm tarballs', 'Standalone', 'Cargo']}>
 
 <Tab value="npm tarballs">
 
-With Node.js 18 or newer, you can install the release’s npm tarballs. Use the
-wrapper and the binary for your platform from the
-[latest release](https://github.com/BarakChamo/latch/releases/latest).
-This example uses Linux x64.
+Install with Node.js 18 or later. Download `barakchamo-latch-0.1.0.tgz`
+and the matching binary tarball from the
+[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.0).
+
+| Platform | Binary tarball |
+| --- | --- |
+| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.0.tgz` |
+| Intel Mac | `barakchamo-latch-darwin-x64-0.1.0.tgz` |
+| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.0.tgz` |
+| Linux x64 | `barakchamo-latch-linux-x64-0.1.0.tgz` |
+
+In the directory containing the downloads, install both files together.
+For example, on Linux x64:
 
 ```sh
-npm install -g ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-linux-x64-0.1.0.tgz
+npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-linux-x64-0.1.0.tgz
 latch --version
 ```
+
+If your shell can’t find `latch`, add `$(npm prefix -g)/bin` to your
+`PATH`. Start your harness from a terminal that can run `latch --version`.
+
+</Tab>
+
+<Tab value="Standalone">
+
+Download the `latch-0.1.0-*.tar.gz` archive for your platform from the
+[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.0).
+Extract it to a directory you can keep. Add its `bin` directory to your
+shell’s `PATH`. For example, on Apple Silicon:
+
+```sh
+mkdir -p "$HOME/.local/share/latch"
+tar -xzf latch-0.1.0-aarch64-apple-darwin.tar.gz -C "$HOME/.local/share/latch"
+export LATCH_HOME="$HOME/.local/share/latch/latch-0.1.0-aarch64-apple-darwin"
+export PATH="$LATCH_HOME/bin:$PATH"
+latch --version
+```
+
+Add those exports to your shell’s startup file for future sessions.
 
 </Tab>
 
@@ -60,21 +79,8 @@ to build a bundled plugin and CLI together.
 
 </Tabs>
 
-The GitHub release distributes the npm tarballs. To use the plugins from a source
-checkout or npm installation, use that checkout or installed npm package
-as the marketplace directory (`LATCH_DIR`) and keep the CLI on your `PATH`.
-
-| Harness | Register the marketplace | Install the plugin |
-| --- | --- | --- |
-| Codex | `codex plugin marketplace add "$LATCH_DIR"` | `codex plugin add latch@latch-local` |
-| Claude Code | `claude plugin marketplace add "$LATCH_DIR"` | `claude plugin install latch@latch-marketplace` |
-| GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_DIR"` | `copilot plugin install latch@latch-marketplace` |
-
-With the CLI on your `PATH`, add the absolute path to
-`plugins/opencode/index.js` to the `plugin` list in your OpenCode v1 config.
-In v2, add the absolute path to the `plugins/opencode` directory to the
-`plugins` list. For Pi, run `pi install /absolute/path/to/plugins/pi`.
-Find these files in the source checkout or the installed npm package.
+Once `latch --version` works, follow the [harness setup guide](/docs/plugins)
+to enable automatic checks in your agent.
 
 ## Commands
 
