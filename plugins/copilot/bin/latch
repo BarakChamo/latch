@@ -2,7 +2,7 @@
 # Installs the release binary for this platform and launches it for plugin hooks and tools.
 set -eu
 
-version='0.1.2'
+version='0.1.3'
 release="https://github.com/BarakChamo/latch/releases/download/v$version"
 
 fail() {
