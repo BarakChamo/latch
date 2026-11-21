@@ -16,5 +16,15 @@ The guides below cover the source plugins and their hook mappings.
 - [OpenHands CLI](openhands/README.md)
 - [Kimi Code CLI](kimi/README.md)
 
-See the [local adapter status and installation guide](../apps/docs/content/docs/plugins.mdx#additional-local-integrations)
-for Cursor, Devin, Grok Build, and Kiro CLI V3.
+## Local hook adapters
+
+Run the command from the project with [the CLI installed](../docs/usage.md#install-the-cli).
+
+| Agent | Setup |
+| --- | --- |
+| Grok Build | `latch install grok`, then review and trust the hooks with `/hooks-trust`. |
+| Cursor CLI (preview) | `latch install cursor --preview` |
+| Devin CLI (preview) | `latch install devin --preview` |
+| Kiro CLI V3 (preview) | `latch install kiro --preview` |
+
+The preview adapters have automated protocol tests. See [hooks and feedback](../docs/usage.md#hooks-and-feedback) for the common lifecycle and where reports appear.
