@@ -9,17 +9,8 @@ npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-d
 latch --version
 ```
 
-Register the installed package as a local plugin source for Codex:
-
-```sh
-codex plugin marketplace add "$(npm root -g)/@barakchamo/latch"
-codex plugin add latch@latch-local
-```
-
-Start Codex from a shell that can run `latch --version` and approve
-the hooks in `/hooks`. See [CLI installation](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/cli.mdx#install-the-cli)
-for the platform tarball names and the [harness guide](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/plugins.mdx)
-for other agents.
+For the standalone CLI commands and native Codex plugin setup, see the
+[Latch guide on GitHub](https://github.com/BarakChamo/latch#readme).
 
 ## Configuration
 

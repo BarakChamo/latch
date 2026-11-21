@@ -3,37 +3,32 @@ title: Harness plugins
 description: Install and manage Latch in your harness, and run checks from chat.
 ---
 
-Install Latch using the [released npm packages or standalone archive](/docs/cli#install-the-cli)
-before enabling a plugin. Start your agent from a terminal where
-`latch --version` works. For agent sessions hosted elsewhere, see
-[cloud setup](/docs/cloud).
-
-## Enable your plugin
-
-Point your agent to the directory containing the released plugin files.
-For a global npm install:
+## Codex
 
 ```sh
-export LATCH_PLUGIN_DIR="$(npm root -g)/@barakchamo/latch"
+codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin add latch@latch-tools
 ```
 
-For the standalone archive, set `LATCH_PLUGIN_DIR` to the extracted
-directory (the `LATCH_HOME` from the [standalone instructions](/docs/cli#install-the-cli)).
-For a Cargo install, use the Latch checkout as `LATCH_PLUGIN_DIR`.
+The marketplace includes Latch. Start a new local session in your project
+and review the hooks in `/hooks`.
 
-### Codex, Claude Code, and Copilot CLI
+## Claude Code, Copilot CLI, OpenCode, and Pi
 
-Run both commands for your agent.
+Download and extract the [standalone archive](/docs/cli#install-the-cli).
+Set `LATCH_PLUGIN_DIR` to the extracted folder and add its `bin` directory
+to your shell’s `PATH`. Keep the archive folder in place. On Apple Silicon,
+if you extracted it under `~/.local/share/latch`:
+
+```sh
+export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.0-aarch64-apple-darwin"
+export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
+```
 
 | Harness | Add the local marketplace | Enable Latch |
 | --- | --- | --- |
-| Codex | `codex plugin marketplace add "$LATCH_PLUGIN_DIR"` | `codex plugin add latch@latch-local` |
 | Claude Code | `claude plugin marketplace add "$LATCH_PLUGIN_DIR"` | `claude plugin install latch@latch-marketplace` |
 | GitHub Copilot CLI | `copilot plugin marketplace add "$LATCH_PLUGIN_DIR"` | `copilot plugin install latch@latch-marketplace` |
-
-Start a new session in the project containing your
-[`latch.json`](/docs/configuration) or [package scripts](/docs/project-scripts).
-In Codex, review and trust the Latch hooks in `/hooks`.
 
 ### OpenCode and Pi
 
@@ -57,7 +52,7 @@ pi install "$LATCH_PLUGIN_DIR/plugins/pi"
 
 | Harness | Find the plugin | Uninstall Latch |
 | --- | --- | --- |
-| Codex | `codex plugin list` | `codex plugin remove latch@latch-local` |
+| Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-marketplace` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-marketplace` |
 | OpenCode | See the project's or user's OpenCode configuration. | Remove the Latch entry. |
@@ -99,7 +94,7 @@ as `latch run turn_end`. Failed checks return a tool error with diagnostics.
 A successful call is quiet unless `on_success` is set to `"output"`. Your
 harness may ask for approval because configured commands can modify files.
 
-In Copilot and the additional integrations above, the agent passes the absolute
+In Codex, Copilot and the additional integrations above, the agent passes the absolute
 project directory to the tool. Other harnesses use the session working directory. Pi exposes
 it as `mcp__latch__run_turn_end`.
 
@@ -128,10 +123,10 @@ output.
 | `latch hook copilot <event>` | Copilot CLI lifecycle hooks, such as `postToolUse` and `agentStop` |
 | `latch hook opencode` | The OpenCode plugin forwards prompt, edit, and idle events |
 | `latch hook pi` | The Pi extension forwards prompt, edit, and settlement events |
-| `latch mcp` | Codex, Claude Code, OpenCode, and Pi expose both Latch tools |
+| `latch mcp` | Claude Code, OpenCode, and Pi expose both Latch tools |
 | `latch install <openhands\|cursor\|devin\|grok\|kiro> [--preview]` | Writes local hook and MCP configuration for the selected harness |
 | `latch hook <openhands\|kimi\|cursor\|devin\|grok\|kiro>` | Receives native lifecycle events for the selected harness |
-| `latch mcp --require-project-directory` | Copilot and the additional integrations expose both tools with an explicit project directory |
+| `latch mcp --require-project-directory` | Codex, Copilot, and the additional integrations expose both tools with an explicit project directory |
 
 See [Hooks and feedback](/docs/hooks) for what triggers automatically and where
 results appear.

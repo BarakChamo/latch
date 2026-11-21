@@ -1,77 +1,156 @@
 # Latch
 
-**Give your coding agent feedback from the checks you already trust.**
+Run your project’s checks automatically when a coding agent edits files or
+finishes a turn. Passing checks stay quiet. Failures come back with the
+diagnostic and, when the output is shortened, a link to the saved log
+when available.
 
-An agent edits a file. Your type checker catches a regression. Latch gets
-that error back into the agent’s workflow while the change is still fresh.
-Passing checks stay quiet. If the output is long, the report points to the
-full log.
+- [Install the Codex plugin](#install-the-codex-plugin)
+- [Run your first check](#run-your-first-check)
+- [Configure checks](#configure-checks)
+- [Read failures and saved logs](#read-failures-and-saved-logs)
+- [Install the standalone CLI](#install-the-standalone-cli)
+- [Other coding agents](#other-coding-agents)
+- [Troubleshoot](#troubleshoot)
+- [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest)
 
-[Run your first check](apps/docs/content/docs/quickstart.mdx) · [Download Latch](https://github.com/BarakChamo/latch/releases/latest) · [Read the docs](apps/docs/content/docs/index.mdx)
+## Install the Codex plugin
 
-## Get started
-
-Download the npm wrapper and your platform’s binary package from
-[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
-Install both tarballs together with Node.js 18 or newer. For Apple Silicon:
-
-```sh
-npm install --global --offline ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-darwin-arm64-0.1.0.tgz
-latch --version
-```
-
-Run the command from the directory containing both files. For Linux or
-an Intel Mac, use the [matching platform package](apps/docs/content/docs/cli.mdx#install-the-cli).
-
-If you use Codex, register the installed npm package as a local plugin source:
+In a terminal with Codex installed, run:
 
 ```sh
-codex plugin marketplace add "$(npm root -g)/@barakchamo/latch"
-codex plugin add latch@latch-local
+codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin add latch@latch-tools
 ```
 
-Start Codex in your project and review the hooks in `/hooks`. For another
-agent, see the [harness guide](apps/docs/content/docs/plugins.mdx).
-The release also provides a [standalone CLI](apps/docs/content/docs/cli.mdx#install-the-cli).
+The plugin includes Latch for macOS and glibc Linux on ARM64 and x64.
+You’ll need GitHub access to this repository. In the Codex desktop app,
+you can also add the marketplace with source `BarakChamo/latch` and Git
+ref `codex/marketplace`, then install **Latch** from that marketplace.
 
-## Run the checks your project already has
+Open a new Codex session in your project. Run `/hooks` and approve the
+Latch hooks after reviewing them. If you installed the older
+`latch@latch-local` plugin, remove it with `codex plugin remove latch@latch-local`
+to avoid running both copies.
 
-If your project defines a `typecheck` script, add this `latch.json` in the
-directory where you normally run it:
+## Run your first check
+
+Add `latch.json` to a Git project that already has a `typecheck` script:
 
 ```json
 {
   "hooks": {
-    "turn_end": {
+    "after_edit": {
       "commands": [["npm", "run", "typecheck"]]
     }
   }
 }
 ```
 
-Latch takes a Git snapshot at the start of a turn. It skips unchanged
-work and picks up fresh edits to files that were already dirty. Use
-`after_edit` for fast checks and `turn_end` for a longer test suite. Keep
-both in one file when teammates use different agents.
+Ask Codex to make an edit and leave it in place. If type checking fails,
+Latch puts the diagnostic alongside the edit result. A clean result stays
+quiet. Replace the command with any check you already run, such as
+`["uv", "run", "pytest"]` or `["cargo", "fmt", "--all", "--", "--check"]`.
 
-For JavaScript, TypeScript, and packaged Python projects, [package
-scripts](apps/docs/content/docs/project-scripts.mdx) can configure checks
-without a `latch.json`. See the [TypeScript and Python examples](examples/).
+## Configure checks
 
-## Find your next step
+- Use `after_edit` for quick checks that should run after a native file edit.
+  Use `turn_end` for slower checks or to catch changes made through shell commands.
+- Each event accepts one object or an array of objects. Matching objects
+  run in order. `paths` filters by Git-worktree-relative globs and
+  `extensions` filters by filename suffix. When both are present, the
+  same changed file must match both.
+- By default, Latch skips unchanged work, including no-op edits to dirty
+  files. Set `when` to `"always"` to run on every matching event.
+- By default, Latch runs the full command list and reports every failure.
+  Use `"on_failure": "stop"` to stop a list at its first failure, or
+  `"on_success": "output"` to show passing output.
+- Put shared settings in `defaults` and override them inside any hook object.
+  Copy [the JSON schema](latch.schema.json) next to `latch.json` and add
+  `"$schema": "./latch.schema.json"` for editor completion.
 
-| I want to… | Go to |
-| --- | --- |
-| See one automatic failure end to end | [Quickstart](apps/docs/content/docs/quickstart.mdx) |
-| Install the CLI for a terminal or CI | [Standalone, npm tarballs, and Cargo](apps/docs/content/docs/cli.mdx#install-the-cli) |
-| Control which files trigger checks or shorten failure output | [Configuration](apps/docs/content/docs/configuration.mdx) |
-| Run a check from chat or recover a saved log | [Harness tools](apps/docs/content/docs/plugins.mdx#run-checks-from-chat) |
-| Set up a hosted session | [Cloud guide](apps/docs/content/docs/cloud.mdx) |
+For example, run Markdown lint only when a Markdown file changes and run
+the full test suite after a changed turn:
+
+```json
+{
+  "defaults": { "failure_output": "tail", "tail_lines": 12 },
+  "hooks": {
+    "after_edit": {
+      "extensions": ["md", "mdx"],
+      "commands": [["npm", "run", "lint:md"]]
+    },
+    "turn_end": {
+      "commands": [["npm", "test"]]
+    }
+  }
+}
+```
+
+You can also use scripts named `hook:afteredit` or `hook:turnend` in
+`package.json`, or `hook-afteredit` and `hook-turnend` under
+`[project.scripts]` in `pyproject.toml`. Latch uses the configured
+JavaScript package manager or uv and runs discovered scripts after explicit
+commands. See the runnable [TypeScript and Python examples](examples/).
+
+## Read failures and saved logs
+
+In Codex, edit failures reach the agent during the turn. A turn-end
+failure lets the turn finish and is available on the next prompt in
+the same session.
+
+Set `failure_output` to `excerpt` for the default preview, `compact` to
+keep diagnostic lines, `tail` for the last lines of each stream, or
+`rtk` to use a separately installed RTK filter. When the report includes
+a `Saved log` path, ask your agent to open it or call Latch’s
+`search_output` tool. You can also ask it to call `run_turn_end`
+to run the current project’s turn-end checks on demand.
+
+## Install the standalone CLI
+
+Install the CLI when you want to run checks from your terminal or CI.
+Download your platform’s `latch-0.1.0-*.tar.gz` from
+[GitHub Releases](https://github.com/BarakChamo/latch/releases/tag/v0.1.0).
+From your downloads directory, extract it and install the binary. For
+Apple Silicon:
+
+```sh
+tar -xzf latch-0.1.0-aarch64-apple-darwin.tar.gz
+mkdir -p "$HOME/.local/bin"
+install -m 755 latch-0.1.0-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
+"$HOME/.local/bin/latch" --version
+```
+
+Use `x86_64-apple-darwin` for Intel Macs,
+`x86_64-unknown-linux-gnu` for Linux x64, or
+`aarch64-unknown-linux-gnu` for Linux ARM64. Add `$HOME/.local/bin` to your
+`PATH` to run `latch` by name.
+
+- `latch run turn_end` runs checks immediately, even with no Git changes.
+- `latch explain after_edit` shows the commands and filters for that event.
+- `latch output <id> --grep <text>` searches a saved failure without rerunning the check.
+
+## Other coding agents
+
+Latch also has integrations for Claude Code, Copilot CLI, OpenCode, Pi,
+OpenHands CLI, Kimi Code, and Grok Build. Cursor, Devin, and Kiro CLI V3
+are in preview. See the [integration guides on GitHub](https://github.com/BarakChamo/latch/tree/main/plugins)
+for those agents.
+
+## Troubleshoot
+
+- **GitHub can’t clone the marketplace.** Sign in with an account that
+  has repository access. If you use GitHub CLI for Git credentials,
+  run `gh auth login` followed by `gh auth setup-git`, then retry.
+- **No checks run in Codex.** Start a new local session in the project,
+  review `/hooks`, and confirm `latch.json` is in the directory where
+  the agent works. Read-only turns and no-op edits are skipped by default.
+- **Using managed Codex Cloud?** The plugin runs local command hooks.
+  In a hosted checkout you can install the standalone CLI and run
+  `latch run turn_end` from its terminal or CI.
 
 ## Develop Latch
 
-With Rust installed through rustup and Node.js with npm 11, run `npm ci`
-and `npm run check`. Use `npm run dev --prefix apps/docs` after installing
-the docs dependencies with `npm ci --prefix apps/docs`.
-
-[Project guide](docs/project-guide.md) · [Release guide](docs/releasing.md)
+Install Rust and Node.js, run `npm ci`, then run `npm run check`.
+See the [release guide](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md)
+for packaging and verification.

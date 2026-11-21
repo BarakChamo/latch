@@ -1,9 +1,9 @@
 # Latch for Claude Code
 
-After installing the released npm tarballs, register the plugin:
+Extract the release archive and put its `bin` directory on your `PATH`. Replace `/path/to/extracted-latch` below with the archive directory:
 
 ```sh
-claude plugin marketplace add "$(npm root -g)/@barakchamo/latch"
+claude plugin marketplace add "/path/to/extracted-latch"
 claude plugin install latch@latch-marketplace
 ```
 

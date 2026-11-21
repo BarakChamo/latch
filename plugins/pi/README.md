@@ -2,10 +2,10 @@
 
 Use Pi 1.5.2 or later with its built-in MCP support enabled.
 
-After installing the released npm tarballs, register the extension:
+Extract the release archive and pass its plugin directory to Pi:
 
 ```sh
-pi install "$(npm root -g)/@barakchamo/latch/plugins/pi"
+pi install "/path/to/extracted-latch/plugins/pi"
 ```
 
 If you use the standalone archive, pass the absolute path to its

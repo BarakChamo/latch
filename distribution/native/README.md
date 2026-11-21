@@ -11,16 +11,8 @@ export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
 latch --version
 ```
 
-For Codex, register this directory as the local marketplace:
-
-```sh
-codex plugin marketplace add "$LATCH_PLUGIN_DIR"
-codex plugin add latch@latch-local
-```
-
-Start Codex in your project and review the Latch hooks in `/hooks`.
-See the [harness guide](https://github.com/BarakChamo/latch/blob/main/apps/docs/content/docs/plugins.mdx)
-for the commands for other agents.
+For the Codex marketplace commands and project setup, see the
+[Latch guide on GitHub](https://github.com/BarakChamo/latch#install-the-codex-plugin).
 
 ## Configuration
 

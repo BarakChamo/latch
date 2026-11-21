@@ -1,23 +1,16 @@
 # Latch for Codex
 
-Install Latch from the [released npm tarballs](../../apps/docs/content/docs/cli.mdx#install-the-cli)
-and make sure `latch --version` works in your terminal. Then run:
+Install from the project’s GitHub marketplace:
 
 ```sh
-codex plugin marketplace add "$(npm root -g)/@barakchamo/latch"
-codex plugin add latch@latch-local
+codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin add latch@latch-tools
 ```
 
-For the standalone archive, pass the extracted directory to
-`codex plugin marketplace add`. Start Codex from a terminal with
-`latch` and `git` on its executable path.
-
-The package uses `.codex-plugin/plugin.json` so Codex CLI 0.154.0 discovers
-its bundled hooks. If you installed an earlier copy with the root
-`plugin.json` manifest, remove and reinstall `latch@latch-local`.
+The plugin includes Latch for macOS and glibc Linux on ARM64 and x64.
 
 Start Codex from the directory containing your project's
-[Latch configuration or package scripts](../../apps/docs/content/docs/configuration.mdx).
+[Latch configuration or package scripts](https://github.com/BarakChamo/latch#configure-checks).
 Review and trust the plugin hooks in Codex using `/hooks`. The
 [hook configuration](hooks/hooks.json) can also be installed directly as a
 project's `.codex/hooks.json`. Merge the event entries if that file already
@@ -51,8 +44,8 @@ and lets the turn finish. The next prompt in the same session and working
 directory receives the saved failure once. The stop and post-tool hooks
 allow up to 120 seconds for validation.
 
-The bundled `run_turn_end` tool runs the same checks on demand. It takes no
-arguments and returns failure diagnostics as a tool result visible to the agent.
+The bundled `run_turn_end` tool runs the same checks on demand. It takes the project’s absolute
+path and returns failure diagnostics as a tool result visible to the agent.
 Codex may ask for approval because the configured commands can modify files.
-See the [configuration reference](../../apps/docs/content/docs/configuration.mdx) for defaults,
+See the [configuration reference](https://github.com/BarakChamo/latch#configure-checks) for defaults,
 per-hook overrides, and output policies.
