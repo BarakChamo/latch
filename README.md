@@ -47,7 +47,12 @@ copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/ma
 copilot plugin install latch@latch-tools
 ```
 
-Start a new session in your project after installing. The [terminal installer](docs/usage.md#install-the-plugin-from-a-terminal) installs the plugin and downloads the binary in one step. For OpenCode, Pi, and other agents, see the [integration guides](plugins/).
+Start a new session in your project. On first use, the plugin downloads the
+matching Latch binary from GitHub and caches it for future sessions. To
+download it before opening the agent, use the [terminal installer](docs/usage.md#install-the-plugin-from-a-terminal)
+as the same user on that machine.
+
+For OpenCode, Pi, and other agents, see the [integration guides](plugins/).
 
 ## Run your first check
 
@@ -74,7 +79,7 @@ To start with a `latch.json`, install the [standalone CLI](#install-the-standalo
 latch config init
 ```
 
-This creates a starter config and keeps package script discovery enabled.
+This optional command creates a starter config and keeps package script discovery enabled.
 You can then add your own checks. Here’s an example for Ruff in a uv project.
 
 ```json

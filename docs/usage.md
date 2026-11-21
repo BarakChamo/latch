@@ -13,8 +13,10 @@ sh install-latch-plugin.sh --install-plugin codex
 Use `claude` or `copilot` for the corresponding CLI. The installer registers
 Latch through the harness’s marketplace commands. It downloads the matching
 release binary, checks its SHA-256, and keeps it in your user cache. The
-marketplace plugin uses the same cache. Once the binary is cached, its hooks
-and tools can run offline. In Codex, open `/hooks` and approve the hooks
+marketplace plugin downloads the binary on first use if the cache is empty.
+Run the terminal installer as the same user on the machine where the agent
+runs to fill that cache in advance. Once the binary is cached, its hooks and
+tools can run offline. In Codex, open `/hooks` and approve the hooks
 after installation.
 
 ## Hooks and feedback

@@ -7,6 +7,8 @@ description: Install and manage Latch in your harness, and run checks from chat.
 
 The [installation section of the Latch guide](/docs#install-a-plugin) has
 the marketplace commands for Codex, Claude Code, and GitHub Copilot CLI.
+Start a new agent session after installing. On first use, the plugin
+downloads the binary from GitHub if its cache is empty.
 
 ### Install from a terminal
 
@@ -18,8 +20,8 @@ sh install-latch-plugin.sh --install-plugin codex
 
 Use `claude` or `copilot` for the corresponding CLI. The script installs the
 plugin, downloads the binary for your system, and verifies its SHA-256 before
-caching it. The marketplace plugin fetches the binary on first use if the
-cache is empty.
+caching it. Run the installer as the same user on the machine where the
+agent runs to make the binary available before opening a session.
 
 ### OpenCode and Pi
 
