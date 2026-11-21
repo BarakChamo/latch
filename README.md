@@ -1,13 +1,13 @@
 # Latch
 
-Latch runs your project’s checks automatically after coding-agent edits and at the end of a turn.
+Latch automatically runs lint, tests, and other project checks and sends failures back to your coding agent.
 
 [Install a plugin](#install-a-plugin) · [First check](#run-your-first-check) · [Configuration](#configure-checks) · [Standalone CLI](#install-the-standalone-cli) · [Troubleshooting](#troubleshoot) · [Releases](https://github.com/BarakChamo/latch/releases/latest)
 
 ## Install a plugin
 
 The plugins bundle Latch for macOS and glibc Linux on ARM64 and x64.
-Install your agent’s CLI and sign in to the agent before starting the demo.
+Install your agent’s CLI and sign in if prompted.
 
 ### Codex
 
@@ -43,46 +43,23 @@ remove that plugin in your harness before enabling the marketplace version.
 
 ## Run your first check
 
-Create a disposable Git project. The check fails whenever `demo.txt`
-differs from the committed version. Git is the only tool it needs.
+Add `latch.json` to your project root. This example runs your existing
+`npm run lint` script after each source edit. Use whatever check you already
+run locally, such as `uv run pytest`.
 
-```sh
-cd "$(mktemp -d)"
-git init -q
-printf 'ready\n' > demo.txt
-cat > latch.json <<'JSON'
+```json
 {
-  "defaults": { "on_success": "output" },
   "hooks": {
     "after_edit": {
-      "commands": [["git", "diff", "--exit-code", "HEAD", "--", "demo.txt"]]
+      "commands": [["npm", "run", "lint"]]
     }
   }
 }
-JSON
-git add demo.txt latch.json
-git -c user.name="Latch Demo" -c user.email="latch@example.test" \
-  -c commit.gpgsign=false commit -qm "Add Latch demo"
 ```
 
-Start a new agent session in that directory. If your agent asks whether
-to trust the project or run the hooks, review and approve the demo hooks.
-Send this prompt:
-
-> Use your native file editing tool to replace `ready` with `changed` in
-> `demo.txt`. Leave the change in place and tell me what Latch reported.
-
-The edit should succeed and Latch should report a failed check with a Git
-diff. Now ask the agent to restore `ready` with its native edit tool. The
-demo’s `on_success` setting makes Latch report that the check succeeded.
-In plain `codex exec` output, the report reaches the model as tool context.
-Ask the agent to relay it or use the interactive session.
-
-For a standalone run in the same project, use
-[`latch run after_edit`](#install-the-standalone-cli). For your own
-project, replace the Git command with a check such as
-`["npm", "run", "typecheck"]` or `["uv", "run", "pytest"]`
-and omit `on_success` for quiet passing checks.
+Start your agent in the project and ask it to change a file with its edit
+tool. Latch sends any lint errors back to the agent. Passing checks are
+quiet by default.
 
 ## Configure checks
 
@@ -150,25 +127,25 @@ Apple Silicon:
 tar -xzf latch-0.1.1-aarch64-apple-darwin.tar.gz
 mkdir -p "$HOME/.local/bin"
 install -m 755 latch-0.1.1-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
-"$HOME/.local/bin/latch" --version
+export PATH="$HOME/.local/bin:$PATH"
+latch --version
 ```
 
 Use `x86_64-apple-darwin` for Intel Macs,
 `x86_64-unknown-linux-gnu` for Linux x64, or
-`aarch64-unknown-linux-gnu` for Linux ARM64. Add `$HOME/.local/bin` to your
-`PATH` to run `latch` by name.
+`aarch64-unknown-linux-gnu` for Linux ARM64. Add the `export PATH` line to
+your shell startup file to keep `latch` available in new terminals.
 
-From the [demo project](#run-your-first-check), run the event you configured:
+From your project root, run the event you configured in `latch.json`.
+For the [example above](#run-your-first-check):
 
 ```sh
-latch explain after_edit
 latch run after_edit
 ```
 
-With `demo.txt` set to `ready`, the run exits `0`. With it set to
-`changed`, the run prints the diff and exits `1`. Manual runs execute
-immediately, even with no Git changes. Use `latch run turn_end` for a
-project that configures `turn_end`.
+This runs the check immediately. It exits `0` on success or prints the
+failure and exits `1`. Run `latch explain after_edit` to see which commands
+and settings Latch found.
 
 To search a saved failure, copy the full path after `Saved log:` into
 `latch output "/path/from-the-report.log" --grep "text to find"`.
@@ -210,8 +187,8 @@ for those agents.
   [your agent’s setup](#install-a-plugin), then restart the session.
 - **The hook is quiet.** Start a new session from the directory containing
   `latch.json`. Review `/hooks` in Codex, or run `claude plugin list`
-  or `copilot plugin list` to check that Latch is enabled. Run the
-  [two-edit demo](#run-your-first-check) to check for failure and success.
+  or `copilot plugin list` to check that Latch is enabled. By default,
+  unchanged files and passing checks are quiet.
 - **Copilot can’t find the Latch tools.** Run `copilot mcp list` and look
   for `latch`. Update Copilot if the commands in this guide are unavailable.
 - **Using managed Codex Cloud?** The plugin runs local command hooks.

@@ -13,7 +13,7 @@ Extract it and open a terminal in the extracted directory. Run:
 
 Keep the extracted folder in place. Restart OpenCode from your project.
 Connect a provider and pick a model if needed, then use the
-[GitHub first-check demo](https://github.com/BarakChamo/latch#run-your-first-check).
+[first-check instructions](https://github.com/BarakChamo/latch#run-your-first-check).
 
 For a project-specific install, set the absolute path in `opencode.json`:
 

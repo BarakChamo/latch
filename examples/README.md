@@ -1,8 +1,8 @@
 # Try Latch in a project
 
-For a first test with no project dependencies, start with the
-[Git-only demo](https://github.com/BarakChamo/latch#run-your-first-check).
 The projects below demonstrate package script discovery and language-specific checks.
+To add a check to your own project, follow the
+[quickstart](https://github.com/BarakChamo/latch#run-your-first-check).
 
 Install Latch using the [GitHub setup guide](https://github.com/BarakChamo/latch#install-the-standalone-cli).
 Run the commands in the example's own directory with `latch` on your
