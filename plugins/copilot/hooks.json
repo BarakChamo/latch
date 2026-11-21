@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "hooks": {
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot userPromptSubmitted"
+      }
+    ],
+    "userPromptTransformed": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot userPromptTransformed"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit|str_replace_editor|apply_patch",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot postToolUse",
+        "timeoutSec": 120
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot agentStop",
+        "timeoutSec": 120
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot sessionEnd"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit|str_replace_editor|apply_patch",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot preToolUse || true",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
