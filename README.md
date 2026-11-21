@@ -1,83 +1,67 @@
 # Latch
 
-Give your coding agent feedback from the checks you already use. Latch runs
-lint, formatting, and tests after edits or at the end of a turn. Passing
-checks stay quiet by default. When a check fails, Latch sends the diagnostics
-to the agent so you spend less time rerunning commands and pasting errors.
+**Give your coding agent feedback from the checks you already trust.**
+
+An agent edits a file. Your type checker catches a regression. Latch gets
+that error back into the agent’s workflow while the change is still fresh.
+Passing checks stay quiet. If the output is long, the report points to the
+full log.
+
+[Run your first check](apps/docs/content/docs/quickstart.mdx) · [Download Latch](https://github.com/BarakChamo/latch/releases/latest) · [Read the docs](apps/docs/content/docs/index.mdx)
 
 ## Get started
 
-For the **private preview**, get the macOS or Linux bundle from the
-[private preview release](https://github.com/BarakChamo/latch/releases/tag/preview-0.1.0)
-with your invited GitHub account, or [build it locally](docs/releasing.md#build-the-artifacts).
-Extract it and run the command for your agent.
+Download the bundle for your machine and extract it. The bundle includes
+the CLI and harness integrations. For example, to set up Codex:
 
-| Agent | Install from the extracted folder |
-| --- | --- |
-| Codex | `./install codex` |
-| Claude Code | `./install claude` |
-| GitHub Copilot CLI | `./install copilot` |
-| OpenCode | `./install opencode` |
-| Pi | `./install pi` |
+```sh
+./install codex
+```
 
-The plugin includes Latch. Keep the extracted folder and start a new
-session in your project. In Codex, review project trust first, then approve
-the hooks at startup or in `/hooks`.
-The [quickstart](apps/docs/content/docs/quickstart.mdx) walks through a
-first automatic check.
+Start a new session in your project and approve the hooks when prompted.
+Choose your setup in the [harness guide](apps/docs/content/docs/plugins.mdx)
+for Claude Code, Copilot CLI, OpenCode, Pi, OpenHands, Kimi Code, or Grok Build.
+The [compatibility guide](apps/docs/content/docs/hooks.mdx) shows when
+each harness delivers feedback.
 
-For terminal use, the archive has a standalone binary at `bin/latch`.
-You can also install from this checkout with
-`cargo install --locked --path crates/latch` or
-[install the preview npm tarballs](apps/docs/content/docs/cli.mdx#install-the-cli).
-The npm registry package is pending publication.
+## Run the checks your project already has
 
-## Choose when to run checks
-
-In JavaScript and TypeScript projects, define `hook:afteredit` or
-`hook:turnend` in `package.json` to use your project's package manager.
-For packaged Python projects, define `hook-afteredit` or `hook-turnend`
-under `[project.scripts]` in `pyproject.toml` to use uv. Both approaches
-are shown in the [runnable examples](examples/).
-
-For any project, put a `latch.json` file where the checks should run.
-For example, a Rust project can check formatting and run tests at turn end.
+If your project defines a `typecheck` script, add this `latch.json` in the
+directory where you normally run it:
 
 ```json
 {
   "hooks": {
     "turn_end": {
-      "commands": [
-        ["cargo", "fmt", "--all", "--", "--check"],
-        ["cargo", "test", "--workspace"]
-      ]
+      "commands": [["npm", "run", "typecheck"]]
     }
   }
 }
 ```
 
-Automatic checks use Git to skip unchanged work by default. Each hook
-can also filter by path or extension. Latch runs commands in order and
-reports all failures by default. Set `on_failure` to `stop` to stop the
-current command list at its first failure. Run `latch explain turn_end`
-to see what will run or `latch run turn_end` to run it immediately.
+Latch takes a Git snapshot at the start of a turn. It skips unchanged
+work and picks up fresh edits to files that were already dirty. Use
+`after_edit` for fast checks and `turn_end` for a longer test suite. Keep
+both in one file when teammates use different agents.
 
-Copy [`latch.schema.json`](latch.schema.json) from this repo or either
-distribution next to your config and add
-`"$schema": "./latch.schema.json"` for editor completion and validation.
+For JavaScript, TypeScript, and packaged Python projects, [package
+scripts](apps/docs/content/docs/project-scripts.mdx) can configure checks
+without a `latch.json`. See the [TypeScript and Python examples](examples/).
 
-## Learn more
+## Find your next step
 
-- [Configuration and output modes](apps/docs/content/docs/configuration.mdx)
-- [Hooks, commands, and tools in your agent](apps/docs/content/docs/plugins.mdx)
-- [Hosted session compatibility](apps/docs/content/docs/cloud.mdx)
-
-Run `npm ci --prefix apps/docs` and `npm run dev --prefix apps/docs` to
-browse the docs locally.
+| I want to… | Go to |
+| --- | --- |
+| See one automatic failure end to end | [Quickstart](apps/docs/content/docs/quickstart.mdx) |
+| Install the CLI for a terminal or CI | [Standalone, npm tarballs, and Cargo](apps/docs/content/docs/cli.mdx#install-the-cli) |
+| Control which files trigger checks or shorten failure output | [Configuration](apps/docs/content/docs/configuration.mdx) |
+| Run a check from chat or recover a saved log | [Harness tools](apps/docs/content/docs/plugins.mdx#run-checks-from-chat) |
+| Set up a hosted session | [Cloud guide](apps/docs/content/docs/cloud.mdx) |
 
 ## Develop Latch
 
-Use Rust via rustup and Node.js with npm 11. Run `npm ci`, then
-`npm run check` for formatting, lint, Rust tests, and schema validation.
-`npm run build` builds the CLI at `target/debug/latch`. See the
-[project guide](docs/project-guide.md) and the [release guide](docs/releasing.md).
+With Rust installed through rustup and Node.js with npm 11, run `npm ci`
+and `npm run check`. Use `npm run dev --prefix apps/docs` after installing
+the docs dependencies with `npm ci --prefix apps/docs`.
+
+[Project guide](docs/project-guide.md) · [Release guide](docs/releasing.md)

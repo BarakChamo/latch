@@ -3,7 +3,13 @@ title: CLI reference
 description: Run project checks from a terminal and inspect their resolved configuration.
 ---
 
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
 ## Install the CLI
+
+<Tabs items={['Standalone', 'npm tarballs', 'Cargo']}>
+
+<Tab value="Standalone">
 
 The [plugin bundle](/docs/quickstart) includes Latch. To use the CLI from
 any directory in your current terminal, run this from the extracted folder.
@@ -13,28 +19,13 @@ export PATH="$PWD/bin:$PATH"
 latch --version
 ```
 
-To install from source, sign in to GitHub with access to the private Latch
-repository. With Rust 1.88 or later, clone the preview tag and install from
-the checkout.
+</Tab>
 
-Run `cargo --version` first. If you installed Rust with rustup and the
-shell cannot find Cargo, open a new terminal or run `. "$HOME/.cargo/env"`.
+<Tab value="npm tarballs">
 
-```sh
-git clone --branch preview-0.1.0 https://github.com/BarakChamo/latch.git
-cd latch
-cargo install --locked --path crates/latch
-latch --version
-```
-
-If Git needs credentials over HTTPS, run `gh auth login` and
-`gh auth setup-git` with the invited account, or use your configured SSH clone
-URL. See the [preview build guide](https://github.com/BarakChamo/latch/blob/preview-0.1.0/docs/releasing.md#build-the-artifacts)
-to build a bundled plugin and CLI together.
-
-With Node.js 18 or newer, you can install the preview npm tarballs. Use the
+With Node.js 18 or newer, you can install the release’s npm tarballs. Use the
 wrapper and the binary for your platform from the
-[preview release](https://github.com/BarakChamo/latch/releases/tag/preview-0.1.0).
+[latest release](https://github.com/BarakChamo/latch/releases/latest).
 This example uses Linux x64.
 
 ```sh
@@ -42,7 +33,34 @@ npm install -g ./barakchamo-latch-0.1.0.tgz ./barakchamo-latch-linux-x64-0.1.0.t
 latch --version
 ```
 
-The registry package is pending publication. To use the plugins from a source
+</Tab>
+
+<Tab value="Cargo">
+
+To install from source, sign in to GitHub with access to the private Latch
+repository. With Rust 1.88 or later, clone the release tag and install from
+the checkout.
+
+Run `cargo --version` first. If you installed Rust with rustup and the
+shell cannot find Cargo, open a new terminal or run `. "$HOME/.cargo/env"`.
+
+```sh
+git clone --branch v0.1.0 https://github.com/BarakChamo/latch.git
+cd latch
+cargo install --locked --path crates/latch
+latch --version
+```
+
+If Git needs credentials over HTTPS, run `gh auth login` and
+`gh auth setup-git` with the invited account, or use your configured SSH clone
+URL. See the [build guide](https://github.com/BarakChamo/latch/blob/v0.1.0/docs/releasing.md#build-the-artifacts)
+to build a bundled plugin and CLI together.
+
+</Tab>
+
+</Tabs>
+
+The GitHub release distributes the npm tarballs. To use the plugins from a source
 checkout or npm installation, use that checkout or installed npm package
 as the marketplace directory (`LATCH_DIR`) and keep the CLI on your `PATH`.
 

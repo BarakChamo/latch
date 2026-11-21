@@ -29,12 +29,15 @@ checkout do not trigger checks in the parent checkout.
 | GitHub Copilot CLI | `create`, `edit`, `str_replace_editor`, `apply_patch` |
 | OpenCode | `edit`, `write`, `apply_patch` (v1) or `patch` (v2) |
 | Pi | `edit`, `write` |
+| OpenHands CLI | `file_editor` write operations |
+| Kimi Code CLI | Use `turn_end` for automatic checks. |
+| Grok Build | `write`, `search_replace`, and patch tools |
 
 ## Where reports appear
 
-Edit reports are attached to the tool result in the same turn. Turn-end reports
-follow the harness's lifecycle. A failed turn-end report is available to
-the agent on the next prompt in the same session.
+Most integrations attach edit reports to the tool result in the same turn.
+OpenHands sends edit and turn-end reports on the next prompt. Turn-end
+reports follow the harness’s lifecycle.
 
 | Harness | Turn-end feedback |
 | --- | --- |
@@ -44,6 +47,9 @@ the agent on the next prompt in the same session.
 | OpenCode v1 | TUI toast or headless stderr. Failed reports are added to the next prompt. |
 | OpenCode v2 | Server stderr. Failed reports appear in the next prompt's model context. Use `opencode --standalone --print-logs run "..."` to see the report immediately from the CLI. |
 | Pi | A message in session history, visible to the next model request. |
+| OpenHands CLI | The next user prompt in the same conversation. |
+| Kimi Code CLI | The next user prompt in the same conversation. |
+| Grok Build | Hook stderr. Edit diagnostics reach the model in the same turn. |
 
 A failed check finishes with the current turn. Latch never starts a repair pass.
 

@@ -1,33 +1,40 @@
 ---
-title: Introduction
-description: Let your coding agent see a broken check while it still has the change in context.
+title: Give your coding agent useful feedback
+description: Run your existing checks automatically and put failures where your coding agent can use them.
 ---
 
-Your agent edits three files and says it’s done. You run the type checker
-and discover an error in the first file. Now you have to copy the output
-back into the chat and explain what happened.
+import { Card, Cards } from 'fumadocs-ui/components/card';
 
-**Latch runs your project’s checks while the agent is still working.**
-It gives the agent the failure output from the tools you already use,
-so you can spend less time running checks and relaying errors.
+Your agent finishes an edit. You run your tests, find a failure, and
+paste the error back into chat. Latch takes care of that step for you.
 
-## What this looks like
+Latch runs your project’s own formatters, linters, type checkers, and tests
+at the points you choose. It uses Git to skip unchanged work and stays
+quiet when checks pass. When a check fails, the harness can pass the
+diagnostic to the agent after an edit or on a later prompt. A shortened
+report can link to the original output for follow-up.
 
-Say your project already has a type-check command. Set Latch to run it
-after an edit. When an agent changes a file, Latch runs the check and puts
-any error alongside the edit result, where the agent can use it. A passing
-check stays quiet by default.
+<Cards>
+  <Card title="Run your first check" href="/docs/quickstart" description="Install the bundled plugin and see a failure in a disposable Git project." />
+  <Card title="Use your existing checks" href="/docs/project-scripts" description="Wire up npm, pnpm, Yarn, Bun, or uv scripts you already run." />
+  <Card title="Choose how checks run" href="/docs/configuration" description="Filter by changed files, configure output, and see how defaults combine." />
+  <Card title="Find your harness" href="/docs/plugins" description="Compare installation paths, available tools, and preview integrations." />
+</Cards>
 
-You can run a fast check after edits and save a longer test suite for the
-end of the turn. Latch skips unchanged work by default. Your project owns
-the commands in its [package scripts](/docs/project-scripts) or
-[`latch.json`](/docs/configuration), so you can use the same checks when
-you switch agents.
+## A typical setup
 
-## Get started
+Run lint after edits and keep the test suite for turn end. Put these
+commands in `latch.json` next to your project's `package.json`.
 
-[Install the bundled plugin](/docs/quickstart) and try a check in a small
-example project. The bundle includes the Latch executable.
+```json title="latch.json"
+{
+  "hooks": {
+    "after_edit": { "commands": [["npm", "run", "lint"]] },
+    "turn_end": { "commands": [["npm", "test"]] }
+  }
+}
+```
 
-See [Harness plugins](/docs/plugins) for supported hosts and how to run
-checks from chat.
+The same configuration travels with your repository. Your teammates can
+use different agents, and you can run the turn-end checks yourself with
+`latch run turn_end`. See [when hooks fire and where reports go](/docs/hooks).

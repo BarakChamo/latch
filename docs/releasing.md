@@ -29,14 +29,18 @@ SHA-256 checksum accompanies the archive. On macOS and Linux, the archive also c
 each plugin. The release smoke test verifies hooks and MCP startup with
 the standalone CLI absent from `PATH`.
 
-## Distribute a private preview
+## Cut a GitHub release
 
-Attach the tested bundles, their checksums, and the npm tarballs to the
-[private preview release](https://github.com/BarakChamo/latch/releases/tag/preview-0.1.0).
-The quickstart links to this tag. Point the preview tag at the source used
-to build the bundles. Invite testers to the private repository so GitHub
-lets them open the links. Use a new tag and update the quickstart when
-distributing a different preview version.
+Run `npm run check` and build the docs before tagging the source. Build and
+smoke-test the release assets from that commit. If hosted runners are
+unavailable, use native or emulated runners locally and list the tested
+platforms in the release notes.
+
+Create a GitHub release on the matching `v<version>` tag. Attach the tested
+archives, their checksums, and the corresponding npm tarballs. Keep the
+release as a draft until the assets are in place. The quickstart links
+to the latest release. Access to a release follows the repository’s
+visibility.
 
 ## Verify a real harness session
 
@@ -74,7 +78,7 @@ Run it with the v1 CLI (1.18.31 or 1.19.6) and again with the v2 CLI
 (2.3.2) to verify both plugin APIs. Pass `opencode` after the archive to
 run just that harness.
 
-## Publish the CLI
+## Publish to the npm registry
 
 Confirm the npm scope and project license for the first public release.
 The package currently uses `@barakchamo/latch` and `UNLICENSED`. Publish

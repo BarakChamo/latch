@@ -43,6 +43,27 @@ and trust the Latch hooks. The OpenCode plugin was verified with 1.18.31,
 
 Use one installation method per project to avoid duplicate hooks.
 
+## Additional local integrations
+
+Use the same release bundle for the integrations below. The preview installers require the `--preview` flag.
+
+| Harness | Setup | Feedback |
+| --- | --- | --- |
+| OpenHands CLI | From your project, run `/path/to/bundle/install openhands`. | Native file edits and changed turns run checks. The next prompt receives reports. |
+| Kimi Code CLI | Run `./install kimi` in the bundle, paste the printed command into Kimi Code, and approve installation. | Changed turns run checks. The next prompt receives reports. |
+| Cursor CLI (preview) | From your project, run `/path/to/bundle/install cursor --preview`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
+| Devin CLI (preview) | From your project, run `/path/to/bundle/install devin --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
+| Grok Build | From your project, run `/path/to/bundle/install grok`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
+| Kiro CLI V3 (preview) | From your project, run `/path/to/bundle/install kiro --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
+
+The preview adapters have automated hook protocol tests. Treat their
+feedback as provisional until verified in a session. For Grok Build, review
+the workspace hooks and trust the folder with `/hooks-trust`. Workspace installers write absolute local paths into harness
+configuration. Keep those entries local. To uninstall them, remove the
+hook entries whose command ends in `# latch-installed` and remove the
+`latch` MCP server entry. In OpenHands, the MCP entry lives in the user
+configuration. In Kimi Code, use `/plugins remove latch`.
+
 ## Run checks from chat
 
 Ask your agent to call the Latch tool.
@@ -56,8 +77,8 @@ as `latch run turn_end`. Failed checks return a tool error with diagnostics.
 A successful call is quiet unless `on_success` is set to `"output"`. Your
 harness may ask for approval because configured commands can modify files.
 
-In Copilot, the agent passes its current project directory to the tool. In
-other harnesses, the tool uses the session's working directory. Pi exposes
+In Copilot and the additional integrations above, the agent passes the absolute
+project directory to the tool. Other harnesses use the session working directory. Pi exposes
 it as `mcp__latch__run_turn_end`.
 
 For a manual `after_edit` run or a preview of the resolved configuration,
@@ -86,7 +107,9 @@ output.
 | `latch hook opencode` | The OpenCode plugin forwards prompt, edit, and idle events |
 | `latch hook pi` | The Pi extension forwards prompt, edit, and settlement events |
 | `latch mcp` | Codex, Claude Code, OpenCode, and Pi expose both Latch tools |
-| `latch mcp --require-project-directory` | Copilot exposes both tools with an explicit project directory |
+| `latch install <openhands\|cursor\|devin\|grok\|kiro> [--preview]` | Writes local hook and MCP configuration for the selected harness |
+| `latch hook <openhands\|kimi\|cursor\|devin\|grok\|kiro>` | Receives native lifecycle events for the selected harness |
+| `latch mcp --require-project-directory` | Copilot and the additional integrations expose both tools with an explicit project directory |
 
 See [Hooks and feedback](/docs/hooks) for what triggers automatically and where
 results appear.
