@@ -1,3 +1,12 @@
 {
-  "pages": ["index"]
+  "pages": [
+    "index",
+    "hooks",
+    "project-scripts",
+    "configuration",
+    "plugins",
+    "cli",
+    "cloud",
+    "troubleshooting"
+  ]
 }

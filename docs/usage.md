@@ -28,6 +28,11 @@ The plugin translates its agent’s native lifecycle events into Latch events. L
 
 Latch compares Git-visible paths and contents. An existing uncommitted change only triggers a check if it changes during that event. Linked Git worktrees have their own baselines. If Latch can’t reliably compare the workspace, it runs configured checks without applying change-based filters.
 
+Passing checks are quiet by default. Filter by path or extension to run
+only relevant checks, and use compact failure output to make diagnostics
+easier to find in long logs. See [configuration](#configuration) and
+[failure output modes](#commands-and-saved-logs).
+
 | Agent | Edit feedback | Turn-end feedback |
 | --- | --- | --- |
 | Codex | Same-turn edit result. | App-server warning. Failed checks reach the next prompt in the same session. |
@@ -43,7 +48,7 @@ A failed check does not start another turn or a repair pass. The terminal output
 
 ## Package script discovery
 
-Latch reads package scripts from the session or command working directory.
+`latch.json` is optional. Latch reads package scripts from the session or command working directory.
 
 | Event | JavaScript and TypeScript in `package.json` | Python in `pyproject.toml` |
 | --- | --- | --- |
@@ -54,11 +59,17 @@ For JavaScript, Latch chooses npm, pnpm, Yarn, or Bun using `packageManager`, th
 
 ## Configuration
 
-Run `latch config init` from the project directory to create a starter
-`latch.json`. It leaves script discovery enabled and preserves any existing
-file.
+Run this from the project directory with [Latch v0.1.2 or later](#install-the-cli).
 
-Use [`latch.schema.json`](../latch.schema.json) for editor completion and validation. Copy it next to your config and set `"$schema": "./latch.schema.json"`.
+```sh
+latch config init
+```
+
+The starter keeps package script discovery enabled and links to the hosted
+schema for editor completion. If `latch.json` already exists, the command
+leaves it in place. For
+offline validation, copy [`latch.schema.json`](../latch.schema.json) next to the
+config and set `"$schema": "./latch.schema.json"`.
 
 ```json
 {

@@ -13,7 +13,12 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 | `after_edit` | After a supported file-edit tool changes the worktree. Use it for fast checks such as linting. |
 | `turn_end` | When the agent finishes a turn that changed the worktree. This catches shell edits and works well for tests. |
 
-By default, Latch compares Git-visible files before and after the edit or turn, so an already-dirty file only counts if it changes again. Passing checks are quiet by default. Most agents get edit failures in the same turn. Turn-end failures may appear in the session or reach the agent on the next prompt, depending on the integration. The turn finishes normally. See [hook timing and feedback by agent](docs/usage.md#hooks-and-feedback).
+- **Skip unchanged work.** Latch compares Git-visible files before and after the edit or turn. No-op edits and read-only turns skip checks by default, even in a dirty worktree.
+- **Keep passing checks quiet.** Success is silent by default, so failures are easier to spot in the agent session.
+- **Run checks that match the change.** Filter by path or file extension so a Markdown-only edit can run Markdown lint and skip TypeScript checks.
+- **Keep failure reports short.** Compact output surfaces useful lines such as errors and assertions. The agent can retrieve more detail from a saved log without rerunning the check.
+
+Most agents get edit failures in the same turn. Turn-end failures may appear in the session or reach the agent on the next prompt, depending on the integration. The turn finishes normally. See [hook timing and feedback by agent](docs/usage.md#hooks-and-feedback).
 
 ## Install a plugin
 
@@ -83,6 +88,13 @@ You can then add your own checks. Here’s an example for Ruff in a uv project.
 ```
 
 Explicit commands and discovered scripts can be used together. See the [configuration reference](docs/usage.md#configuration) for ordering, defaults, and filters.
+
+### Filters and failure output
+
+- Use `paths` to match globs such as `src/**`, and `extensions` for file types such as `["md", "mdx"]`. When both are set, the same changed file must match both.
+- Set `failure_output` to `compact` for diagnostic lines or `tail` for the last lines of each stream. The default is a short excerpt. A saved log lets you retrieve the original output.
+
+[Filter examples](docs/usage.md#configuration) · [Failure output modes](docs/usage.md#commands-and-saved-logs)
 
 ## Install the standalone CLI
 

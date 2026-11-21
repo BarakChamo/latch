@@ -6,15 +6,23 @@ description: Define checks, filter by changed files, and choose how failures are
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
 
-Run `latch config init` to create a starter that keeps package script discovery
-enabled. The command leaves any existing configuration in place.
+`latch.json` is optional. To create a starter, run this from your project root
+with the [standalone CLI](/docs/cli#install-the-cli).
+
+```sh
+latch config init
+```
+
+The starter keeps package script discovery enabled. If `latch.json` already
+exists, the command leaves it in place.
 
 Put `latch.json` in the directory where your checks should run. Use it for
 explicit commands, file filters, or defaults for [discovered scripts](/docs/project-scripts).
 
 ## Editor completion and validation
 
-Copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/v0.1.2/latch.schema.json)
+The starter points to the hosted schema. For offline editor completion,
+copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/v0.1.2/latch.schema.json)
 from the Latch repository, standalone archive, or npm wrapper into your
 project next to `latch.json`. Add `"$schema": "./latch.schema.json"` as
 a top-level property. Editors that support JSON Schema can then suggest

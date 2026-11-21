@@ -15,7 +15,12 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 | `after_edit` | After a supported file-edit tool changes the worktree. Use it for fast checks such as linting. |
 | `turn_end` | When the agent finishes a turn that changed the worktree. This catches shell edits and works well for tests. |
 
-By default, Latch compares Git-visible files before and after the edit or turn, so an already-dirty file only counts if it changes again. Passing checks are quiet by default. Most agents get edit failures in the same turn. Turn-end failures may appear in the session or reach the agent on the next prompt, depending on the integration. The turn finishes normally. See [hook timing and feedback by agent](/docs/hooks).
+- **Skip unchanged work.** Latch compares Git-visible files before and after the edit or turn. No-op edits and read-only turns skip checks by default, even in a dirty worktree.
+- **Keep passing checks quiet.** Success is silent by default, so failures are easier to spot in the agent session.
+- **Run checks that match the change.** Filter by path or file extension so a Markdown-only edit can run Markdown lint and skip TypeScript checks.
+- **Keep failure reports short.** Compact output surfaces useful lines such as errors and assertions. The agent can retrieve more detail from a saved log without rerunning the check.
+
+Most agents get edit failures in the same turn. Turn-end failures may appear in the session or reach the agent on the next prompt, depending on the integration. The turn finishes normally. See [hook timing and feedback by agent](/docs/hooks).
 
 ## Install a plugin
 
@@ -86,6 +91,13 @@ You can then add your own checks. Here’s an example for Ruff in a uv project.
 
 Explicit commands and discovered scripts can be used together. See the [configuration reference](/docs/configuration) for ordering, defaults, and filters.
 
+### Filters and failure output
+
+- Use `paths` to match globs such as `src/**`, and `extensions` for file types such as `["md", "mdx"]`. When both are set, the same changed file must match both.
+- Set `failure_output` to `compact` for diagnostic lines or `tail` for the last lines of each stream. The default is a short excerpt. A saved log lets you retrieve the original output.
+
+[Filter examples](/docs/configuration#examples) · [Failure output modes](/docs/configuration#compact-failure-output)
+
 ## Install the standalone CLI
 
 For terminal or CI use, download and extract your platform’s archive from [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest) and follow the [CLI installation guide](/docs/cli#install-the-cli).
@@ -97,5 +109,5 @@ From your project, run `latch run after_edit` or `latch run turn_end` to execute
 - [Hook lifecycle and where failures appear](/docs/hooks)
 - [Package script discovery](/docs/project-scripts) and [TypeScript and Python examples](https://github.com/BarakChamo/latch/tree/main/examples)
 - [Configuration, filters, and JSON schema](/docs/configuration)
-- [CLI commands, plugin tools, and saved logs](/docs/cli#commands)
+- [CLI commands and saved logs](/docs/cli) and [plugin tools](/docs/plugins#run-checks-from-chat)
 - [Agent integration guides](/docs/plugins) and [troubleshooting](/docs/troubleshooting)

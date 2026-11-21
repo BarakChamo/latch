@@ -3,7 +3,9 @@ title: Hooks and feedback
 description: Understand what triggers a check and where each harness shows its result.
 ---
 
-See [Harness plugins](/docs/plugins) to install Latch and run checks from chat.
+Plugins map their agents’ native hooks to the same Latch events. Commands
+come from the project’s [package scripts](/docs/project-scripts), optional
+[`latch.json`](/docs/configuration), or both.
 
 ## When checks run
 
@@ -14,7 +16,9 @@ See [Harness plugins](/docs/plugins) to install Latch and run checks from chat.
 
 A pre-existing dirty file triggers a check only if it changes again during
 the comparison window. Latch checks Git-visible files and runs the commands
-when a reliable comparison is unavailable.
+without change-based filters when a reliable comparison is unavailable.
+Use [path or extension filters](/docs/configuration#examples) to run just
+the checks that match the files changed during the event.
 
 Linked worktrees have their own change baselines, whether they sit inside
 the main checkout or beside it. Start Latch or your harness from the
@@ -35,7 +39,8 @@ checkout do not trigger checks in the parent checkout.
 
 ## Where reports appear
 
-Most integrations attach edit reports to the tool result in the same turn.
+Passing checks are silent by default. Most integrations attach edit reports
+to the tool result in the same turn.
 OpenHands sends edit and turn-end reports on the next prompt. Turn-end
 reports follow the harness’s lifecycle.
 
@@ -51,8 +56,10 @@ reports follow the harness’s lifecycle.
 | Kimi Code CLI | The next user prompt in the same conversation. |
 | Grok Build | Hook stderr. Edit diagnostics reach the model in the same turn. |
 
-A failed check finishes with the current turn. Latch never starts a repair pass.
+In Codex, Claude Code, and Copilot CLI, failed turn-end checks also reach
+the next prompt in the same session. A failed check lets the turn finish normally.
 
-If a failure preview omits details, the report includes a readable log path.
-The agent can search the file directly or use
+Use [compact failure output](/docs/configuration#compact-failure-output)
+to keep useful lines such as errors and assertions. When a report includes
+a saved log path, the agent can read the original output directly or use
 [the plugin tool](/docs/plugins#look-up-details-from-a-failure).
