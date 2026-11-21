@@ -96,8 +96,38 @@ Explicit commands and discovered scripts can be used together. See the [configur
 
 ### Filters and failure output
 
-- Use `paths` to match globs such as `src/**`, and `extensions` for file types such as `["md", "mdx"]`. When both are set, the same changed file must match both.
-- Set `failure_output` to `compact` for diagnostic lines or `tail` for the last lines of each stream. The default is a short excerpt. A saved log lets you retrieve the original output.
+This example runs your existing `npm test` script at turn end when a `.ts`
+or `.tsx` file under `src/` changes. The same file must match both filters.
+
+```json
+{
+  "hooks": {
+    "turn_end": {
+      "paths": ["src/**"],
+      "extensions": ["ts", "tsx"],
+      "commands": [["npm", "test"]],
+      "failure_output": "compact"
+    }
+  }
+}
+```
+
+Here’s an excerpt from the compact report for a failing Vitest run.
+
+```text
+Latch checks failed.
+latch: command 1 ("npm") failed: exit status: 1
+stdout:
+Tests  1 failed | 36 passed (37)
+[output compacted from 3175 bytes]
+stderr:
+FAIL  tests/message.test.ts > greets the caller by name
+AssertionError: expected 'Hi, Latch!' to be 'Hello, Latch!'
+Saved log: …/r-kgMl3D6EnjseUc7Nal1Wgf8Z.log
+```
+
+Open the saved log for the full output. Use `tail` to show the last lines of
+each stream, or leave `failure_output` unset for the default excerpt.
 
 [Filter examples](docs/usage.md#configuration) · [Failure output modes](docs/usage.md#commands-and-saved-logs)
 
