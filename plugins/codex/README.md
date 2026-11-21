@@ -7,7 +7,7 @@ codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
 codex plugin add latch@latch-tools
 ```
 
-The plugin includes Latch for macOS and glibc Linux on ARM64 and x64.
+The plugin downloads Latch on first use for macOS and glibc Linux on ARM64 and x64.
 
 Start Codex from the directory containing your project's
 [Latch configuration or package scripts](https://github.com/BarakChamo/latch#configure-checks).

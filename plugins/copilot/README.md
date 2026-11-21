@@ -7,8 +7,8 @@ copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/ma
 copilot plugin install latch@latch-tools
 ```
 
-Start a new session in your project. The plugin carries the Latch binary
-for macOS and glibc Linux on ARM64 and x64.
+Start a new session in your project. The plugin downloads Latch on first
+use for macOS and glibc Linux on ARM64 and x64.
 
 Tested with Copilot CLI 1.0.114. Run `copilot plugin list` to verify the
 installation and `copilot mcp list` to check for the local Latch tool server.

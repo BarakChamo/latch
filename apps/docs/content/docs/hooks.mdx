@@ -26,12 +26,16 @@ directory where you want to read config and run commands. Path filters are
 relative to that Git worktree’s root. Edits inside an untracked nested
 checkout do not trigger checks in the parent checkout.
 
+These tables cover shipped integrations in local sessions. For hosted
+environments, see [Cloud sessions](/docs/cloud).
+
 | Harness | Native edit tools |
 | --- | --- |
 | Codex | `apply_patch` |
 | Claude Code | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` |
 | GitHub Copilot CLI | `create`, `edit`, `str_replace_editor`, `apply_patch` |
-| OpenCode | `edit`, `write`, `apply_patch` (v1) or `patch` (v2) |
+| OpenCode v1 | `edit`, `write`, `apply_patch` |
+| OpenCode v2 | `edit`, `write`, `patch` |
 | Pi | `edit`, `write` |
 | OpenHands CLI | `file_editor` write operations |
 | Kimi Code CLI | Use `turn_end` for automatic checks. |
@@ -57,7 +61,9 @@ reports follow the harness’s lifecycle.
 | Grok Build | Hook stderr. Edit diagnostics reach the model in the same turn. |
 
 In Codex, Claude Code, and Copilot CLI, failed turn-end checks also reach
-the next prompt in the same session. A failed check lets the turn finish normally.
+the next prompt in the same session and project. Copilot uses
+`userPromptTransformed` to attach the report to the prompt. A failed check
+lets the turn finish normally.
 
 Use [compact failure output](/docs/configuration#compact-failure-output)
 to keep useful lines such as errors and assertions. When a report includes

@@ -35,16 +35,20 @@ only relevant checks, and use compact failure output to make diagnostics
 easier to find in long logs. See [configuration](#configuration) and
 [failure output modes](#commands-and-saved-logs).
 
-| Agent | Edit feedback | Turn-end feedback |
+The table covers shipped integrations running in local sessions. “Next
+prompt” means the next message in the same session and project.
+
+| Agent | Edit trigger and feedback | Turn-end feedback |
 | --- | --- | --- |
-| Codex | Same-turn edit result. | App-server warning. Failed checks reach the next prompt in the same session. |
-| Claude Code | Same-turn edit result. | Informational hook event. Failed checks reach the next prompt in the same session. |
-| GitHub Copilot CLI | Same-turn edit result. | Hook warning. Failed checks reach the next prompt in the same session. |
-| OpenCode | Same-turn edit result. | v1 toast or headless stderr, v2 server stderr. Failed checks also reach the next prompt. |
-| Pi | Same-turn edit result. | Session history, visible to the next model request. |
-| OpenHands CLI | Next prompt. | Next prompt. |
-| Kimi Code CLI | Use `turn_end`. | Next prompt. |
-| Grok Build | Same-turn edit result. | Hook stderr. |
+| Codex | Same-turn context after `apply_patch`. | App-server warning. The tested `codex exec --json` output omits that warning. Failed checks reach the next prompt. |
+| Claude Code | Same-turn context after `Edit`, `Write`, `MultiEdit`, or `NotebookEdit`. | Informational hook event. Failed checks reach the next prompt. |
+| GitHub Copilot CLI | Same-turn context after `create`, `edit`, `str_replace_editor`, or `apply_patch`. | Hook warning. Failed checks reach the next prompt through `userPromptTransformed`. |
+| OpenCode v1 | Same-turn context after `edit`, `write`, or `apply_patch`. | TUI toast or headless stderr. Failed checks also reach the next prompt. |
+| OpenCode v2 | Same-turn context after `edit`, `write`, or `patch`. | Server stderr. Failed checks also reach the next prompt. |
+| Pi | Same-turn context after `edit` or `write`. | Session history, visible to the next model request. |
+| OpenHands CLI | Next prompt after writes from `file_editor`. | Next prompt. |
+| Kimi Code CLI | Use `turn_end` for automatic checks. | Next prompt. |
+| Grok Build | Same-turn context after native writes, replacements, or patches. | Hook stderr. |
 
 A failed check does not start another turn or a repair pass. The terminal output of a headless run may omit hook context that the agent receives. See the [integration guides](../plugins/) for agent-specific hooks and setup.
 

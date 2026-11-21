@@ -2,7 +2,7 @@
 
 Latch automatically runs your project’s linters, tests, and other checks while your coding agent works, so it can see failures without being asked to run the checks.
 
-[How it works](#how-it-works) · [Install a plugin](#install-a-plugin) · [Run your first check](#run-your-first-check) · [Standalone CLI](#install-the-standalone-cli) · [Docs](#docs)
+[How it works](#how-it-works) · [Compatibility](#compatibility) · [Install a plugin](#install-a-plugin) · [Run your first check](#run-your-first-check) · [Standalone CLI](#install-the-standalone-cli) · [Docs](#docs)
 
 ## How it works
 
@@ -18,7 +18,28 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 - **Run checks that match the change.** Filter by path or file extension so a Markdown-only edit can run Markdown lint and skip TypeScript checks.
 - **Keep failure reports short.** Compact output surfaces useful lines such as errors and assertions. The agent can retrieve more detail from a saved log without rerunning the check.
 
-Most agents get edit failures in the same turn. Turn-end failures may appear in the session or reach the agent on the next prompt, depending on the integration. The turn finishes normally. See [hook timing and feedback by agent](docs/usage.md#hooks-and-feedback).
+## Compatibility
+
+These integrations ship for local sessions. The table shows when checks
+run and where failures are reported. “Next prompt” means your next message
+in the same session and project.
+
+| Harness | `after_edit` | `turn_end` |
+| --- | --- | --- |
+| Codex | Same-turn context after `apply_patch`. | App-server warning. The failure also reaches the next prompt. |
+| Claude Code | Same-turn context after native edits. | Informational hook event. The failure also reaches the next prompt. |
+| GitHub Copilot CLI | Same-turn context after native edits. | Hook warning. The failure also reaches the next prompt. |
+| OpenCode v1 | Same-turn context after native edits. | TUI toast or headless stderr. The failure also reaches the next prompt. |
+| OpenCode v2 | Same-turn context after native edits. | Server stderr. The failure also reaches the next prompt. |
+| Pi | Same-turn context after `edit` and `write`. | Session history, visible to the next model request. |
+| OpenHands CLI | Next prompt after a native file edit. | Next prompt. |
+| Kimi Code CLI | Turn-end checks only. | Next prompt. |
+| Grok Build | Same-turn context after native edits. | Hook stderr. |
+
+The turn finishes normally on a failed check. See the
+[hook and feedback reference](docs/usage.md#hooks-and-feedback) for the exact edit tools and
+headless behavior. With MCP enabled, agents can also [run checks on demand
+or search saved logs](docs/usage.md#commands-and-saved-logs).
 
 ## Install a plugin
 
