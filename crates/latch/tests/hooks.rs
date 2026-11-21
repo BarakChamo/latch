@@ -1311,6 +1311,16 @@ fn opted_in_turn_failure_reaches_the_agent_without_rechecking() {
             assert!(report.status.success(), "{host}: {report:?}");
             let response: Value = serde_json::from_slice(&report.stdout).unwrap();
             match host {
+                "claude-code" => {
+                    assert!(response["decision"].is_null());
+                    assert_eq!(response["hookSpecificOutput"]["hookEventName"], "Stop");
+                    assert!(
+                        response["hookSpecificOutput"]["additionalContext"]
+                            .as_str()
+                            .unwrap()
+                            .contains("important-diagnostic")
+                    );
+                }
                 "pi" | "opencode" => {
                     assert_eq!(response["continue"], true);
                     assert!(

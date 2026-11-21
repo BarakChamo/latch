@@ -65,10 +65,18 @@ try {
     if (continueOnFailure) {
       assert.equal(checkOrder, "turn\n", `${name} repeated validation after the failure`);
       const messages = name === "codex" ? JSON.parse(events) : events.trim().split("\n").map(JSON.parse);
-      const replies = messages.filter((event) =>
-        (event.method === "item/completed" && event.params.item.type === "agentMessage")
-        || event.type === "assistant" || event.type === "assistant.message");
-      assert(JSON.stringify(replies).includes(firstFailure), `${name} never quoted the failure in an assistant reply`);
+      if (name === "copilot") {
+        const followUp = messages.findIndex((event) =>
+          event.type === "user.message" && event.data?.content?.includes(firstFailure));
+        assert(followUp !== -1, "Copilot did not add the failure to its continuation prompt");
+        assert(messages.slice(followUp + 1).some((event) => event.type === "assistant.message"),
+          "Copilot did not respond after the continuation prompt");
+      } else {
+        const replies = messages.filter((event) =>
+          (event.method === "item/completed" && event.params.item.type === "agentMessage")
+          || event.type === "assistant");
+        assert(JSON.stringify(replies).includes(firstFailure), `${name} never quoted the failure in an assistant reply`);
+      }
       console.log(`${name}: model acted on the turn-end failure without another prompt or check`);
       return;
     }

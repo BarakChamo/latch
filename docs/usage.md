@@ -68,18 +68,31 @@ compatible agent act on a failed turn-end check immediately.
 }
 ```
 
-Keep your existing check definitions or package scripts. A supported harness
-gets one follow-up containing the failure without a new message from you. Latch does not rerun the turn-end checks for that follow-up.
-Successful checks, manual runs, and the default `report` mode keep their
-usual behavior.
+Keep your existing check definitions or package scripts. Latch hands off
+the failure once and skips the automatic turn-end recheck. Successful
+checks, manual runs, and the default `report` mode keep their usual behavior.
 
-Codex, Claude Code, Copilot CLI, OpenCode v2, Pi, OpenHands CLI, and Kimi Code
-CLI have a continuation path. OpenHands and Kimi are verified at the hook
-protocol level. Native stop hooks that use an active-stop flag need a
-harness version that supplies it. OpenCode v1 and Grok Build keep their
-default delivery. Use `after_edit` for fast checks and ask the agent to
-call `run_turn_end` before responding when you need feedback in a session
-without continuation.
+| Harness | How the model sees the failure |
+| --- | --- |
+| Claude Code | Native Stop hook context keeps the current turn open without a separate user prompt. Claude makes another model request to act on the report. |
+| OpenCode v2 and Pi | The extension adds its report to session context and resumes the current execution. |
+| Codex and Copilot CLI | The host creates a continuation prompt from the stop-hook response. |
+| Kimi Code CLI | The Stop hook supplies the failure as the reason for one continuation. |
+| OpenHands CLI | The Stop hook denies completion once and supplies the failure as feedback. |
+
+Verified in live Codex, Claude Code, and Copilot CLI sessions, and in real
+OpenCode v2, Pi, OpenHands CLI, and Kimi Code CLI sessions with scripted
+models.
+
+A model needs another request to act on a report produced after its final
+response. Use `after_edit` to attach feedback to an existing tool result
+while the agent is still working. OpenCode v1 and Grok Build keep their
+default delivery. For sessions without automatic continuation, the agent
+can call `run_turn_end` before responding.
+
+[Claude Code Stop hooks](https://code.claude.com/docs/en/hooks#stop-decision-control) ·
+[Codex Stop hooks](https://learn.chatgpt.com/docs/hooks#stop) ·
+[Copilot stop hooks](https://docs.github.com/en/copilot/reference/hooks-reference#agentstop--subagentstop-decision-control)
 
 ## Hosted sessions
 

@@ -499,7 +499,8 @@ fn handle(harness: &Harness, event: Event) -> Value {
             {
                 let reason = format!("{FOLLOW_UP_INTRO}\n\n{}", feedback.message);
                 match harness {
-                    Harness::Codex | Harness::ClaudeCode | Harness::Kimi => {
+                    Harness::ClaudeCode => return context_response("Stop", reason),
+                    Harness::Codex | Harness::Kimi => {
                         return json!({ "decision": "block", "reason": reason });
                     }
                     Harness::Copilot(_) => {

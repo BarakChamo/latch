@@ -35,6 +35,10 @@ the diagnostics and lets the turn finish. The next prompt in the same session an
 directory receives the saved failure once. The stop and post-tool hooks
 allow up to 120 seconds for validation.
 
+With the [opt-in follow-up](../../docs/usage.md#act-on-a-turn-end-failure),
+Claude receives a failed check as native Stop hook context. Claude can act
+before the turn settles without a separate user prompt.
+
 The bundled `run_turn_end` tool runs the same checks on demand. It takes no
 arguments and returns failure diagnostics as a tool result visible to the agent.
 See the [configuration reference](https://github.com/BarakChamo/latch#configure-checks) for defaults,

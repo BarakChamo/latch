@@ -32,8 +32,8 @@ result. A turn-end warning can be visible to you while the model is idle.
 | OpenCode v1 | Real CLI, scripted model | Model gets context after native edits. | TUI toast or headless stderr. The model gets the failure on your next prompt. | Managed service unverified. |
 | OpenCode v2 | Real CLI, scripted model | Model gets context after native edits. | Server stderr. The model gets the failure on your next prompt. | Managed service unverified. |
 | Pi | Real CLI, scripted model | Model gets context after `edit` and `write`. | Report enters session history. The model reads it on its next request. | Managed service unverified. |
-| OpenHands CLI | Hook protocol tested | Report reaches the next prompt after a native file edit. | Report reaches the next prompt. | Canvas and Cloud document repo hooks. Install Latch in the workspace. Hosted feedback unverified. |
-| Kimi Code CLI | Hook protocol tested | Turn-end checks only. | Report reaches the next prompt. | With remote tools, hooks still run beside the CLI and see its local checkout. Managed cloud feedback unverified. |
+| OpenHands CLI | Real CLI, scripted model | Report reaches the next prompt after a native file edit. | Report reaches the next prompt. | Canvas and Cloud document repo hooks. Install Latch in the workspace. Hosted feedback unverified. |
+| Kimi Code CLI | Real CLI, scripted model | Turn-end checks only. | Report reaches the next prompt. | With remote tools, hooks still run beside the CLI and see its local checkout. Managed cloud feedback unverified. |
 | Grok Build | Hook protocol tested | Latch returns edit context. Model delivery unverified. | Hook stderr. | Grok Bot integration unverified. |
 
 “Next prompt” means your next message in the same session and project.

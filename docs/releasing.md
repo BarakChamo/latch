@@ -81,7 +81,9 @@ synthetic Git fixture to the selected harness services, and checks that
 one edit runs both checks once in order and surfaces both failure diagnostics.
 To verify that a model actually sees an opt-in turn-end failure and that
 the checks run once, add `--continue-on-failure` to the live test. The
-fixture asks for a diagnostic marker that appears only in the check output.
+fixture uses a diagnostic marker that appears only in the check output.
+For Copilot, it checks the continuation prompt and verifies an assistant
+response followed.
 
 The test also retrieves a line that the compact preview omitted.
 It also checks that an explicit plugin tool call returns its output.
