@@ -32,6 +32,7 @@ try {
     });
     wrapper = join(scratch, wrapperName);
   }
+  verifyChecksum(platformTarball);
   const prefix = join(scratch, "install");
   execFileSync(process.execPath, [npm, "install", "--global", "--offline", "--ignore-scripts", "--prefix",
     prefix, wrapper, platformTarball], { stdio: "inherit" });
@@ -53,6 +54,15 @@ try {
   assert.equal(installed.status, 0, installed.stderr);
   assert.equal(installed.stdout.trim(), `latch ${version}`);
 
+  const initialized = run("config", "init");
+  assert.equal(initialized.status, 0, initialized.stderr);
+  const configPath = join(project, "latch.json");
+  const starter = readFileSync(configPath, "utf8");
+  assert.equal(JSON.parse(starter).defaults.on_failure, "collect");
+  const repeated = run("config", "init");
+  assert.equal(repeated.status, 1, repeated.stderr);
+  assert.equal(readFileSync(configPath, "utf8"), starter);
+
   writeFileSync(join(project, "latch.json"), JSON.stringify({
     hooks: { after_edit: { commands: [["node", "-e", "console.log('release smoke check')"]] } },
   }));
@@ -66,8 +76,7 @@ try {
   assert.equal(failure.status, 1, failure.stderr);
   assert.match(failure.stderr, /release smoke failure/);
 
-  const checksum = readFileSync(`${archive}.sha256`, "utf8").split(/\s+/)[0];
-  assert.equal(createHash("sha256").update(readFileSync(archive)).digest("hex"), checksum);
+  verifyChecksum(archive);
   execFileSync("tar", ["-xzf", archive, "-C", scratch], { stdio: "inherit" });
   const extracted = join(scratch, bundle);
   const binary = join(extracted, "bin", windows ? "latch.exe" : "latch");
@@ -77,6 +86,11 @@ try {
   console.log(`Verified the release packages for ${target}.`);
 } finally {
   rmSync(scratch, { recursive: true });
+}
+
+function verifyChecksum(path) {
+  const checksum = readFileSync(`${path}.sha256`, "utf8").split(/\s+/)[0];
+  assert.equal(createHash("sha256").update(readFileSync(path)).digest("hex"), checksum, path);
 }
 
 function verifySharedFiles(directory) {

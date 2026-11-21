@@ -6,8 +6,29 @@ use serde::de::{DeserializeSeed, MapAccess, SeqAccess, Visitor, value::MapAccess
 use serde::{Deserialize, Serialize};
 use std::{
     fmt, fs, io,
+    io::Write,
     path::{Path, PathBuf},
 };
+
+const CONFIG_FILENAME: &str = "latch.json";
+const STARTER: &str = r#"{
+  "$schema": "https://raw.githubusercontent.com/BarakChamo/latch/main/latch.schema.json",
+  "defaults": {
+    "on_success": "silent",
+    "on_failure": "collect"
+  }
+}
+"#;
+
+/// Creates a starter without replacing an existing configuration or disabling discovery.
+pub(crate) fn initialize(directory: &Path) -> io::Result<()> {
+    let mut starter = tempfile::NamedTempFile::new_in(directory)?;
+    starter.write_all(STARTER.as_bytes())?;
+    starter
+        .persist_noclobber(directory.join(CONFIG_FILENAME))
+        .map_err(|error| error.error)?;
+    Ok(())
+}
 
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -357,7 +378,7 @@ pub(crate) fn load_with_source(
     directory: &Path,
     selected: HookName,
 ) -> Result<LoadedHook, ConfigError> {
-    let path = directory.join("latch.json");
+    let path = directory.join(CONFIG_FILENAME);
     let (config_path, config) = match fs::read(&path) {
         Ok(bytes) => (
             Some(path),

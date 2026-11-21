@@ -7,6 +7,7 @@
     "check": "turbo run format:check lint:rust test:rust && npm run test:schema",
     "fmt": "cargo fmt --all",
     "package:release": "node distribution/package-release.mjs",
+    "test:plugin-installer": "node --test distribution/smoke-plugin-installer.mjs",
     "test:release": "node distribution/smoke-release.mjs",
     "test:live": "node distribution/smoke-harnesses.mjs",
     "test:schema": "node --test distribution/check-schema.mjs",

@@ -53,6 +53,7 @@ jobs:
         with:
           node-version: 24
           package-manager-cache: false
+      - run: npm run test:plugin-installer
       - run: npm run package:release -- npm
       - uses: actions/upload-artifact@v7
         with:

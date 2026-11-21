@@ -30,6 +30,49 @@ fn help_succeeds_without_loading_project_configuration() {
 }
 
 #[test]
+fn config_init_preserves_script_discovery_and_refuses_to_overwrite() {
+    let project = tempfile::tempdir().expect("create temporary project");
+    let config_path = project.path().join("latch.json");
+    fs::write(
+        project.path().join("package.json"),
+        r#"{"scripts":{"hook:afteredit":"echo lint"}}"#,
+    )
+    .expect("write package.json");
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.path())
+            .args(args)
+            .output()
+            .expect("run latch")
+    };
+
+    let created = run(&["config", "init"]);
+    assert!(created.status.success(), "{created:?}");
+    let starter: serde_json::Value =
+        serde_json::from_slice(&fs::read(&config_path).expect("read starter configuration"))
+            .expect("parse starter configuration");
+    assert_eq!(starter["defaults"]["on_failure"], "collect");
+    let explanation = run(&["explain", "after_edit"]);
+    assert!(explanation.status.success(), "{explanation:?}");
+    let resolved: serde_json::Value =
+        serde_json::from_slice(&explanation.stdout).expect("parse explanation");
+    assert_eq!(
+        resolved["commands"],
+        serde_json::json!([["npm", "run", "hook:afteredit"]])
+    );
+
+    let existing = br#"{"defaults":{"on_success":"output"}}"#;
+    fs::write(&config_path, existing).expect("customize starter configuration");
+    let repeated = run(&["config", "init"]);
+    assert_eq!(repeated.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&repeated.stderr).contains("latch.json already exists"));
+    assert_eq!(
+        fs::read(config_path).expect("read existing configuration"),
+        existing
+    );
+}
+
+#[test]
 fn schema_reference_is_editor_metadata() {
     let config = r#"{"$schema":"./missing.schema.json","commands":[["check"]]}"#;
     let output = run_with_args(Some(config), &["explain"]);

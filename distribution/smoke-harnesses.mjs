@@ -72,7 +72,7 @@ try {
     ], { cwd: fixture.project, env: fixture.env, encoding: "utf8" });
     assert.equal(original.trim(), omittedOutput, `${name} could not retrieve the omitted line`);
     assert(events.includes(toolOutput), `${name} did not surface the MCP result`);
-    console.log(`${name}: bundled install, edit feedback and MCP passed`);
+    console.log(`${name}: ${marketplace ? "marketplace" : "archive"} install, edit feedback and MCP passed`);
   }));
   for (const [index, result] of results.entries()) {
     if (result.status === "rejected") {

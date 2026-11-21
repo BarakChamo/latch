@@ -2,6 +2,21 @@
 
 Start with the [README](../README.md) to install a plugin and run your first check.
 
+## Install the plugin from a terminal
+
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.2/install-latch-plugin.sh), then run it in your terminal.
+
+```sh
+sh install-latch-plugin.sh --install-plugin codex
+```
+
+Use `claude` or `copilot` for the corresponding CLI. The installer registers
+Latch through the harness’s marketplace commands. It downloads the matching
+release binary, checks its SHA-256, and keeps it in your user cache. The
+marketplace plugin uses the same cache. Once the binary is cached, its hooks
+and tools can run offline. In Codex, open `/hooks` and approve the hooks
+after installation.
+
 ## Hooks and feedback
 
 The plugin translates its agent’s native lifecycle events into Latch events. Latch uses the same project commands and settings regardless of which plugin calls it.
@@ -39,6 +54,10 @@ For JavaScript, Latch chooses npm, pnpm, Yarn, or Bun using `packageManager`, th
 
 ## Configuration
 
+Run `latch config init` from the project directory to create a starter
+`latch.json`. It leaves script discovery enabled and preserves any existing
+file.
+
 Use [`latch.schema.json`](../latch.schema.json) for editor completion and validation. Copy it next to your config and set `"$schema": "./latch.schema.json"`.
 
 ```json
@@ -69,9 +88,9 @@ Download your platform’s archive from [GitHub Releases](https://github.com/Bar
 For Apple Silicon, from your downloads directory:
 
 ```sh
-tar -xzf latch-0.1.1-aarch64-apple-darwin.tar.gz
+tar -xzf latch-0.1.2-aarch64-apple-darwin.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 latch-0.1.1-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
+install -m 755 latch-0.1.2-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
 export PATH="$HOME/.local/bin:$PATH"
 latch --version
 ```
@@ -83,7 +102,7 @@ Use the archive name for your platform in the first and third lines. Add the `ex
 Download the wrapper and the matching platform tarball from the same release. For Apple Silicon:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.1.tgz ./barakchamo-latch-darwin-arm64-0.1.1.tgz
+npm install --global --offline ./barakchamo-latch-0.1.2.tgz ./barakchamo-latch-darwin-arm64-0.1.2.tgz
 latch --version
 ```
 
@@ -94,7 +113,7 @@ The other binary tarballs contain `darwin-x64`, `linux-arm64`, or `linux-x64` in
 With Rust 1.88 or later:
 
 ```sh
-git clone --branch v0.1.1 https://github.com/BarakChamo/latch.git
+git clone --branch v0.1.2 https://github.com/BarakChamo/latch.git
 cd latch
 cargo install --locked --path crates/latch
 latch --version
@@ -108,6 +127,7 @@ latch --version
 | `latch run turn_end` | Run turn-end checks immediately. |
 | `latch explain after_edit` or `latch explain turn_end` | Show the commands, settings, and filters Latch resolved. |
 | `latch output <log-or-id> [--grep <text>]` | Replay or search a saved failure from the same project. |
+| `latch config init` | Create a starter `latch.json` in the current directory. |
 | `latch --help` | List the available commands. |
 
 Manual runs bypass the Git change gate and file filters. Successful runs exit `0`, check or configuration failures exit `1`, and invalid CLI arguments exit `2`.

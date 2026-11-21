@@ -7,7 +7,18 @@ description: Install and manage Latch in your harness, and run checks from chat.
 
 The [installation section of the Latch guide](/docs#install-a-plugin) has
 the marketplace commands for Codex, Claude Code, and GitHub Copilot CLI.
-Each of those plugins bundles Latch.
+
+### Install from a terminal
+
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.2/install-latch-plugin.sh), then run it in your terminal.
+
+```sh
+sh install-latch-plugin.sh --install-plugin codex
+```
+
+Use `claude` or `copilot` for the corresponding CLI. The script installs the
+plugin and verifies and caches the correct binary for your system. The
+marketplace plugin also fetches it on first use if the cache is empty.
 
 ### OpenCode and Pi
 
@@ -16,7 +27,7 @@ Set `LATCH_PLUGIN_DIR` to the extracted folder and add its `bin` directory
 to your shell’s `PATH`. For example, on Apple Silicon:
 
 ```sh
-export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.1-aarch64-apple-darwin"
+export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.2-aarch64-apple-darwin"
 export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
 ```
 

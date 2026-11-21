@@ -19,7 +19,7 @@ By default, Latch compares Git-visible files before and after the edit or turn, 
 
 ## Install a plugin
 
-The marketplace plugins below bundle the CLI for macOS and glibc Linux on ARM64 and x64.
+The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
 
 ### Codex
 
@@ -44,7 +44,7 @@ copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/ma
 copilot plugin install latch@latch-tools
 ```
 
-Start a new session in your project after installing. For OpenCode, Pi, and other agents, see the [integration guides](/docs/plugins).
+Start a new session in your project after installing. The [terminal installer](/docs/plugins#install-from-a-terminal) installs the plugin and downloads the binary in one step. For OpenCode, Pi, and other agents, see the [integration guides](/docs/plugins).
 
 ## Run your first check
 
@@ -64,7 +64,15 @@ Ask the agent to change a file with its edit tool, and Latch runs the script. Us
 
 ### Configure checks
 
-To run commands directly, set defaults, or filter by changed files, add `latch.json` in the directory where the agent runs. For example, run Ruff from an existing uv project:
+To start with a `latch.json`, install the [standalone CLI](#install-the-standalone-cli)
+(v0.1.2 or later), then run this from your project root.
+
+```sh
+latch config init
+```
+
+This creates a starter config and keeps package script discovery enabled.
+You can then add your own checks. Here’s an example for Ruff in a uv project.
 
 ```json
 {

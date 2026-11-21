@@ -6,6 +6,7 @@ import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeF
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pluginLauncher } from "./plugin-launcher.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const targets = {
@@ -53,6 +54,7 @@ try {
     );
     writeJson(join(packageRoot, "package.json"), { ...packageManifest, private: false, optionalDependencies });
     npmPack(packageRoot);
+    writeFileSync(join(output, "install-latch-plugin.sh"), pluginLauncher(version), { mode: 0o755 });
   } else {
     packPlatform(target);
   }
@@ -73,6 +75,8 @@ function packPlatform(target) {
     ...(os === "linux" ? { libc: ["glibc"] } : {}),
   });
   npmPack(packageRoot);
+  const tarball = `${platformName(os, cpu).replace(/^@/, "").replace("/", "-")}-${version}.tgz`;
+  writeChecksum(tarball);
 
   const directory = `latch-${version}-${target}`;
   const bundle = join(staging, directory);
@@ -93,6 +97,10 @@ function packPlatform(target) {
     env: { ...process.env, COPYFILE_DISABLE: "1" },
     stdio: "inherit",
   });
+  writeChecksum(filename);
+}
+
+function writeChecksum(filename) {
   const digest = createHash("sha256").update(readFileSync(join(output, filename))).digest("hex");
   writeFileSync(join(output, `${filename}.sha256`), `${digest}  ${filename}\n`);
 }

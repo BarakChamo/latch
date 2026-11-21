@@ -11,22 +11,22 @@ import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 
 <Tab value="npm tarballs">
 
-Install with Node.js 18 or later. Download `barakchamo-latch-0.1.1.tgz`
+Install with Node.js 18 or later. Download `barakchamo-latch-0.1.2.tgz`
 and the matching binary tarball from the
-[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.1).
+[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.2).
 
 | Platform | Binary tarball |
 | --- | --- |
-| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.1.tgz` |
-| Intel Mac | `barakchamo-latch-darwin-x64-0.1.1.tgz` |
-| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.1.tgz` |
-| Linux x64 | `barakchamo-latch-linux-x64-0.1.1.tgz` |
+| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.2.tgz` |
+| Intel Mac | `barakchamo-latch-darwin-x64-0.1.2.tgz` |
+| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.2.tgz` |
+| Linux x64 | `barakchamo-latch-linux-x64-0.1.2.tgz` |
 
 In the directory containing the downloads, install both files together.
 For example, on Linux x64:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.1.tgz ./barakchamo-latch-linux-x64-0.1.1.tgz
+npm install --global --offline ./barakchamo-latch-0.1.2.tgz ./barakchamo-latch-linux-x64-0.1.2.tgz
 latch --version
 ```
 
@@ -36,15 +36,15 @@ Start your harness from a terminal that can run `latch --version`.
 
 <Tab value="Standalone">
 
-Download the `latch-0.1.1-*.tar.gz` archive for your platform from the
-[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.1).
+Download the `latch-0.1.2-*.tar.gz` archive for your platform from the
+[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.2).
 Extract it to a directory you can keep. Add its `bin` directory to your
 shell’s `PATH`. For example, on Apple Silicon:
 
 ```sh
 mkdir -p "$HOME/.local/share/latch"
-tar -xzf latch-0.1.1-aarch64-apple-darwin.tar.gz -C "$HOME/.local/share/latch"
-export LATCH_HOME="$HOME/.local/share/latch/latch-0.1.1-aarch64-apple-darwin"
+tar -xzf latch-0.1.2-aarch64-apple-darwin.tar.gz -C "$HOME/.local/share/latch"
+export LATCH_HOME="$HOME/.local/share/latch/latch-0.1.2-aarch64-apple-darwin"
 export PATH="$LATCH_HOME/bin:$PATH"
 latch --version
 ```
@@ -61,7 +61,7 @@ Run `cargo --version` first. If you installed Rust with rustup and the
 shell cannot find Cargo, open a new terminal or run `. "$HOME/.cargo/env"`.
 
 ```sh
-git clone --branch v0.1.1 https://github.com/BarakChamo/latch.git
+git clone --branch v0.1.2 https://github.com/BarakChamo/latch.git
 cd latch
 cargo install --locked --path crates/latch
 latch --version
@@ -84,6 +84,7 @@ Run these commands from the directory containing your `latch.json` or
 
 | Command | What it does |
 | --- | --- |
+| `latch config init` | Create a starter `latch.json` in the current directory. Existing files are preserved. |
 | `latch --help` | List available commands. |
 | `latch --version` | Print the installed version. |
 | `latch run after_edit` | Run all configured edit checks immediately. |

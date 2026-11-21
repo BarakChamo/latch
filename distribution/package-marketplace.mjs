@@ -1,15 +1,14 @@
-// Builds the Git marketplace and bundles verified release executables for each supported host.
+// Builds the binary-free Git marketplace for the supported harnesses.
 
-import { execFileSync } from "node:child_process";
-import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pluginLauncher } from "./plugin-launcher.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
-const [archiveDir, destination] = process.argv.slice(2);
-if (!archiveDir || !destination) {
-  throw new Error("Usage: node distribution/package-marketplace.mjs <archive-dir> <new-destination>");
+const [destination, extra] = process.argv.slice(2);
+if (!destination || extra) {
+  throw new Error("Usage: node distribution/package-marketplace.mjs <new-destination>");
 }
 
 const output = resolve(destination);
@@ -25,21 +24,7 @@ const version = plugins[0].descriptor.version;
 if (plugins.some(({ descriptor }) => descriptor.version !== version)) {
   throw new Error("Marketplace plugin versions must match.");
 }
-const targets = [
-  "aarch64-apple-darwin", "x86_64-apple-darwin",
-  "aarch64-unknown-linux-gnu", "x86_64-unknown-linux-gnu",
-];
-const binaries = new Map(targets.map((target) => {
-  const bundle = `latch-${version}-${target}`;
-  const archive = resolve(archiveDir, `${bundle}.tar.gz`);
-  const expected = readFileSync(`${archive}.sha256`, "utf8").split(/\s+/)[0];
-  const actual = createHash("sha256").update(readFileSync(archive)).digest("hex");
-  if (actual !== expected) throw new Error(`Checksum mismatch for ${archive}`);
-  return [target, execFileSync("tar", ["-xOf", archive, `${bundle}/bin/latch`], {
-    maxBuffer: 32 * 1024 * 1024,
-  })];
-}));
-const launcher = readFileSync(join(root, "distribution/native/plugin-launch.sh"));
+const launcher = pluginLauncher(version);
 mkdirSync(output);
 
 for (const plugin of plugins) writePlugin(plugin);
@@ -67,7 +52,6 @@ function writePlugin({ host, catalog, descriptor, manifest, rootVariable, hooksF
   writeJson(join(target, hooksFile), hooks);
   writeJson(join(target, ".mcp.json"), { mcpServers: { latch: mcpServer(host, executable) } });
   writeExecutable(join(target, "bin/latch"), launcher);
-  for (const [platform, binary] of binaries) writeExecutable(join(target, "bin", platform), binary);
 }
 
 function mcpServer(host, executable) {

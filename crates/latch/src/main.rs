@@ -18,7 +18,7 @@ use std::process::ExitCode;
 use config::{HookEntries, HookEntry, HookName};
 use serde_json::{Map, Value, json};
 
-const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
+const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
 
 fn main() -> ExitCode {
     let mut args = env::args_os().skip(1).peekable();
@@ -50,6 +50,12 @@ fn main() -> ExitCode {
         Some(arg) if arg == "--version" && args.next().is_none() => {
             println!("latch {}", env!("CARGO_PKG_VERSION"));
             return ExitCode::SUCCESS;
+        }
+        Some(arg) if arg == "config" => {
+            return match args.next().as_deref() {
+                Some(option) if option == "init" && args.next().is_none() => initialize_config(),
+                _ => usage(),
+            };
         }
         Some(arg) if arg == "output" => {
             let Some(id) = args.next().and_then(|id| id.into_string().ok()) else {
@@ -146,6 +152,23 @@ fn main() -> ExitCode {
         ExitCode::FAILURE
     } else {
         ExitCode::SUCCESS
+    }
+}
+
+fn initialize_config() -> ExitCode {
+    match config::initialize(Path::new(".")) {
+        Ok(()) => {
+            println!("Created latch.json.");
+            ExitCode::SUCCESS
+        }
+        Err(error) if error.kind() == io::ErrorKind::AlreadyExists => {
+            eprintln!("latch: latch.json already exists");
+            ExitCode::FAILURE
+        }
+        Err(error) => {
+            eprintln!("latch: could not create latch.json: {error}");
+            ExitCode::FAILURE
+        }
     }
 }
 
