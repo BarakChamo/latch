@@ -4,7 +4,7 @@ Start with the [README](../README.md) to install a plugin and run your first che
 
 ## Install the plugin from a terminal
 
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.2/install-latch-plugin.sh), then run it in your terminal.
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.3/install-latch-plugin.sh), then run it in your terminal.
 
 ```sh
 sh install-latch-plugin.sh --install-plugin codex
@@ -58,9 +58,8 @@ terminal output of a headless run may omit the UI warning. See the
 
 ## Act on a turn-end failure
 
-Install Latch from a [locally built archive](releasing.md#build-the-artifacts) to try this option
-in the current source. Set this top-level option in `latch.json` to let a
-compatible agent act on a failed turn-end check immediately.
+With [Latch v0.1.3 or later](https://github.com/BarakChamo/latch/releases/tag/v0.1.3),
+add this top-level option to `latch.json`.
 
 ```json
 {
@@ -68,9 +67,10 @@ compatible agent act on a failed turn-end check immediately.
 }
 ```
 
-Keep your existing check definitions or package scripts. Latch hands off
-the failure once and skips the automatic turn-end recheck. Successful
-checks, manual runs, and the default `report` mode keep their usual behavior.
+Keep your existing check definitions or package scripts. A supported agent
+automatically receives the failure and gets one chance to act on it,
+without another message from you or an automatic recheck. The default
+`report` mode lets the turn finish as usual.
 
 | Harness | How the model sees the failure |
 | --- | --- |
@@ -168,9 +168,9 @@ Download your platform’s archive from [GitHub Releases](https://github.com/Bar
 For Apple Silicon, from your downloads directory:
 
 ```sh
-tar -xzf latch-0.1.2-aarch64-apple-darwin.tar.gz
+tar -xzf latch-0.1.3-aarch64-apple-darwin.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 latch-0.1.2-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
+install -m 755 latch-0.1.3-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
 export PATH="$HOME/.local/bin:$PATH"
 latch --version
 ```
@@ -182,7 +182,7 @@ Use the archive name for your platform in the first and third lines. Add the `ex
 Download the wrapper and the matching platform tarball from the same release. For Apple Silicon:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.2.tgz ./barakchamo-latch-darwin-arm64-0.1.2.tgz
+npm install --global --offline ./barakchamo-latch-0.1.3.tgz ./barakchamo-latch-darwin-arm64-0.1.3.tgz
 latch --version
 ```
 
@@ -193,7 +193,7 @@ The other binary tarballs contain `darwin-x64`, `linux-arm64`, or `linux-x64` in
 With Rust 1.88 or later:
 
 ```sh
-git clone --branch v0.1.2 https://github.com/BarakChamo/latch.git
+git clone --branch v0.1.3 https://github.com/BarakChamo/latch.git
 cd latch
 cargo install --locked --path crates/latch
 latch --version

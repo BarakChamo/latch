@@ -62,7 +62,7 @@ to remove binaries left by earlier marketplace versions. Install from GitHub in 
 profiles and check edit feedback and MCP startup with no Latch on `PATH`.
 
 ```sh
-npm run test:live -- dist/latch-0.1.2-aarch64-apple-darwin.tar.gz --marketplace
+npm run test:live -- dist/latch-0.1.3-aarch64-apple-darwin.tar.gz --marketplace
 ```
 
 ## Verify a real harness session
@@ -72,8 +72,8 @@ the live test. Omit `--harness` to test Codex, Claude Code, and GitHub
 Copilot CLI together, or repeat the option to select multiple harnesses.
 
 ```sh
-npm run test:live -- dist/latch-0.1.2-aarch64-apple-darwin.tar.gz
-npm run test:live -- dist/latch-0.1.2-aarch64-apple-darwin.tar.gz --harness copilot
+npm run test:live -- dist/latch-0.1.3-aarch64-apple-darwin.tar.gz
+npm run test:live -- dist/latch-0.1.3-aarch64-apple-darwin.tar.gz --harness copilot
 ```
 
 The test installs the plugin in temporary directories, sends a
@@ -95,7 +95,7 @@ when available. The test removes its temporary files on exit.
 Install OpenCode and Pi 1.5.2 on your `PATH`, then run:
 
 ```sh
-npm run test:extensions -- dist/latch-0.1.2-aarch64-apple-darwin.tar.gz
+npm run test:extensions -- dist/latch-0.1.3-aarch64-apple-darwin.tar.gz
 ```
 
 The test runs both real CLIs against a scripted localhost model with
@@ -118,7 +118,7 @@ set -e
 for tarball in dist/barakchamo-latch-{darwin,linux,win32}-*.tgz; do
   npm publish "$tarball" --access public
 done
-npm publish dist/barakchamo-latch-0.1.2.tgz --access public
+npm publish dist/barakchamo-latch-0.1.3.tgz --access public
 ```
 
 Attach the native archives and checksums to the matching GitHub release.

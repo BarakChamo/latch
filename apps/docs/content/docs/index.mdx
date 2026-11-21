@@ -42,8 +42,10 @@ result. A turn-end warning can be visible to you while the model is idle.
 See [hook and feedback details](/docs/hooks) and [hosted setup](/docs/cloud).
 With MCP enabled, agents can [run checks on demand or search saved logs](/docs/plugins#run-checks-from-chat).
 
-To let a supported agent act on a turn-end failure before you send another
-message, see the [opt-in follow-up](/docs/hooks#act-on-a-turn-end-failure).
+With Latch v0.1.3 or later, set `"turn_end_feedback": "continue_once"` at the
+top level of `latch.json`. A supported agent automatically receives the
+failure and gets one chance to respond, without another message from you
+or an automatic recheck. See [which agents can continue and how](/docs/hooks#act-on-a-turn-end-failure).
 
 ## Install a plugin
 

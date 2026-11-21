@@ -23,7 +23,7 @@ both files. Change the base name for Linux ARM64 or a different version.
 
 ```sh
 set -eu
-bundle=latch-0.1.2-x86_64-unknown-linux-gnu
+bundle=latch-0.1.3-x86_64-unknown-linux-gnu
 sha256sum --check "$bundle.tar.gz.sha256"
 tar -xzf "$bundle.tar.gz"
 install -Dm755 "$bundle/bin/latch" "$HOME/.local/bin/latch"

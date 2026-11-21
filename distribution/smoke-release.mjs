@@ -70,8 +70,12 @@ try {
   assert.equal(success.status, 0, success.stderr);
   assert.equal(success.stdout, "");
   writeFileSync(join(project, "latch.json"), JSON.stringify({
+    turn_end_feedback: "continue_once",
     commands: [["node", "-e", "console.error('release smoke failure'); process.exit(17)"]],
   }));
+  const explained = run("explain", "turn_end");
+  assert.equal(explained.status, 0, explained.stderr);
+  assert.equal(JSON.parse(explained.stdout).turn_end_feedback, "continue_once");
   const failure = run();
   assert.equal(failure.status, 1, failure.stderr);
   assert.match(failure.stderr, /release smoke failure/);

@@ -22,7 +22,7 @@ explicit commands, file filters, or defaults for [discovered scripts](/docs/proj
 ## Editor completion and validation
 
 The starter points to the hosted schema. For offline editor completion,
-copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/v0.1.2/latch.schema.json)
+copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/v0.1.3/latch.schema.json)
 from the Latch repository, standalone archive, or npm wrapper into your
 project next to `latch.json`. Add `"$schema": "./latch.schema.json"` as
 a top-level property. Editors that support JSON Schema can then suggest
@@ -94,7 +94,7 @@ its first failure.
 ## File structure
 
 <TypeTable type={{
-  turn_end_feedback: { type: '"report" | "continue_once"', description: 'On current source builds, optionally give compatible agents one follow-up on a failed turn-end check. Defaults to report.' },
+  turn_end_feedback: { type: '"report" | "continue_once"', description: 'Since v0.1.3. Automatically give compatible agents one follow-up on failure, with no new user message or automatic recheck. Defaults to report.' },
   defaults: { type: 'object', description: 'Default values for when, on_success, on_failure, failure_output, tail_lines, and rtk_filter.' },
   hooks: { type: 'object', description: 'Accepts after_edit and turn_end. Each event takes a hook object or an array of hook objects.' },
   commands: { type: 'string[][]', description: 'Legacy shorthand for turn-end commands. Use it as an alternative to hooks.' },
