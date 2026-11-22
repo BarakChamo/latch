@@ -1,6 +1,6 @@
 {
   "name": "latch",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "description": "Run project validation at the end of Kimi Code turns.",
   "hooks": [
     {
