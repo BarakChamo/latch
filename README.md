@@ -11,6 +11,13 @@
   <a href="#install-the-standalone-cli">Standalone CLI</a> ·
   <a href="https://barakchamo.github.io/latch/">Docs</a>
 </p>
+<p align="center">
+  <a href="README.md">English</a> ·
+  <a href="README_zh.md">简体中文</a> ·
+  <a href="README_ja.md">日本語</a> ·
+  <a href="README_ko.md">한국어</a> ·
+  <a href="README_es.md">Español</a>
+</p>
 
 When we write code, our IDE gives us feedback as we work. Syntax highlighting
 helps us read the change, linting and formatting on save catch problems early,
