@@ -2,6 +2,6 @@
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "latch",
   "version": "0.1.3",
-  "description": "Run project checks after edits and at the end of OpenHands turns.",
+  "description": "Run project checks after edits and at the end of coding-agent turns.",
   "homepage": "https://barakchamo.github.io/latch/"
 }

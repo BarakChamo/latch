@@ -1,0 +1,59 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$GROK_PLUGIN_ROOT/plugins/extension-launch.sh\" hook grok",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$GROK_PLUGIN_ROOT/plugins/extension-launch.sh\" hook grok",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$GROK_PLUGIN_ROOT/plugins/extension-launch.sh\" hook grok",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$GROK_PLUGIN_ROOT/plugins/extension-launch.sh\" hook grok",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$GROK_PLUGIN_ROOT/plugins/extension-launch.sh\" hook grok",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
