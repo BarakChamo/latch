@@ -18,18 +18,18 @@ hooks, or inspect a saved failure.
 ### Standalone
 
 Download your platform’s archive, extract it, and add its `bin`
-directory to your `PATH`. The v0.1.6 Linux builds target glibc 2.36
+directory to your `PATH`. The v0.1.7 Linux builds target glibc 2.36
 or later, including Debian 12 and Ubuntu 24.04.
 
 | Platform | Standalone archive |
 | --- | --- |
-| Apple Silicon | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.6/latch-0.1.6-aarch64-apple-darwin.tar.gz) |
-| Intel Mac | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.6/latch-0.1.6-x86_64-apple-darwin.tar.gz) |
-| Linux ARM64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.6/latch-0.1.6-aarch64-unknown-linux-gnu.tar.gz) |
-| Linux x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.6/latch-0.1.6-x86_64-unknown-linux-gnu.tar.gz) |
-| Windows x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.6/latch-0.1.6-x86_64-pc-windows-msvc.tar.gz) |
+| Apple Silicon | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.7/latch-0.1.7-aarch64-apple-darwin.tar.gz) |
+| Intel Mac | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.7/latch-0.1.7-x86_64-apple-darwin.tar.gz) |
+| Linux ARM64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.7/latch-0.1.7-aarch64-unknown-linux-gnu.tar.gz) |
+| Linux x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.7/latch-0.1.7-x86_64-unknown-linux-gnu.tar.gz) |
+| Windows x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.7/latch-0.1.7-x86_64-pc-windows-msvc.tar.gz) |
 
-[Release checksums](https://github.com/BarakChamo/latch/releases/tag/v0.1.6)
+[Release checksums](https://github.com/BarakChamo/latch/releases/tag/v0.1.7)
 
 Run `latch --version` to confirm the install.
 
@@ -37,23 +37,23 @@ Run `latch --version` to confirm the install.
 
 ### npm tarballs
 
-Install with Node.js 18 or later. Download `barakchamo-latch-0.1.6.tgz`
+Install with Node.js 18 or later. Download `barakchamo-latch-0.1.7.tgz`
 and the matching binary tarball from the
-[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.6).
+[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.7).
 
 | Platform | Binary tarball |
 | --- | --- |
-| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.6.tgz` |
-| Intel Mac | `barakchamo-latch-darwin-x64-0.1.6.tgz` |
-| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.6.tgz` |
-| Linux x64 | `barakchamo-latch-linux-x64-0.1.6.tgz` |
-| Windows x64 | `barakchamo-latch-win32-x64-0.1.6.tgz` |
+| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.7.tgz` |
+| Intel Mac | `barakchamo-latch-darwin-x64-0.1.7.tgz` |
+| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.7.tgz` |
+| Linux x64 | `barakchamo-latch-linux-x64-0.1.7.tgz` |
+| Windows x64 | `barakchamo-latch-win32-x64-0.1.7.tgz` |
 
 In the directory containing the downloads, install both files together.
 For example, on Linux x64:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.6.tgz ./barakchamo-latch-linux-x64-0.1.6.tgz
+npm install --global --offline ./barakchamo-latch-0.1.7.tgz ./barakchamo-latch-linux-x64-0.1.7.tgz
 latch --version
 ```
 
@@ -64,7 +64,7 @@ Start your harness from a terminal that can run `latch --version`.
 With Rust 1.88 or later, install directly from the release tag.
 
 ```sh
-cargo install --locked --git https://github.com/BarakChamo/latch --tag v0.1.6 latch
+cargo install --locked --git https://github.com/BarakChamo/latch --tag v0.1.7 latch
 ```
 
 See the [build guide](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md#build-the-artifacts)
@@ -105,7 +105,7 @@ Run these commands from the directory containing your `latch.json` or
 | Command | What it does |
 | --- | --- |
 | `latch config init` | Create a starter `latch.json` in the current directory. Existing files are preserved. |
-| `latch install cloud <claude\|copilot\|openhands>` | Add cloud hooks to the harness config at the Git worktree root. Available since 0.1.6. Existing settings are preserved. [Cloud setup](/docs/cloud) |
+| `latch install cloud <claude\|copilot\|openhands>` | Add cloud hooks to the harness config at the Git worktree root. Available since 0.1.7. Existing settings are preserved. [Cloud setup](/docs/cloud) |
 | `latch --help` | List available commands. |
 | `latch --version` | Print the installed version. |
 | `latch status` | Show the resolved checks and recent prompt and automatic-check activity without running anything. |

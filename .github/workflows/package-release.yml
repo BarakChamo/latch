@@ -35,6 +35,13 @@ jobs:
           package-manager-cache: false
       - run: cargo test --locked --workspace --target ${{ matrix.target }}
       - run: cargo build --release --locked -p latch --target ${{ matrix.target }}
+        if: runner.os != 'Linux'
+      - name: Build for Debian 12 and newer glibc
+        if: runner.os == 'Linux'
+        run: |
+          docker run --rm --volume "$PWD:/source" --workdir /source rust:bookworm \
+            sh -ec 'cargo build --release --locked -p latch --target "$1"
+            "./target/$1/release/latch" --version' sh "${{ matrix.target }}"
       - run: npm run package:release -- ${{ matrix.target }}
       - run: npm run test:release -- ${{ matrix.target }}
       - uses: actions/upload-artifact@v7
