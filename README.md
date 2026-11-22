@@ -3,8 +3,8 @@
 Latch runs your project’s checks as your coding agent works and brings failures back into the session.
 
 ```sh
-pi install git:github.com/BarakChamo/latch@codex/marketplace
-opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
+pi install git:github.com/BarakChamo/latch
+opencode plugin add 'github:BarakChamo/latch'
 ```
 
 Use the command for your agent. The OpenCode command targets v2. On first
