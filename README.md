@@ -10,6 +10,17 @@
   <a href="https://barakchamo.github.io/latch/">Docs</a>
 </p>
 
+When we write code, our IDE gives us feedback as we work. Syntax highlighting
+helps us read the change, linting and formatting on save catch problems early,
+and type checks show when an edit breaks code elsewhere. Latch gives coding
+agents that same feedback loop.
+
+- **Make checks automatic.** The harness’s hooks run your checks after a
+  supported edit or changed turn. The agent doesn’t have to remember which
+  checks to run or when.
+- **Keep agent context focused.** Passing checks stay quiet by default.
+  Latch surfaces failures with the diagnostics the agent needs to act.
+
 ## How it works
 
 Use Latch to catch a lint error right after an edit or see a failing test at the end of a turn. Reuse commands you already run locally or in CI, and keep them in the project so teammates can use the same checks with different agents.

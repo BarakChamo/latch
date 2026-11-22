@@ -184,10 +184,20 @@ hook entries whose command ends in `# latch-installed` and remove the
 
 Ask your agent to call `latch_status` in the project after you send a prompt.
 It shows the resolved commands, when Latch last received a prompt hook, and
-the most recent automatic check outcome for each event. An empty result
-for an event means Latch has yet to record it for this project. Call it
-without running or changing any check. The standalone equivalent is
-`latch status`.
+the most recent automatic check outcome for each event. On a fresh project,
+`last_check: null` means Latch has yet to record a check for that event.
+The tool is read-only. The standalone equivalent is `latch status`.
+
+| Harness | What happened on the first prompt after a clean plugin install |
+| --- | --- |
+| Grok Build 1.0.92 | The agent found the tool through Grok’s MCP search, then called it with the absolute project directory. |
+| Kimi Code 2.7.2 | The interactive CLI connected to the plugin, but requests to the OpenAI-compatible test provider omitted the tool, even after experimental tool selection reported it as loaded. Use `latch status` in the project if the agent cannot access it. |
+| OpenHands Agent Canvas 1.43.0 | The tool was available in the first message of a new OpenHands conversation after enabling the plugin and opening a local Git workspace. The agent passed the absolute project directory. |
+
+These tests used Latch 0.1.5, local Git workspaces and a scripted model
+provider. Grok and Canvas returned the configured commands and empty check
+history without running a check.
+[Grok’s MCP tool discovery](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/07-mcp-servers.md#tool-discovery) · [Kimi MCP tool visibility issue](https://github.com/MoonshotAI/kimi-code/issues/5083)
 
 ## Run checks from chat
 
