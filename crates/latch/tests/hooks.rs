@@ -1274,6 +1274,7 @@ fn opted_in_turn_failure_reaches_the_agent_without_rechecking() {
         "opencode",
         "openhands",
         "kimi",
+        "grok",
         "pi",
     ] {
         let project = Project::new();
@@ -1289,6 +1290,7 @@ fn opted_in_turn_failure_reaches_the_agent_without_rechecking() {
                 "cwd": project.root.path(), "working_dir": project.root.path(),
             });
             payload["stop_hook_active"] = json!(active);
+            payload["stopHookActive"] = json!(active);
             payload["extension_can_continue"] = json!(host == "opencode");
             if host == "copilot" {
                 let name = if event == "Stop" {
