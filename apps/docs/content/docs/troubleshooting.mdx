@@ -13,9 +13,9 @@ are public.
 
 ## The agent cannot sign in or start a turn
 
-Use the sign-in command in [your agent’s setup](/docs#install-a-plugin)
-and start a new session. In OpenCode, connect a model provider and
-select a working model before running your [first check](/docs#run-your-first-check).
+Use `codex login`, `claude auth login`, or `copilot login` for your CLI,
+then start a new session. In OpenCode, connect a model provider and
+select a working model before running your [first check](/docs/quickstart#run-your-first-check).
 
 ## The hook is quiet
 
@@ -44,6 +44,8 @@ CLI separately, verify that the session can launch `latch`. The plugin exposes
 
 ## A turn-end failure is missing from the chat
 
-Look for the harness's [turn-end feedback](/docs/hooks#where-reports-appear).
-The failed report should appear once on the next prompt in the same session and
-working directory.
+Check [where your harness shows turn-end feedback](/docs/hooks#where-reports-appear).
+Some integrations pass the report to the model on your next prompt in the
+same session and project. With [`continue_once`](/docs/hooks#act-on-a-turn-end-failure)
+enabled on a supported agent, it receives the failure automatically. Run
+`latch explain turn_end` from the project directory to confirm the setting.

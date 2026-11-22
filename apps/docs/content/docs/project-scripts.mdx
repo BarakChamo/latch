@@ -49,7 +49,11 @@ The scripts inherit any [defaults in `latch.json`](/docs/configuration#ordering-
 
 ## Try the examples
 
-From a Latch checkout, choose an example and run its checks.
+From a Latch checkout, choose an example below. Use the
+[standalone CLI](/docs/cli#install-the-cli) to try the passing and failing
+checks from a terminal. To try automatic runs, follow the
+[plugin quickstart](/docs/quickstart#install-a-plugin), start the agent in the
+example directory, and ask it to make the described change with its edit tool.
 
 ### TypeScript example
 
@@ -61,7 +65,8 @@ latch run turn_end
 ```
 
 Use Node.js 22.12 or newer. Change `Hello` to `Hi` in `src/message.ts`,
-then rerun `latch run turn_end` to see the Vitest assertion.
+then rerun `latch run turn_end` to see the Vitest assertion. Restore `Hello`
+to pass again. [TypeScript source and setup](https://github.com/BarakChamo/latch/tree/main/examples/typescript)
 
 ### Python example
 
@@ -74,4 +79,6 @@ latch run turn_end
 
 Add an unused import to `src/latch_python_example/__init__.py` and rerun
 `latch run after_edit` to see Ruff's diagnostic. Remove the import and change
-`Hello` to `Hi` to see a unit test fail with `latch run turn_end`.
+`Hello` to `Hi` in the same file to see a unit test fail with
+`latch run turn_end`. Restore `Hello` to pass again.
+[Python source and setup](https://github.com/BarakChamo/latch/tree/main/examples/python)

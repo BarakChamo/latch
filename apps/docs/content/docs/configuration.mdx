@@ -37,7 +37,6 @@ path globs at runtime.
 
 ```json title="latch.json"
 {
-  "$schema": "./latch.schema.json",
   "hooks": {
     "turn_end": {
       "commands": [["cargo", "fmt", "--all", "--", "--check"]]
@@ -70,6 +69,7 @@ Run a Rust formatting check at turn end when the worktree changes.
 
 A Markdown edit runs lint and Markdown lint. A TypeScript edit in `src/`
 runs lint and type checking. An edit that changes both runs all three in order.
+A JSON-only edit runs the general linter.
 
 </Tab>
 

@@ -19,3 +19,7 @@ and run `latch run after_edit` to see Ruff's diagnostic. Remove the import,
 then change `Hello` to `Hi` in that file and run `latch run turn_end` to see
 the failed unit test. Both failures exit with status 1. Restore the greeting
 to make the tests pass again.
+
+To try automatic feedback, start an agent session with Latch enabled in
+this directory and ask the agent to add the unused import with its edit tool.
+Check [where your agent shows edit failures](../../docs/usage.md#hooks-and-feedback).

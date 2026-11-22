@@ -17,3 +17,7 @@ Change `Hello` to `Hi` in [`src/message.ts`](src/message.ts) and run
 `latch run turn_end`. The greeting still type checks, but Vitest reports
 the expected and actual messages and Latch exits with status 1. Restore
 `Hello` to make the check pass again.
+
+To try automatic feedback, open an agent session with Latch enabled in
+this directory and ask the agent to make the same edit. Check
+[where your agent shows turn-end failures](../../docs/usage.md#hooks-and-feedback).

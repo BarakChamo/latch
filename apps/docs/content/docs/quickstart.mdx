@@ -1,8 +1,108 @@
 ---
 title: Quickstart
-description: Install the plugin and run your first check.
+description: Install Latch in your agent and run an existing project check after an edit.
 ---
 
-Start with [plugin installation](/docs#install-a-plugin), then
-[run your first check](/docs#run-your-first-check) with a package script
-or [create a starter config](/docs#configure-checks).
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Start in a Git project with a check you already run, such as a linter. The plugin handles automatic checks, and the standalone CLI is available for terminal and CI runs.
+
+## Install a plugin
+
+Choose your agent. The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
+
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI']}>
+
+<Tab value="Codex">
+
+```sh
+codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin add latch@latch-tools
+```
+
+Open a new Codex session in your project, then review and approve the Latch hooks in `/hooks`.
+
+</Tab>
+
+<Tab value="Claude Code">
+
+```sh
+claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
+claude plugin install latch@latch-tools
+```
+
+</Tab>
+
+<Tab value="GitHub Copilot CLI">
+
+```sh
+copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+copilot plugin install latch@latch-tools
+```
+
+</Tab>
+
+</Tabs>
+
+The plugin downloads the Latch binary from GitHub on first use and caches it. [OpenCode, Pi, and other integrations](/docs/plugins) · [Pre-download the binary](/docs/plugins#install-from-a-terminal)
+
+## Run your first check
+
+Install your project’s dependencies and choose a command that already works locally.
+
+<Tabs items={['JavaScript or TypeScript', 'Python or other commands']}>
+
+<Tab value="JavaScript or TypeScript">
+
+If your npm project has a `lint` script, add this entry to the existing `scripts` object. Latch discovers it automatically.
+
+```json title="package.json"
+{
+  "scripts": {
+    "hook:afteredit": "npm run lint"
+  }
+}
+```
+
+For pnpm, Yarn, or Bun, call your lint script with that runner. Use `hook:turnend` for a script such as `npm test` that should run once per changed turn. [How Latch selects a package manager](/docs/project-scripts#javascript-and-typescript)
+
+</Tab>
+
+<Tab value="Python or other commands">
+
+If your project already uses Ruff through uv, add `latch.json` in the directory where you run it. For other tools, put the executable first and each argument in its own string.
+
+```json title="latch.json"
+{
+  "hooks": {
+    "after_edit": {
+      "commands": [["uv", "run", "ruff", "check", "."]]
+    }
+  }
+}
+```
+
+You can also use `latch config init` to create a starter file if you have the [standalone CLI](/docs/cli#install-the-cli). A packaged uv project can define a [Python entry point](/docs/project-scripts#python-with-uv) to use discovery.
+
+</Tab>
+
+</Tabs>
+
+1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a source file using its native edit tool.
+2. Passing checks are silent. To see the feedback, ask the agent to introduce a violation of a lint rule your project enforces. For Ruff projects that enforce `F401`, add an unused `import os`. Restore the file after trying it.
+3. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` to see the command Latch found.
+
+For a ready-to-run project with known passing and failing cases, try the [TypeScript or Python example](/docs/project-scripts#try-the-examples).
+
+## Run the same check from a terminal
+
+Install the [standalone CLI](/docs/cli#install-the-cli), then run these from your project directory.
+
+```sh
+latch explain after_edit
+latch run after_edit
+```
+
+`explain` shows the resolved command and settings. `run` executes the check immediately, even when no files have changed. Use `latch run turn_end` in CI if your project defines turn-end checks.
+
+Once the first check works, add [path or file-type filters](/docs/configuration#examples) or [give the agent one automatic response to a turn-end failure](/docs/hooks#act-on-a-turn-end-failure).

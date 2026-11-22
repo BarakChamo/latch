@@ -1,10 +1,18 @@
-# Latch
-
-Latch automatically runs your project’s linters, tests, and other checks while your coding agent works, so it can see failures without being asked to run the checks.
-
-[How it works](#how-it-works) · [Compatibility](#compatibility) · [Install a plugin](#install-a-plugin) · [Run your first check](#run-your-first-check) · [Standalone CLI](#install-the-standalone-cli) · [Docs](#docs)
+<h1 align="center">Latch</h1>
+<p align="center"><strong>Give your coding agent a feedback loop.</strong></p>
+<p align="center">Latch runs your project’s linters, tests, and other checks as your agent works, and brings failures back into the session.</p>
+<p align="center">
+  <a href="#install-a-plugin">Install a plugin</a> ·
+  <a href="#run-your-first-check">First check</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#compatibility">Compatibility</a> ·
+  <a href="#install-the-standalone-cli">Standalone CLI</a> ·
+  <a href="https://barakchamo.github.io/latch/">Docs</a>
+</p>
 
 ## How it works
+
+Use Latch to catch a lint error right after an edit or see a failing test at the end of a turn. Reuse commands you already run locally or in CI, and keep them in the project so teammates can use the same checks with different agents.
 
 Plugins map their agents’ native hooks to two shared Latch events. Available events vary by agent, but your check commands stay in the project and work with any integration.
 
@@ -18,36 +26,9 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 - **Run checks that match the change.** Filter by path or file extension so a Markdown-only edit can run Markdown lint and skip TypeScript checks.
 - **Keep failure reports short.** Compact output surfaces useful lines such as errors and assertions. The agent can retrieve more detail from a saved log without rerunning the check.
 
-## Compatibility
-
-These are the shipped integrations. The local columns describe the default
-reporting behavior. Same-turn context reaches the model with the edit
-result. A turn-end warning can be visible to you while the model is idle.
-
-| Harness | Local verification | Local `after_edit` | Local `turn_end` | Managed cloud |
-| --- | --- | --- | --- | --- |
-| Codex | Live session | Model gets context after `apply_patch`. | UI or app-server warning. The model gets the failure on your next prompt. | Managed Codex Cloud has no Latch command hooks. Run Latch directly or in CI. |
-| Claude Code | Live session | Model gets context after native edits. | Informational hook event. The model gets the failure on your next prompt. | Single-repo sessions outside Claude Projects can load committed hooks. Install the binary in setup. Hosted feedback unverified. |
-| GitHub Copilot CLI | Live session | Model gets context after native edits. | Hook warning. The model gets the failure on your next prompt. | Copilot cloud agent requires repository hooks and runner setup. Same-turn context is documented by GitHub. Latch hosted feedback unverified. |
-| OpenCode v1 | Real CLI, scripted model | Model gets context after native edits. | TUI toast or headless stderr. The model gets the failure on your next prompt. | Managed service unverified. |
-| OpenCode v2 | Real CLI, scripted model | Model gets context after native edits. | Server stderr. The model gets the failure on your next prompt. | Managed service unverified. |
-| Pi | Real CLI, scripted model | Model gets context after `edit` and `write`. | Report enters session history. The model reads it on its next request. | Managed service unverified. |
-| OpenHands CLI | Real CLI, scripted model | Report reaches the next prompt after a native file edit. | Report reaches the next prompt. | Canvas and Cloud document repo hooks. Install Latch in the workspace. Hosted feedback unverified. |
-| Kimi Code CLI | Real CLI, scripted model | Turn-end checks only. | Report reaches the next prompt. | With remote tools, hooks still run beside the CLI and see its local checkout. Managed cloud feedback unverified. |
-| Grok Build | Hook protocol tested | Latch returns edit context. Model delivery unverified. | Hook stderr. | Grok Bot integration unverified. |
-
-“Next prompt” means your next message in the same session and project.
-See [hook and feedback details](docs/usage.md#hooks-and-feedback) and [hosted setup](docs/usage.md#hosted-sessions).
-With MCP enabled, agents can [run checks on demand or search saved logs](docs/usage.md#commands-and-saved-logs).
-
-With Latch v0.1.3 or later, set `"turn_end_feedback": "continue_once"` at the
-top level of `latch.json`. A supported agent automatically receives the
-failure and gets one chance to respond, without another message from you
-or an automatic recheck. See [which agents can continue and how](docs/usage.md#act-on-a-turn-end-failure).
-
 ## Install a plugin
 
-The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
+Choose your agent. The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
 
 ### Codex
 
@@ -81,9 +62,9 @@ For OpenCode, Pi, and other agents, see the [integration guides](plugins/).
 
 ## Run your first check
 
-**`latch.json` is optional.** Latch can discover checks from `package.json` or `pyproject.toml`.
+**`latch.json` is optional.** Latch can discover checks from `package.json` or `pyproject.toml`. Start the agent in the project directory after installing its dependencies.
 
-For example, if your npm project already has a `lint` script, add `hook:afteredit` to the existing `scripts` object in `package.json`:
+If your npm project already has a `lint` script, add this entry to the existing `scripts` object in `package.json`.
 
 ```json
 {
@@ -93,7 +74,9 @@ For example, if your npm project already has a `lint` script, add `hook:afteredi
 }
 ```
 
-Ask the agent to change a file with its edit tool, and Latch runs the script. Use `hook:turnend` for a check at the end of the turn. For Python projects using uv, see the [Python entry-point example](examples/python/).
+Ask the agent to make a real change to a source file using its edit tool. Latch runs lint after a supported edit. A passing check is quiet. To see a failure, ask for an edit that breaks a lint rule your project enforces, then restore the file. Use `hook:turnend` for a check at the end of the turn.
+
+Try the runnable [TypeScript project](examples/typescript/) for formatting, type checking, and Vitest, or the [Python project](examples/python/) for Ruff and unit tests with uv. Each example includes an edit that produces a failure.
 
 ### Configure checks
 
@@ -151,10 +134,20 @@ AssertionError: expected 'Hi, Latch!' to be 'Hello, Latch!'
 Saved log: …/r-kgMl3D6EnjseUc7Nal1Wgf8Z.log
 ```
 
-Open the saved log for the full output. Use `tail` to show the last lines of
-each stream, or leave `failure_output` unset for the default excerpt.
+Open the saved log to read the full output without rerunning the tests. Use
+`tail` to show the last lines of each stream, or leave `failure_output` unset
+for the default excerpt.
 
 [Filter examples](docs/usage.md#configuration) · [Failure output modes](docs/usage.md#commands-and-saved-logs)
+
+### Give the agent a chance to act on a failure
+
+With Latch v0.1.3 or later, set `"turn_end_feedback": "continue_once"` at the
+top level of `latch.json`. On supported agents, this delivers the failed
+turn-end report automatically and gives the agent one chance to respond
+without another message from you or an automatic recheck.
+
+[Supported agents and how they receive failures](docs/usage.md#act-on-a-turn-end-failure)
 
 ## Install the standalone CLI
 
@@ -162,10 +155,29 @@ For terminal or CI use, download and extract your platform’s archive from [Git
 
 From your project, run `latch run after_edit` or `latch run turn_end` to execute that event’s checks immediately. This works with either package scripts or `latch.json`. Use `latch explain after_edit` to see what Latch resolved.
 
+## Compatibility
+
+The local columns show when the agent gets failures by default.
+
+| Harness | Local test | After edit | Turn end | Managed cloud |
+| --- | --- | --- | --- | --- |
+| Codex | Live | Same turn | Next prompt | Latch CLI or CI |
+| Claude Code | Live | Same turn | Next prompt | Single-repo setup |
+| GitHub Copilot CLI | Live | Same turn | Next prompt | Actions runner setup |
+| OpenCode v1 and v2 | Scripted | Same turn | Next prompt | Unverified |
+| Pi | Scripted | Same turn | Next model request | Unverified |
+| OpenHands CLI | Scripted | Next prompt | Next prompt | Workspace setup |
+| Kimi Code CLI | Scripted | — | Next prompt | Unverified |
+| Grok Build | Protocol | Agent delivery unverified | Hook stderr | Unverified |
+
+“Scripted” means a real CLI with a scripted model. “Next prompt” means your
+next message in the same session and project. Hosted agent feedback is unverified.
+[Hook and feedback details](docs/usage.md#hooks-and-feedback) · [Cloud setup](docs/usage.md#hosted-sessions)
+
 ## Docs
 
 - [Hook lifecycle and where failures appear](docs/usage.md#hooks-and-feedback)
 - [Package script discovery](docs/usage.md#package-script-discovery) and [TypeScript and Python examples](examples/)
 - [Configuration, filters, and JSON schema](docs/usage.md#configuration)
 - [CLI commands, plugin tools, and saved logs](docs/usage.md#commands-and-saved-logs)
-- [Agent integration guides](plugins/) and [troubleshooting](docs/usage.md#troubleshooting)
+- [Agent integration guides](plugins/), [cloud setup](docs/usage.md#hosted-sessions), and [troubleshooting](docs/usage.md#troubleshooting)

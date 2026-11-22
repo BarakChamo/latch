@@ -14,7 +14,9 @@ import {
 import { useStaticSearch } from 'fumadocs-core/search/client';
 
 export default function DefaultSearchDialog(props: SharedProps) {
-  const search = useStaticSearch();
+  const search = useStaticSearch({
+    from: `${process.env.NEXT_PUBLIC_DOCS_BASE_PATH ?? ''}/api/search`,
+  });
 
   return (
     <SearchDialog {...search} {...props}>

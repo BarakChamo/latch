@@ -1,6 +1,12 @@
 # Latch usage guide
 
-Start with the [README](../README.md) to install a plugin and run your first check.
+Use Latch to run the checks your project already uses as your coding agent
+works. Keep quick checks such as lint close to edits, and run tests at
+turn end when several edits should be checked together. Start with the
+[README quickstart](../README.md#install-a-plugin) or try the runnable
+[TypeScript and Python examples](../examples/).
+
+[Hooks and feedback](#hooks-and-feedback) · [Hosted sessions](#hosted-sessions) · [Package scripts](#package-script-discovery) · [Configuration](#configuration) · [CLI and saved logs](#commands-and-saved-logs) · [Troubleshooting](#troubleshooting)
 
 ## Install the plugin from a terminal
 
