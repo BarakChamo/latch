@@ -3,7 +3,7 @@
   "version": "0.1.6",
   "private": true,
   "description": "Run project checks from your coding harness or command line.",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "engines": { "node": ">=18" },
   "bin": { "latch": "cli.cjs" },
   "files": ["cli.cjs", "README.md", "latch.schema.json", "plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"]

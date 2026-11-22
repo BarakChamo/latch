@@ -243,3 +243,7 @@ with `continue_once`.
 - [Configuration, filters, and JSON schema](docs/usage.md#configuration)
 - [CLI commands, plugin tools, and saved logs](docs/usage.md#commands-and-saved-logs)
 - [Agent integration guides](plugins/), [cloud setup](docs/usage.md#hosted-sessions), and [troubleshooting](docs/usage.md#troubleshooting)
+
+## License
+
+Latch is licensed under the [Apache License 2.0](LICENSE).

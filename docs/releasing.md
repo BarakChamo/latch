@@ -107,9 +107,8 @@ run just that harness.
 
 ## Publish to the npm registry
 
-Confirm the npm scope and project license for the first public release.
-The package currently uses `@barakchamo/latch` and `UNLICENSED`. Publish
-the platform tarballs before the wrapper after inspecting the artifacts.
+Latch uses the `@barakchamo/latch` npm name and the [Apache 2.0 license](../LICENSE).
+Inspect the artifacts, then publish the platform tarballs before the wrapper.
 
 ```sh
 set -e

@@ -27,7 +27,7 @@ const pluginManifests = [
   "plugins/pi/package.json",
   "plugins/kimi/kimi.plugin.json",
 ];
-const sharedFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin", "latch.schema.json"];
+const sharedFiles = ["LICENSE", "plugins", ".agents/plugins", ".claude-plugin", ".github/plugin", "latch.schema.json"];
 const [target, destination = "dist"] = process.argv.slice(2);
 const output = resolve(destination);
 const packageManifest = readJson(join(root, "distribution/npm/package.json"));
@@ -74,6 +74,7 @@ function packPlatform(target) {
   const packageRoot = join(staging, "binary");
   mkdirSync(packageRoot);
   cpSync(binary, join(packageRoot, executable));
+  cpSync(join(root, "LICENSE"), join(packageRoot, "LICENSE"));
   chmodSync(join(packageRoot, executable), 0o755);
   writeJson(join(packageRoot, "package.json"), {
     name: platformName(os, cpu), version, license, os: [os], cpu: [cpu], files: [executable],

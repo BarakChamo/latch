@@ -35,6 +35,7 @@ if (destination === "--refresh-launchers") {
   process.exit(0);
 }
 mkdirSync(output);
+cpSync(join(root, "LICENSE"), join(output, "LICENSE"));
 
 for (const plugin of plugins) writePlugin(plugin);
 writeExtensions();
