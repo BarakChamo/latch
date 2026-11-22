@@ -216,21 +216,26 @@ async function runCodex(fixture) {
   const env = { ...fixture.env, CODEX_HOME: fixture.profile };
   await install(fixture, env);
   const project = execFileSync("pwd", ["-P"], { cwd: fixture.project, encoding: "utf8" }).trim();
-  const { hooks } = await withCodex(fixture, env, async ({ call }) => {
-    const { data } = await call("hooks/list", { cwds: [project] });
-    return data[0];
-  });
-  assert(hooks.length, "Codex did not discover bundled hooks");
   const config = join(fixture.profile, "config.toml");
-  const trusted = hooks.map(({ key, currentHash }) =>
-    `[hooks.state.${JSON.stringify(key)}]\ntrusted_hash = ${JSON.stringify(currentHash)}\n`);
+  const pluginId = `latch@${fixture.marketplaceName}`;
   writeFileSync(config, [
     readFileSync(config, "utf8"),
     `[projects.${JSON.stringify(project)}]\ntrust_level = "trusted"`,
-    ...trusted,
-    `[plugins."latch@${fixture.marketplaceName}".mcp_servers.latch]\ndefault_tools_approval_mode = "approve"`,
+    `[plugins.${JSON.stringify(pluginId)}.mcp_servers.latch]\ndefault_tools_approval_mode = "approve"`,
   ].join("\n\n"));
   return withCodex(fixture, env, async ({ call, receive, send }) => {
+    const { data } = await call("hooks/list", { cwds: [project] });
+    const hooks = data[0].hooks.filter(({ key }) => key.startsWith(`${pluginId}:hooks/hooks.json:`));
+    assert(hooks.length, "Codex did not discover Latch hooks");
+    // Use the same writer as /hooks so Codex persists declaration and plugin content trust.
+    await call("config/batchWrite", {
+      edits: [{
+        keyPath: "hooks.state",
+        value: Object.fromEntries(hooks.map(({ key, currentHash }) => [key, { trusted_hash: currentHash }])),
+        mergeStrategy: "upsert",
+      }],
+      reloadUserConfig: true,
+    });
     const { thread } = await call("thread/start", {
       cwd: project, sandbox: "workspace-write", approvalPolicy: "on-request",
     });
