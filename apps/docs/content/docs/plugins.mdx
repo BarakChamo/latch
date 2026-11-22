@@ -102,8 +102,10 @@ grok plugin install BarakChamo/latch --trust
 
 This installs and trusts the plugin’s hooks and MCP server. Start a new
 session. Run `grok plugin list` to see it and `grok mcp doctor latch` to check
-the tool server. Latch returns edit context to the hook and reports
-turn-end failures on hook stderr. Agent receipt of edit feedback is unverified.
+the tool server. Automatic turn-end checks and MCP passed on Grok Build
+1.0.92. Upgrade if you use 1.0.34, where the native plugin’s MCP server
+loaded but its hooks did not run. Turn-end failures go to hook stderr.
+Agent receipt of edit feedback is unverified.
 [Grok Build plugin docs](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md)
 
 ### Kimi Code
@@ -114,8 +116,9 @@ In Kimi Code, run:
 /plugins install https://github.com/BarakChamo/latch/tree/main
 ```
 
-Confirm installation, then run `/reload` or open a new session. Changed turns
-run checks. Failures reach the next prompt by default.
+Choose **Trust and install**, then run `/reload` or open a new session.
+Changed turns run checks. Failures reach the next prompt by default.
+Use the default `report` mode for headless Kimi Code 2.7.2.
 [Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)
 
 ### OpenHands CLI

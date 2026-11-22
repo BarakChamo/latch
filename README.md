@@ -75,6 +75,8 @@ Use OpenCode 2.3.2 or later. [OpenCode v1 and project-local setup](https://barak
 grok plugin install BarakChamo/latch --trust
 ```
 
+Verified with Grok Build 1.0.92.
+
 ### Kimi Code
 
 In Kimi Code, run:
@@ -198,7 +200,7 @@ The local columns show when the agent gets failures by default.
 | Pi | Scripted | Same turn | Next model request | Unverified |
 | OpenHands CLI | Scripted | Next prompt | Next prompt | Workspace setup |
 | Kimi Code CLI | Scripted | — | Next prompt | Unverified |
-| Grok Build | Protocol | Agent delivery unverified | Hook stderr | Unverified |
+| Grok Build | Stop tested | Agent delivery unverified | Hook stderr | Unverified |
 
 “Scripted” means a real CLI with a scripted model. “Next prompt” means your
 next message in the same session and project. Hosted agent feedback is unverified.
