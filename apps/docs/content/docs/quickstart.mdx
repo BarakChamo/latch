@@ -31,14 +31,12 @@ Open a new Codex session in your project. Choose **Review hooks** if Codex promp
 
 ### Claude Code
 
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
 ```sh
-sh ~/Downloads/install-latch-plugin.sh --install-plugin claude
+claude plugin marketplace add BarakChamo/latch
+claude plugin install latch@latch-tools
 ```
 
-The installer downloads Latch before registering the plugin through Claude
-Code’s marketplace, so its tools are ready for the first session.
+Open a new Claude Code session in your project.
 
 ### GitHub Copilot CLI
 
@@ -65,18 +63,7 @@ Check your version with `opencode --version`.
 opencode plugin add 'github:BarakChamo/latch'
 ```
 
-**OpenCode v1**
-
-With Node.js and npm installed, run:
-
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
-```sh
-sh ~/Downloads/install-latch-plugin.sh --install-plugin opencode
-```
-
-This prepares the OpenCode plugin dependencies before its first startup.
-[Project-local setup and headless output](/docs/plugins#opencode)
+For a new install on OpenCode v1, upgrade to v2. [OpenCode details](/docs/plugins#opencode)
 
 ### Grok Build
 
@@ -99,17 +86,10 @@ In Kimi Code, run the command below. Choose **Trust and install**, then run `/re
 In Agent Canvas, open **Customize → Plugins → Add plugin**. Enter
 `github:BarakChamo/latch` as the source and select **Install**.
 
-For OpenHands CLI, run the installer from your Git project.
+For OpenHands CLI, [install the standalone Latch binary](/docs/cli#install-the-cli) and run
+`latch install openhands` in your Git project.
 
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
-```sh
-sh ~/Downloads/install-latch-plugin.sh install openhands
-```
-
-[OpenHands SDK setup](/docs/plugins#openhands-sdk)
-
-[Plugin settings, updates, and removal](/docs/plugins)
+[Manage plugins](/docs/plugins)
 
 ## Run your first check
 
@@ -171,7 +151,7 @@ Use `hook-afteredit` for checks after a supported edit. For a regular command su
 ### Try it in your agent
 
 1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a file and let the turn finish.
-2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples](/docs/project-scripts#try-the-examples) show exactly what to change.
+2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples on GitHub](https://github.com/BarakChamo/latch/tree/main/examples) show exactly what to change.
 3. Ask the agent to call `latch_status` to see whether Latch ran or skipped. If the tool is unavailable in chat, use `latch status` with the standalone CLI. [First-run tool availability](/docs/plugins#confirm-a-first-run)
 
 If a check failed and the report hasn’t appeared, check when your harness

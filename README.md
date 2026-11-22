@@ -58,14 +58,12 @@ In a new Codex session, choose **Review hooks** when prompted or open
 
 ### Claude Code
 
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
 ```sh
-sh ~/Downloads/install-latch-plugin.sh --install-plugin claude
+claude plugin marketplace add BarakChamo/latch
+claude plugin install latch@latch-tools
 ```
 
-The installer downloads Latch before registering the plugin through Claude
-Code’s marketplace, so its tools are ready for the first session.
+Open a new Claude Code session in your project.
 
 ### GitHub Copilot CLI
 
@@ -90,15 +88,7 @@ Check `opencode --version`. For v2.3.2 or later:
 opencode plugin add 'github:BarakChamo/latch'
 ```
 
-For v1 with Node.js and npm installed:
-
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
-```sh
-sh ~/Downloads/install-latch-plugin.sh --install-plugin opencode
-```
-
-[OpenCode project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
+For a new install on OpenCode v1, upgrade to v2. [OpenCode details](https://barakchamo.github.io/latch/docs/plugins/#opencode)
 
 ### Grok Build
 
@@ -125,16 +115,10 @@ In Agent Canvas, go to **Customize → Plugins → Add plugin**. Enter
 plugin loads in new local conversations.
 [OpenHands SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
 
-For OpenHands CLI, run the installer from the Git project you want to check.
+For OpenHands CLI, [install the standalone Latch binary](https://barakchamo.github.io/latch/docs/cli/#install-the-cli) and run
+`latch install openhands` in your Git project.
 
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
-```sh
-sh ~/Downloads/install-latch-plugin.sh install openhands
-```
-
-Already have `latch` on your path? Run `latch install openhands` in the project.
-[Plugin settings, updates, and removal](https://barakchamo.github.io/latch/docs/plugins/)
+[Manage plugins](https://barakchamo.github.io/latch/docs/plugins/)
 
 ## Run your first check
 
@@ -168,7 +152,7 @@ Start the agent in your project and ask it to make an edit that fails your
 check. Let the turn finish, then send a follow-up in the same session if
 your harness delivers the report on the next prompt. Ask the agent to call
 `latch_status` to check whether Latch ran or skipped. Undo the test edit.
-Passing checks are quiet. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
+Passing checks are quiet. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [Runnable examples](examples/)
 
 ### Filters and failure output
 
@@ -206,7 +190,7 @@ Open the saved log to read the full output without rerunning the tests. Use
 `tail` to show the last lines of each stream, or leave `failure_output` unset
 for the default excerpt.
 
-[Filter examples](docs/usage.md#configuration) · [Failure output modes](docs/usage.md#commands-and-saved-logs)
+[Runnable filter example](examples/filters/) · [Failure output modes](https://barakchamo.github.io/latch/docs/configuration/#failure-output-modes)
 
 ### Give the agent a chance to act on a failure
 
@@ -220,16 +204,9 @@ requires Latch v0.1.4 or later for this option.
 
 ## Install the standalone CLI
 
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
-
-```sh
-sh ~/Downloads/install-latch-plugin.sh --install-cli
-```
-
-The installer puts `latch` in `~/.local/bin`. Add that directory to your
-`PATH` if needed. From your project directory, run `latch status` to see
-your resolved checks or `latch run turn_end` to run them immediately.
-[Direct downloads and CLI walkthrough](https://barakchamo.github.io/latch/docs/cli/#install-the-cli)
+[Download Latch for your platform](https://barakchamo.github.io/latch/docs/cli/#install-the-cli).
+Extract the archive and put `latch` on your `PATH`. Run `latch --version`
+to confirm the install.
 
 ## Compatibility
 
@@ -255,7 +232,7 @@ Hosted agent feedback is unverified.
 ## Docs
 
 - [Hook lifecycle and where failures appear](docs/usage.md#hooks-and-feedback)
-- [Package script discovery](docs/usage.md#package-script-discovery) and [TypeScript and Python examples](examples/)
+- [Package script discovery](https://barakchamo.github.io/latch/docs/project-scripts/) and [runnable examples](examples/)
 - [Configuration, filters, and JSON schema](docs/usage.md#configuration)
 - [CLI commands, plugin tools, and saved logs](docs/usage.md#commands-and-saved-logs)
 - [Agent integration guides](plugins/), [cloud setup](docs/usage.md#hosted-sessions), and [troubleshooting](docs/usage.md#troubleshooting)

@@ -9,7 +9,7 @@ standalone CLI from your terminal or CI.
 
 - [Run your first check](/docs/quickstart) with an existing project command.
 - [See what your harness supports](#compatibility) for local or hosted sessions.
-- [Try a complete example](#examples) for script discovery or file filters.
+- [Try a runnable project](#examples) and see how Latch reports a failure.
 
 ## When to use Latch
 
@@ -30,9 +30,16 @@ tests or build that need the complete set of changes.
 
 ## Examples
 
-- **TypeScript with npm.** Check formatting after edits, then run TypeScript and Vitest at turn end. [Walkthrough](/docs/project-scripts#typescript-example)
-- **Python with uv.** Run Ruff after edits and unit tests at turn end, with shared output settings. [Walkthrough](/docs/project-scripts#python-example)
-- **Filter several checks on one event.** Run a general check on every edit and add Markdown and TypeScript checks only when their files change. [Configuration examples](/docs/configuration#examples)
+Each project links to its README on GitHub, with steps to run the checks
+and trigger a failure.
+
+| Project | What Latch runs | Try this |
+| --- | --- | --- |
+| [TypeScript with npm](https://github.com/BarakChamo/latch/tree/main/examples/typescript) | Prettier after an edit, then TypeScript and Vitest at turn end. Uses `package.json` alone. | Change `Hello` to `Hi` in `src/message.ts` and see Vitest report the mismatch. |
+| [Python with uv](https://github.com/BarakChamo/latch/tree/main/examples/python) | Ruff after an edit and unit tests at turn end. Uses `pyproject.toml` for commands and `latch.json` for shared settings. | Add an unused `import os` to the example module and see Ruff flag it. |
+| [Path and extension filters](https://github.com/BarakChamo/latch/tree/main/examples/filters) | Git status on every changed turn, plus whitespace checks for matching Markdown and TypeScript files. | Edit either file, both, or a JSON file to see which checks run. |
+
+[Browse all examples on GitHub](https://github.com/BarakChamo/latch/tree/main/examples)
 
 ## Compatibility
 

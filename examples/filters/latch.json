@@ -1,0 +1,24 @@
+{
+  "defaults": { "on_success": "output" },
+  "hooks": {
+    "turn_end": [
+      { "commands": "git status --short" },
+      {
+        "paths": ["**/docs/**"],
+        "extensions": ["md", "mdx"],
+        "commands": [
+          ["echo", "Markdown whitespace check"],
+          ["git", "diff", "--check", "HEAD", "--", "docs"]
+        ]
+      },
+      {
+        "paths": ["**/src/**"],
+        "extensions": ["ts", "tsx"],
+        "commands": [
+          ["echo", "TypeScript whitespace check"],
+          ["git", "diff", "--check", "HEAD", "--", "src"]
+        ]
+      }
+    ]
+  }
+}

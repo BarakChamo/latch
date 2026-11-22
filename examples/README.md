@@ -1,16 +1,12 @@
-# Try Latch in a project
+# Latch examples
 
-The projects below demonstrate package script discovery and language-specific checks.
-To add a check to your own project, follow the
-[quickstart](https://github.com/BarakChamo/latch#run-your-first-check).
+Clone this repository, open an example directory, and follow its README. Each example shows what passes,
+what to change to make a check fail, and how to try it with an agent.
 
-Install Latch using the [GitHub setup guide](https://github.com/BarakChamo/latch#install-the-standalone-cli).
-Run the commands in the example's own directory with `latch` on your
-`PATH`. To try automatic checks, start a new session in that directory
-with the plugin enabled and ask your agent to make one of the edits below
-using its native edit tool.
+| Project | What you’ll learn |
+| --- | --- |
+| [TypeScript with npm](typescript/) | Run Prettier, type checking, and Vitest using only `package.json`. |
+| [Python with uv](python/) | Run Ruff and unit tests from uv entry points and customize output in `latch.json`. |
+| [Path and extension filters](filters/) | Run different checks for Markdown, TypeScript, and mixed edits in one turn. |
 
-| Example | After a native edit | At turn end | What it shows |
-| --- | --- | --- | --- |
-| [TypeScript](typescript/) | Prettier | Type checking and Vitest | Script discovery with npm and no `latch.json` |
-| [Python with uv](python/) | Ruff | Unit tests | Entry-point discovery with shared defaults in `latch.json` |
+To add Latch to your own project, use the [quickstart](https://barakchamo.github.io/latch/docs/quickstart/).

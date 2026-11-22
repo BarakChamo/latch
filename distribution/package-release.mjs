@@ -6,7 +6,6 @@ import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeF
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
-import { pluginLauncher } from "./plugin-launcher.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const targets = {
@@ -61,7 +60,6 @@ try {
     const marketplace = join(staging, "marketplace");
     execFileSync(process.execPath, [join(root, "distribution/package-marketplace.mjs"), marketplace]);
     npmPack(marketplace);
-    writeFileSync(join(output, "install-latch-plugin.sh"), pluginLauncher(version), { mode: 0o755 });
   } else {
     packPlatform(target);
   }

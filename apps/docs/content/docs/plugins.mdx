@@ -54,10 +54,9 @@ For a project, add the Git package to the existing `plugins` array in
 }
 ```
 
-For OpenCode v1, use the [v1 installer](/docs/quickstart#opencode) to
-prepare OpenCode’s npm dependencies before it first loads the plugin.
-If a project has its own `.opencode` directory, OpenCode can also provision
-dependencies there. [OpenCode v1 startup issue](https://github.com/anomalyco/opencode/issues/47212)
+For new installs, use OpenCode v2. OpenCode v1 can stall on first load
+unless its plugin dependencies are already installed.
+[OpenCode v1 startup issue](https://github.com/anomalyco/opencode/issues/47212)
 
 Restart OpenCode after installation. For a headless v2 run, use
 `opencode --standalone --print-logs run "Make a change that fails my check"`
@@ -68,8 +67,7 @@ the model see that report. [OpenCode plugin discovery](https://opencode.ai/docs/
 
 The [standalone archive](/docs/cli#install-the-cli) includes the CLI and plugin
 sources. Extract it and keep the folder in place. For Pi, pass its
-`plugins/pi` directory to `pi install`. For OpenCode, run the installer
-from inside the extracted archive with `./install opencode`.
+`plugins/pi` directory to `pi install`.
 
 ### Find or remove a plugin
 
@@ -155,9 +153,8 @@ and MCP. The SDK path was tested with 1.63.1. [OpenHands plugin docs](https://do
 
 #### OpenHands CLI
 
-Run the [OpenHands installer command](/docs/quickstart#install-a-plugin)
-from the Git project you want to check. If `latch` is already on your path,
-run `latch install openhands` in the project instead. It installs project hooks
+With [Latch on your path](/docs/cli#install-the-cli), run
+`latch install openhands` in the Git project you want to check. It installs project hooks
 and registers the tools for the current user. Start a new session in the
 same project. Native edits and changed turns run checks. Failures reach the
 next prompt by default. [OpenHands hook docs](https://docs.openhands.dev/openhands/usage/customization/hooks)

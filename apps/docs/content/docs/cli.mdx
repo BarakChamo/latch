@@ -15,30 +15,23 @@ hooks, or inspect a saved failure.
 
 ## Install the CLI
 
-[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
+### Standalone
 
-```sh
-sh ~/Downloads/install-latch-plugin.sh --install-cli
-```
+Download your platform’s archive, extract it, and add its `bin`
+directory to your `PATH`.
 
-The installer selects and verifies the binary for macOS or glibc Linux
-on ARM64 or x64. It installs into `~/.local/bin`. Run `latch --version`
-to confirm the install.
+| Platform | Standalone archive |
+| --- | --- |
+| Apple Silicon | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-aarch64-apple-darwin.tar.gz) |
+| Intel Mac | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-x86_64-apple-darwin.tar.gz) |
+| Linux ARM64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-aarch64-unknown-linux-gnu.tar.gz) |
+| Linux x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-x86_64-unknown-linux-gnu.tar.gz) |
 
-<details>
-<summary>If your terminal can’t find Latch</summary>
+[Release checksums](https://github.com/BarakChamo/latch/releases/tag/v0.1.5)
 
-Add this line to your shell startup file and open a new terminal.
+Run `latch --version` to confirm the install.
 
-```sh
-export PATH="$HOME/.local/bin:$PATH"
-```
-
-Set `LATCH_INSTALL_DIR` to an absolute directory for a different destination.
-
-</details>
-
-[npm tarballs](#npm-tarballs) · [Standalone archives](#standalone) · [Build with Cargo](#cargo)
+[Install from npm tarballs](#npm-tarballs) · [Build with Cargo](#cargo)
 
 ### npm tarballs
 
@@ -62,20 +55,6 @@ latch --version
 ```
 
 Start your harness from a terminal that can run `latch --version`.
-
-### Standalone
-
-Download your platform’s archive, extract it, and add its `bin`
-directory to your `PATH`.
-
-| Platform | Standalone archive |
-| --- | --- |
-| Apple Silicon | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-aarch64-apple-darwin.tar.gz) |
-| Intel Mac | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-x86_64-apple-darwin.tar.gz) |
-| Linux ARM64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-aarch64-unknown-linux-gnu.tar.gz) |
-| Linux x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-x86_64-unknown-linux-gnu.tar.gz) |
-
-[Release checksums](https://github.com/BarakChamo/latch/releases/tag/v0.1.5)
 
 ### Cargo
 

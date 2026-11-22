@@ -13,9 +13,9 @@ For a project, add the same Git package to `plugins` in `opencode.json`, or
 put a checkout of the package in `.opencode/plugins/latch/` for automatic
 discovery. Use one setup per project. [OpenCode plugin discovery](https://opencode.ai/docs/plugins/#discover)
 
-For OpenCode v1, follow the [local plugin setup](https://barakchamo.github.io/latch/docs/plugins/#opencode).
-For offline setup, extract the [standalone archive](https://github.com/BarakChamo/latch/releases/latest)
-and run `./install opencode` from the extracted directory.
+For new installs, use OpenCode v2. OpenCode v1 can stall on first load
+unless its plugin dependencies are already installed.
+[OpenCode setup details](https://barakchamo.github.io/latch/docs/plugins/#opencode)
 
 Latch adds diagnostics to results from `edit`, `write`, and the native patch
 tool. By default, the model gets failed turn-end reports on the next prompt.

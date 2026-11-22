@@ -3,18 +3,17 @@ title: Cloud sessions
 description: Find the simplest way to run Latch in your hosted coding environment.
 ---
 
-Use the same checks you use locally. The setup depends on **where the
-harness process runs** and **which hooks the provider loads**. Installing
-the binary is enough for manual checks. Automatic feedback also needs
-the lifecycle hooks.
+Commit one file to enable Latch hooks in supported cloud sessions.
+The first prompt downloads and verifies Latch. Keep your usual project
+checks in `latch.json` or [package scripts](/docs/project-scripts).
 
 | Where your session runs | Start here | Latch verification |
 | --- | --- | --- |
-| Claude Code cloud, one repository outside Projects | [Run the Claude setup command](#single-repository-cloud-session). | Provider-documented hook path. Hosted Latch delivery unverified. |
+| Claude Code cloud, one repository outside Projects | [Commit the settings file](#single-repository-cloud-session). | Provider-documented hook path. Hosted Latch delivery unverified. |
 | Claude Projects or Anthropic-hosted multi-repo sessions | [Use Remote Control or run the check directly](#claude-projects-and-multi-repository-sessions). | Repository command hooks do not load on these surfaces. |
-| GitHub Copilot cloud agent | [Run the Copilot setup command](#github-copilot). | Linux fixture passed. The hosted task attempt returned 403. |
+| GitHub Copilot cloud agent | [Commit the hook file](#github-copilot). | Linux fixture passed. The hosted task attempt returned 403. |
 | Codex Cloud | [Run the CLI in the checkout or in CI](#codex). | Managed orchestration does not run Latch command hooks. |
-| OpenHands Cloud, remote Canvas, or Enterprise | [Run the OpenHands setup command](#openhands). | Local Canvas verified. Hosted delivery unverified. |
+| OpenHands Cloud, remote Canvas, or Enterprise | [Commit the hook file](#openhands). | Local Canvas verified. Hosted delivery unverified. |
 | OpenCode, Pi, Kimi, or Grok Build on a host you control | [Install where the agent runs](#other-integrations). | Local integration verified. Managed-service delivery unverified. |
 
 [Check local compatibility](/docs/hooks#where-reports-appear) · [Verify a hosted session](#verify-a-new-environment)
@@ -23,16 +22,10 @@ the lifecycle hooks.
 
 ### Single-repository cloud session
 
-From your Git project, run this once with Python 3.9 or later.
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/main/distribution/cloud/setup-hooks.py | python3 - claude
-```
-
-Commit the two files the command writes, then start a new cloud session
-outside Claude Projects. Your existing settings and hooks are preserved.
-The first hook downloads and verifies Latch. Use either these hooks or
-the Latch plugin in local sessions to avoid running the checks twice.
+<a href="../../downloads/claude/settings.json" download="settings.json">Download settings.json</a> and commit it as `.claude/settings.json`.
+If you already have this file, add the Latch hooks to it and keep your
+existing settings. Start a new cloud session with one repository outside
+Claude Projects.
 [Claude cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
 
 ### Claude Projects and multi-repository sessions
@@ -44,15 +37,8 @@ the check directly in the hosted checkout or in CI.
 
 ## GitHub Copilot
 
-From your Git project, run this once with Python 3.9 or later.
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/main/distribution/cloud/setup-hooks.py | python3 - copilot
-```
-
-Merge the two generated files into the **default branch**, then start a
-new Copilot cloud task. The first hook downloads Latch. Choose Actions
-if your checks need dependency setup before the session starts.
+<a href="../../downloads/copilot/latch.json" download="latch.json">Download latch.json</a> and commit it as `.github/hooks/latch.json` on the **default branch**. Start a new Copilot cloud task. Choose Actions if your checks
+need dependencies installed before the session.
 [GitHub cloud hooks](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/use-hooks) · [Dependency setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment)
 
 ## Codex
@@ -66,21 +52,16 @@ session running on the machine with the checkout.
 ## OpenHands
 
 If you control the Canvas backend, use [Customize → Plugins](/docs/plugins#agent-canvas).
-For a hosted workspace, run this once in your Git repository with Python
-3.9 or later.
-
-```sh
-curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/main/distribution/cloud/setup-hooks.py | python3 - openhands
-```
-
-Commit the two generated files and open the repository root as the working
-folder for a new conversation. [OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
+For a hosted workspace, <a href="../../downloads/openhands/hooks.json" download="hooks.json">download hooks.json</a> and commit it as `.openhands/hooks.json`. If you
+already have this file, add the Latch hooks to it. Start a new conversation
+with the repository root as the working folder.
+[OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
 
 ## Install in the environment
 
-For manual checks or CI, use the [standalone installer](/docs/cli#install-the-cli)
+For manual checks or CI, use the [standalone binary](/docs/cli#install-the-cli)
 in the environment setup and run `latch run turn_end` in the checkout.
-Automatic hooks need access to GitHub release assets on first use. For
+The first prompt needs access to GitHub release assets. For
 restricted networks, allow the release download or run your checks in CI.
 [Standalone downloads](/docs/cli#standalone)
 
@@ -98,6 +79,9 @@ checkout on a VM or container you control.
 | Cursor, Devin, Kiro | [Preview adapters](/docs/plugins#preview-integrations) cover local CLI setups. Use the project’s check directly or in CI on managed cloud services. |
 
 ## Verify a new environment
+
+Use either the repository hooks or the native Latch plugin in a session
+to avoid running checks twice.
 
 1. In a fresh agent session, try a read-only turn and then a real edit
    that fails a check. With defaults, the read-only turn should skip and

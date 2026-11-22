@@ -20,6 +20,7 @@ export default function Home() {
       links={[
         { text: "Docs", url: "/docs" },
         { text: "Quickstart", url: "/docs/quickstart" },
+        { text: "Examples", url: "/docs#examples" },
         { text: "Compatibility", url: "/docs/hooks#where-reports-appear" },
       ]}
       githubUrl="https://github.com/BarakChamo/latch"

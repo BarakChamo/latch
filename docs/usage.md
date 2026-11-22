@@ -108,9 +108,9 @@ binary and a supported hook registration for automatic feedback.
 | Harness | Automatic hook setup and evidence |
 | --- | --- |
 | Codex Cloud | Managed orchestration accepts admin-configured Global MCP hooks. Latch ships command hooks, so use `latch run turn_end` directly in the checkout or in CI. Running Codex CLI in a VM you control uses the local setup. |
-| Claude Code cloud | Run the [Claude setup command](https://barakchamo.github.io/latch/docs/cloud/#claude-code) and commit the generated files. Single-repository sessions outside Claude Projects load these hooks. Hosted Latch delivery remains unverified. |
-| GitHub Copilot cloud agent | Run the [Copilot setup command](https://barakchamo.github.io/latch/docs/cloud/#github-copilot) and merge the generated files into the default branch. The earlier Actions wiring passed a Linux fixture. Hosted delivery remains unverified. |
-| OpenHands Cloud and Canvas | Run the [OpenHands setup command](https://barakchamo.github.io/latch/docs/cloud/#openhands) for a hosted workspace. For a Canvas backend you control, use the native plugin. Hosted delivery remains unverified. |
+| Claude Code cloud | Download and commit [the Claude settings file](https://barakchamo.github.io/latch/docs/cloud/#claude-code). Single-repository sessions outside Claude Projects load these hooks. Hosted Latch delivery remains unverified. |
+| GitHub Copilot cloud agent | Commit [the Copilot hook file](https://barakchamo.github.io/latch/docs/cloud/#github-copilot) on the default branch. The earlier Actions wiring passed a Linux fixture. Hosted delivery remains unverified. |
+| OpenHands Cloud and Canvas | Commit [the OpenHands hook file](https://barakchamo.github.io/latch/docs/cloud/#openhands) for a hosted workspace. For a Canvas backend you control, use the native plugin. Hosted delivery remains unverified. |
 
 For OpenCode, Pi, Kimi Code, and Grok Build, install the shipped integration
 where the agent process and checkout run. Managed-service reports remain
