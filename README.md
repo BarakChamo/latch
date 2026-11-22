@@ -107,9 +107,9 @@ Already have `latch` on your path? Run `latch install openhands` in the project.
 ## Run your first check
 
 **Latch runs project commands in any language.** You can skip `latch.json`
-if you define `hook:afteredit` in `package.json` or `hook-afteredit` as a
+if you define `hook:turnend` in `package.json` or `hook-turnend` as a
 console script in a packaged uv project. For any other command, add it to
-`latch.json`. [Discovery and turn-end script names](docs/usage.md#package-script-discovery)
+`latch.json`. [Package script names and discovery](docs/usage.md#package-script-discovery)
 
 ### Configure checks
 
@@ -119,7 +119,7 @@ For example, if `make lint` already works in your project, put this in
 ```json
 {
   "hooks": {
-    "after_edit": {
+    "turn_end": {
       "commands": [["make", "lint"]]
     }
   }
@@ -131,9 +131,9 @@ file by hand or use `latch config init` with the
 [standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
 scripts can be used together.
 
-Start the agent in the project directory and ask it to change a file with
-its edit tool. A passing check is quiet. Choose `turn_end` to run after a
-changed turn instead. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
+Start the agent in the project directory and ask it to change a file. Latch
+runs the check when the turn finishes. A passing check is quiet. To check
+immediately after supported file edits, use `after_edit`. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
 
 ### Filters and failure output
 

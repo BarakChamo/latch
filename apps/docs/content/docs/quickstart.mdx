@@ -1,6 +1,6 @@
 ---
 title: Quickstart
-description: Install Latch in your agent and run an existing project check after an edit.
+description: Install Latch in your agent and run an existing project check at the end of a changed turn.
 ---
 
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
@@ -115,7 +115,7 @@ Create `latch.json` in the directory where you run your checks. If you already u
 ```json title="latch.json"
 {
   "hooks": {
-    "after_edit": {
+    "turn_end": {
       "commands": [["make", "lint"]]
     }
   }
@@ -125,8 +125,9 @@ Create `latch.json` in the directory where you run your checks. If you already u
 Replace the example with your own command, such as `["go", "test", "./..."]`,
 `["uv", "run", "ruff", "check", "."]`, or `["./scripts/check"]`. Put the
 executable first and each argument in a separate string. Install your
-project’s dependencies so the agent can run the command. Use `turn_end`
-for checks you want to run once per changed turn.
+project’s dependencies so the agent can run the command. Every shipped
+integration supports `turn_end`. For feedback while the agent edits, see
+[which file edits trigger checks](/docs/hooks#when-checks-run).
 
 You can create the file by hand or generate a starter with `latch config init`
 from the [standalone CLI](/docs/cli#install-the-cli). [Configuration examples](/docs/configuration#examples)
@@ -140,30 +141,30 @@ already defines one, start a session with the plugin enabled.
 
 <Tab value="package.json">
 
-For example, add `hook:afteredit` to the existing `scripts` object in an npm project that already has a `lint` script.
+For example, add `hook:turnend` to the existing `scripts` object in an npm project that already has a `lint` script.
 
 ```json title="package.json"
 {
   "scripts": {
-    "hook:afteredit": "npm run lint"
+    "hook:turnend": "npm run lint"
   }
 }
 ```
 
-Use `hook:turnend` to run a script at the end of a changed turn. Latch supports npm, pnpm, Yarn, and Bun. [Package manager selection](/docs/project-scripts#javascript-and-typescript)
+Use `hook:afteredit` to run a script after a supported edit. Latch supports npm, pnpm, Yarn, and Bun. [Package manager selection](/docs/project-scripts#javascript-and-typescript)
 
 </Tab>
 
 <Tab value="pyproject.toml with uv">
 
-In a packaged uv project, add a console entry point under `[project.scripts]`. For example, the [runnable Python project](/docs/project-scripts#python-example) points to a function that runs Ruff and returns its exit status.
+In a packaged uv project, add a console entry point under `[project.scripts]`. For example, the [runnable Python project](/docs/project-scripts#python-example) points to a function that runs the project’s unit tests and returns their exit status.
 
 ```toml title="pyproject.toml"
 [project.scripts]
-hook-afteredit = "latch_python_example.checks:after_edit"
+hook-turnend = "latch_python_example.checks:turn_end"
 ```
 
-Use `hook-turnend` for a turn-end check. For a regular command such as `uv run pytest`, use the `latch.json` recipe above. [Python entry-point setup](/docs/project-scripts#python-with-uv)
+Use `hook-afteredit` for checks after a supported edit. For a regular command such as `uv run pytest`, use the `latch.json` recipe above. [Python entry-point setup](/docs/project-scripts#python-with-uv)
 
 </Tab>
 
@@ -171,7 +172,7 @@ Use `hook-turnend` for a turn-end check. For a regular command such as `uv run p
 
 ### Try it in your agent
 
-1. Start a fresh agent session in the project directory. For `after_edit`, ask the agent to make a real change using its native edit tool. For `turn_end`, let it finish a turn that changes a file.
+1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a file and let the turn finish.
 2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples](/docs/project-scripts#try-the-examples) show exactly what to change.
 3. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` or `latch explain turn_end` to see which command Latch found.
 
@@ -180,10 +181,10 @@ Use `hook-turnend` for a turn-end check. For a regular command such as `uv run p
 Install the [standalone CLI](/docs/cli#install-the-cli), then run these from your project directory.
 
 ```sh
-latch explain after_edit
-latch run after_edit
+latch explain turn_end
+latch run turn_end
 ```
 
-`explain` shows the resolved command and settings. `run` executes the check immediately, even when no files have changed. Use `latch run turn_end` in CI if your project defines turn-end checks.
+`explain` shows the resolved command and settings. `run` executes the check immediately, even when no files have changed. The same command works in CI.
 
 Once the first check works, add [path or file-type filters](/docs/configuration#examples) or [give the agent one automatic response to a turn-end failure](/docs/hooks#act-on-a-turn-end-failure).
