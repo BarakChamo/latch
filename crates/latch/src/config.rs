@@ -35,12 +35,44 @@ pub(crate) fn initialize(directory: &Path) -> io::Result<()> {
 struct Config {
     #[serde(rename = "$schema")]
     _schema: Option<String>,
-    commands: Option<Vec<Vec<String>>>,
+    commands: Option<Commands>,
     hooks: Option<Hooks>,
     #[serde(default)]
     turn_end_feedback: TurnEndFeedback,
     #[serde(default)]
     defaults: Settings,
+}
+
+#[derive(Deserialize)]
+#[serde(
+    untagged,
+    expecting = "a command string or an array of argument arrays"
+)]
+enum Commands {
+    Multiple(Vec<Vec<String>>),
+    Text(String),
+}
+
+impl Default for Commands {
+    fn default() -> Self {
+        Self::Multiple(Vec::new())
+    }
+}
+
+impl Commands {
+    fn resolve(self, name: HookName) -> Result<Vec<Vec<String>>, ConfigError> {
+        let commands = match self {
+            Self::Multiple(commands) => commands,
+            Self::Text(text) => {
+                if text.contains('\0') {
+                    return Err(ConfigError::InvalidCommand(name, 1));
+                }
+                vec![shlex::split(&text).ok_or(ConfigError::InvalidCommandQuoting(name))?]
+            }
+        };
+        validate_commands(name, &commands)?;
+        Ok(commands)
+    }
 }
 
 #[derive(Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
@@ -160,7 +192,7 @@ impl HookName {
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct EntryConfig {
-    commands: Vec<Vec<String>>,
+    commands: Commands,
     paths: Option<Vec<String>>,
     extensions: Option<Vec<String>>,
     when: Option<When>,
@@ -326,6 +358,7 @@ pub(crate) enum ConfigError {
     Discovery(DiscoveryError),
     ConflictingLists,
     InvalidCommand(HookName, usize),
+    InvalidCommandQuoting(HookName),
     EmptyFilter(HookName, &'static str),
     InvalidPath(HookName, String),
     CompilePaths(HookName, globset::Error),
@@ -362,6 +395,11 @@ impl fmt::Display for ConfigError {
             Self::InvalidCommand(name, number) => write!(
                 formatter,
                 "command {number} for {} in latch.json needs a nonempty executable and arguments without NUL bytes",
+                name.name()
+            ),
+            Self::InvalidCommandQuoting(name) => write!(
+                formatter,
+                "command 1 for {} in latch.json has an unterminated quote or escape",
                 name.name()
             ),
         }
@@ -447,7 +485,7 @@ fn resolve_hook(
     let discovered = resolve(
         selected,
         EntryConfig {
-            commands,
+            commands: Commands::Multiple(commands),
             ..EntryConfig::default()
         },
         &config.defaults,
@@ -482,7 +520,7 @@ fn resolve(
     hook: EntryConfig,
     defaults: &Settings,
 ) -> Result<HookEntry, ConfigError> {
-    validate_commands(name, &hook.commands)?;
+    let commands = hook.commands.resolve(name)?;
     let filters = compile_filters(name, hook.paths, hook.extensions)?;
     Ok(HookEntry {
         when: hook
@@ -501,7 +539,7 @@ fn resolve(
             .or_else(|| defaults.rtk_filter.clone())
             .unwrap_or_default(),
         filters,
-        commands: hook.commands,
+        commands,
     })
 }
 
@@ -586,7 +624,7 @@ mod tests {
         };
         let hook = EntryConfig {
             on_success: Some(OnSuccess::Output),
-            commands: vec![vec!["verify".into(), "--quiet".into()]],
+            commands: Commands::Multiple(vec![vec!["verify".into(), "--quiet".into()]]),
             ..EntryConfig::default()
         };
         let resolved = resolve(HookName::TurnEnd, hook, &defaults).unwrap();

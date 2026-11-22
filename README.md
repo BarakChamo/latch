@@ -120,14 +120,18 @@ For example, if `make lint` already works in your project, put this in
 {
   "hooks": {
     "turn_end": {
-      "commands": [["make", "lint"]]
+      "commands": "make lint"
     }
   }
 }
 ```
 
-Replace `make lint` with your own executable and arguments. You can create the
-file by hand or use `latch config init` with the
+Use a command string like `"bun run lint"` or nested arrays for several
+commands. Strings support quoting. For shell
+features such as pipes, invoke a shell explicitly. [Command syntax](docs/usage.md#command-syntax)
+Latch v0.1.4 requires the nested form, such as `[["make", "lint"]]`.
+
+Create the file by hand or use `latch config init` with the
 [standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
 scripts can be used together.
 
@@ -146,7 +150,7 @@ or `.tsx` file under `src/` changes. The same file must match both filters.
     "turn_end": {
       "paths": ["src/**"],
       "extensions": ["ts", "tsx"],
-      "commands": [["npm", "test"]],
+      "commands": "npm test",
       "failure_output": "compact"
     }
   }
@@ -193,20 +197,19 @@ From your project, run `latch run after_edit` or `latch run turn_end` to execute
 
 The local columns show when the agent gets failures by default, except where marked opt-in.
 
-| Harness | Local test | After edit | Turn end | Managed cloud |
-| --- | --- | --- | --- | --- |
-| Codex | Live | Same turn | Next prompt | Latch CLI or CI |
-| Claude Code | Live | Same turn | Next prompt | Single-repo setup |
-| GitHub Copilot CLI | Live | Same turn | Next prompt | Actions runner setup |
-| OpenCode v1 and v2 | Scripted | Same turn | Next prompt | Unverified |
-| Pi | Scripted | Same turn | Next model request | Unverified |
-| OpenHands CLI and SDK | Scripted | Next prompt | Next prompt | Workspace setup |
-| OpenHands Agent Canvas | Scripted | — | Opt-in verified | Unverified |
-| Kimi Code CLI | Scripted | — | Next prompt | Unverified |
-| Grok Build 1.0.92 | Scripted | Same turn | No model feedback | Unverified |
+| Harness | After edit | Turn end | Managed cloud |
+| --- | --- | --- | --- |
+| Codex | Same turn | Next prompt | Latch CLI or CI |
+| Claude Code | Same turn | Next prompt | Single-repo setup |
+| GitHub Copilot CLI | Same turn | Next prompt | Actions runner setup |
+| OpenCode v1 and v2 | Same turn | Next prompt | Unverified |
+| Pi | Same turn | Next model request | Unverified |
+| OpenHands CLI and SDK | Next prompt | Next prompt | Workspace setup |
+| OpenHands Agent Canvas | — | Opt-in verified | Unverified |
+| Kimi Code CLI | — | Next prompt | Unverified |
+| Grok Build 1.0.92 | Same turn | No model feedback | Unverified |
 
-“Scripted” means a real harness session with a scripted model. “Next prompt” means your
-next message in the same session and project. Kimi 2.7.2 supports
+“Next prompt” means your next message in the same session and project. Kimi 2.7.2 supports
 `continue_once` in interactive and ACP sessions. Use `report` with `kimi -p`.
 Hosted agent feedback is unverified.
 [Hook and feedback details](docs/usage.md#hooks-and-feedback) · [Cloud setup](docs/usage.md#hosted-sessions)
