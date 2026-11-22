@@ -37,11 +37,31 @@ case "${1:-}" in
     copilot plugin install latch@latch-tools
     ;;
   opencode)
-    command -v opencode >/dev/null
-    directory="${XDG_CONFIG_HOME:-"$HOME/.config"}/opencode/plugins"
+    version=$(opencode --version)
+    version=${version#opencode }
+    version=${version#v}
+    config_dir="${XDG_CONFIG_HOME:-"$HOME/.config"}/opencode"
+    directory="$config_dir/plugins"
     mkdir -p -- "$directory"
     target="$root/plugins/opencode/index.js"
     link="$directory/latch.js"
+    if [ -e "$link" ] || [ -L "$link" ]; then
+      [ "$(readlink "$link" 2>/dev/null || true)" = "$target" ] || {
+        printf '%s\n' 'A different plugin already exists at the OpenCode Latch link.' >&2
+        exit 1
+      }
+    fi
+    case "$version" in
+      1.*)
+        command -v npm >/dev/null || {
+          printf '%s\n' 'Install Node.js and npm for OpenCode v1 setup.' >&2
+          exit 1
+        }
+        printf '%s\n' 'Preparing OpenCode v1 dependencies…'
+        npm install --prefix "$config_dir" --save-exact --ignore-scripts --no-audit --no-fund \
+          --fetch-retries=1 --fetch-timeout=15000 "@opencode-ai/plugin@$version"
+        ;;
+    esac
     if [ "$(readlink "$link" 2>/dev/null || true)" != "$target" ]; then
       ln -s -- "$target" "$link"
     fi

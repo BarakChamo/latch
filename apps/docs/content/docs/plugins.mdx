@@ -54,8 +54,9 @@ For a project, add the Git package to the existing `plugins` array in
 }
 ```
 
-For new installs, use OpenCode v2. OpenCode v1 can stall on first load
-unless its plugin dependencies are already installed.
+For new installs, use OpenCode v2. If you stay on v1, the installer in
+the Latch archive prepares the matching OpenCode dependencies before
+registering the plugin. This first-time setup needs npm and network access.
 [OpenCode v1 startup issue](https://github.com/anomalyco/opencode/issues/47212)
 
 Restart OpenCode after installation. For a headless v2 run, use
