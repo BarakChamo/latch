@@ -10,6 +10,33 @@ use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process::{Command, Output, Stdio};
 
+#[test]
+fn status_distinguishes_automatic_checks_from_skipped_turns() {
+    let project = Project::new();
+    project.init();
+    let status = || {
+        let result = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .arg("status")
+            .current_dir(project.root.path())
+            .env("XDG_STATE_HOME", project.harness_home.path())
+            .output()
+            .unwrap();
+        assert!(result.status.success(), "{result:?}");
+        serde_json::from_slice::<Value>(&result.stdout).unwrap()
+    };
+    assert!(status()["last_prompt_unix_seconds"].is_null());
+    project.hook("UserPromptSubmit", "first", false);
+    assert!(status()["last_prompt_unix_seconds"].is_number());
+    assert!(status()["checks"][1]["last_check"].is_null());
+    project.hook("Stop", "first", false);
+    assert_eq!(status()["checks"][1]["last_check"]["outcome"], "unchanged");
+    project.hook("UserPromptSubmit", "second", false);
+    project.write("tracked", "second");
+    assert_eq!(project.hook("Stop", "second", false), json!({}));
+    assert_eq!(status()["checks"][1]["last_check"]["outcome"], "passed");
+    assert!(project.checked());
+}
+
 struct Project {
     root: tempfile::TempDir,
     harness_home: tempfile::TempDir,

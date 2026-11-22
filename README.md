@@ -40,7 +40,8 @@ codex plugin add latch@latch-tools
 If Codex says `latch-tools` is already added from a different source, run
 `codex plugin marketplace remove latch-tools`, then rerun the two commands above.
 
-In a new Codex session in your project, review and approve the Latch hooks in `/hooks`.
+In a new Codex session, choose **Review hooks** when prompted or open
+`/hooks`. Approve the Latch hooks there.
 
 ### Claude Code
 
@@ -66,11 +67,20 @@ Use Pi 1.5.2 or later.
 
 ### OpenCode
 
+Check `opencode --version`. For v2.3.2 or later:
+
 ```sh
 opencode plugin add 'github:BarakChamo/latch'
 ```
 
-Use OpenCode 2.3.2 or later. [OpenCode v1 and project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
+For v1 with Node.js and npm installed:
+
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh --install-plugin opencode
+```
+
+[OpenCode project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
 
 ### Grok Build
 
@@ -123,22 +133,23 @@ For example, if `make lint` already works in your project, put this in
 {
   "hooks": {
     "turn_end": {
-      "commands": [["make", "lint"]]
+      "commands": "make lint"
     }
   }
 }
 ```
 
-List each check as an array containing its executable and arguments. Add
-more arrays to run checks in order. [Command syntax](docs/usage.md#command-syntax)
+Use a string for one command or nested argument arrays for several commands. [Command syntax](docs/usage.md#command-syntax)
 
 Create the file by hand or use `latch config init` with the
 [standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
 scripts can be used together.
 
-Start the agent in the project directory and ask it to change a file. Latch
-runs the check when the turn finishes. A passing check is quiet. To check
-immediately after supported file edits, use `after_edit`. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
+Start the agent in your project and ask it to make an edit that fails your
+check. Let the turn finish, then send a follow-up in the same session if
+your harness delivers the report on the next prompt. Ask the agent to call
+`latch_status` to check whether Latch ran or skipped. Undo the test edit.
+Passing checks are quiet. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
 
 ### Filters and failure output
 
@@ -190,9 +201,17 @@ requires Latch v0.1.4 or later for this option.
 
 ## Install the standalone CLI
 
-For terminal or CI use, download and extract your platform’s archive from [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest) and follow the [CLI installation guide](docs/usage.md#install-the-cli).
+For terminal or CI use, run this from your downloads directory.
 
-From your project, run `latch run after_edit` or `latch run turn_end` to execute that event’s checks immediately. This works with either package scripts or `latch.json`. Use `latch explain after_edit` to see what Latch resolved.
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh --install-cli
+```
+
+The installer puts `latch` in `~/.local/bin`. Add that directory to your
+`PATH` if needed. From your project directory, run `latch status` to see
+your resolved checks or `latch run turn_end` to run them immediately.
+[Direct downloads and CLI walkthrough](https://barakchamo.github.io/latch/docs/cli/#install-the-cli)
 
 ## Compatibility
 

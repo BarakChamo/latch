@@ -49,16 +49,15 @@ mkdir -p .opencode/plugins
 git clone --depth 1 https://github.com/BarakChamo/latch.git .opencode/plugins/latch
 ```
 
-For OpenCode v1, install through its local plugin directory.
+For OpenCode v1, use the [v1 installer](/docs/quickstart#opencode) to
+prepare OpenCode’s npm dependencies before it first loads the plugin.
+If a project has its own `.opencode` directory, OpenCode can also provision
+dependencies there. [OpenCode v1 startup issue](https://github.com/anomalyco/opencode/issues/47212)
 
-```sh
-opencode_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
-mkdir -p "$opencode_dir/plugins"
-git clone --depth 1 https://github.com/BarakChamo/latch.git "$opencode_dir/latch"
-ln -s ../latch/plugins/opencode/index.js "$opencode_dir/plugins/latch.js"
-```
-
-Restart OpenCode after installation. [OpenCode plugin discovery](https://opencode.ai/docs/plugins/#discover)
+Restart OpenCode after installation. For a headless v2 run, use
+`opencode --standalone --print-logs run "Make a change that fails my check"`
+to see the turn-end report on stderr. Resume the same session to let
+the model see that report. [OpenCode plugin discovery](https://opencode.ai/docs/plugins/#discover)
 
 ### Offline setup
 
@@ -181,6 +180,15 @@ configuration. Keep those entries local. To uninstall them, remove the
 hook entries whose command ends in `# latch-installed` and remove the
 `latch` MCP server entry.
 
+## Confirm a first run
+
+Ask your agent to call `latch_status` in the project after you send a prompt.
+It shows the resolved commands, when Latch last received a prompt hook, and
+the most recent automatic check outcome for each event. An empty result
+for an event means Latch has yet to record it for this project. Call it
+without running or changing any check. The standalone equivalent is
+`latch status`.
+
 ## Run checks from chat
 
 Ask your agent to call the Latch tool.
@@ -223,10 +231,10 @@ output.
 | `latch hook copilot <event>` | Copilot CLI lifecycle hooks, such as `postToolUse` and `agentStop` |
 | `latch hook opencode` | The OpenCode plugin forwards prompt, edit, and idle events |
 | `latch hook pi` | The Pi extension forwards prompt, edit, and settlement events |
-| `latch mcp` | Claude Code, OpenCode, and Pi expose both Latch tools |
+| `latch mcp` | Claude Code, OpenCode, and Pi expose the Latch tools |
 | `latch install <openhands\|cursor\|devin\|grok\|kiro> [--preview]` | Writes local hook and MCP configuration for the selected harness |
 | `latch hook <openhands\|kimi\|cursor\|devin\|grok\|kiro>` | Receives native lifecycle events for the selected harness |
-| `latch mcp --require-project-directory` | Codex, Copilot, and the additional integrations expose both tools with an explicit project directory |
+| `latch mcp --require-project-directory` | Codex, Copilot, and the additional integrations expose the tools with an explicit project directory |
 
 See [Hooks and feedback](/docs/hooks) for what triggers automatically and where
 results appear.

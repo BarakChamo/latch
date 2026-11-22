@@ -4,7 +4,7 @@ mod native;
 
 use crate::{
     config::{self, HookName},
-    run,
+    run, status,
     workspace::Baseline,
 };
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
@@ -380,6 +380,7 @@ fn handle(harness: &Harness, event: Event) -> Value {
             json!({})
         }
         EventKind::ContinuationPrompt | EventKind::UserPromptSubmit => {
+            status::observe(&event.cwd);
             if let Some(path) = &continuation {
                 let _ = fs::remove_file(path);
             }
@@ -723,8 +724,15 @@ fn check_workspace(
     baseline: Option<Baseline>,
 ) -> Option<Feedback> {
     let (entries, turn_end_feedback) = match config::load_with_source(directory, name) {
-        Ok(loaded) => (loaded.entries?, loaded.turn_end_feedback),
+        Ok(loaded) => {
+            let Some(entries) = loaded.entries else {
+                status::record(directory, name, status::Outcome::NotConfigured);
+                return None;
+            };
+            (entries, loaded.turn_end_feedback)
+        }
         Err(error) => {
+            status::record(directory, name, status::Outcome::ConfigurationError);
             return Some(Feedback {
                 message: format!("Latch could not complete validation: {error}"),
                 failed: name == HookName::TurnEnd,
@@ -737,13 +745,34 @@ fn check_workspace(
     } else {
         None
     };
-    let matching = entries.into_vec().into_iter().filter(|entry| {
-        !entry.needs_comparison()
-            || changed
-                .as_ref()
-                .is_none_or(|paths| paths.iter().any(|path| entry.filters.matches(path)))
-    });
+    let mut matching = entries
+        .into_vec()
+        .into_iter()
+        .filter(|entry| {
+            !entry.needs_comparison()
+                || changed
+                    .as_ref()
+                    .is_none_or(|paths| paths.iter().any(|path| entry.filters.matches(path)))
+        })
+        .peekable();
+    if matching.peek().is_none() {
+        let outcome = match changed.as_deref() {
+            Some([]) => status::Outcome::Unchanged,
+            Some(_) => status::Outcome::Filtered,
+            None => status::Outcome::NoCommands,
+        };
+        status::record(directory, name, outcome);
+        return None;
+    }
     let report = run::run(directory, matching);
+    let outcome = if report.failed() {
+        status::Outcome::Failed
+    } else if report.command_count() == 0 {
+        status::Outcome::NoCommands
+    } else {
+        status::Outcome::Passed
+    };
+    status::record(directory, name, outcome);
     let message = report.message(directory);
     if report.failed() {
         Some(Feedback {

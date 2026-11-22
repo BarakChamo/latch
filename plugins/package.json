@@ -1,6 +1,6 @@
 {
   "name": "@barakchamo/latch-agent-plugins",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "type": "module",
   "exports": {
     ".": "./opencode/index.js",

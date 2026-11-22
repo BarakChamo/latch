@@ -130,6 +130,21 @@ test("the install command uses native plugin commands and caches a verified bina
   }
 });
 
+test("standalone installer copies the verified binary into an isolated prefix", () => {
+  const fixture = createFixture();
+  try {
+    fixture.packageAsset("darwin-arm64");
+    const destination = join(fixture.root, "local bin");
+    const result = run(fixture.launcher, ["--install-cli"], { ...fixture.env, LATCH_INSTALL_DIR: destination });
+    assert.equal(result.status, 0, result.stderr);
+    const binary = join(destination, "latch");
+    assert.match(run(binary, ["status"], fixture.env).stdout, /^status/m);
+    assert.equal(fixture.downloads().length, 2);
+  } finally {
+    rmSync(fixture.root, { recursive: true });
+  }
+});
+
 function run(launcher, args, env) {
   return spawnSync("/bin/sh", [launcher, ...args], { env, input: "hook JSON on stdin\n", encoding: "utf8" });
 }

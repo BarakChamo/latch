@@ -3,57 +3,64 @@ title: CLI reference
 description: Run project checks from a terminal and inspect their resolved configuration.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-
 ## Install the CLI
 
-<Tabs items={['npm tarballs', 'Standalone', 'Cargo']}>
+From your downloads directory, run:
 
-<Tab value="npm tarballs">
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh --install-cli
+```
 
-Install with Node.js 18 or later. Download `barakchamo-latch-0.1.4.tgz`
+The installer selects and verifies the binary for macOS or glibc Linux
+on ARM64 or x64. It installs into `~/.local/bin`. If that directory is
+missing from your `PATH`, add the following to your shell startup file.
+
+```sh
+export PATH="$HOME/.local/bin:$PATH"
+latch --version
+```
+
+Set `LATCH_INSTALL_DIR` to an absolute directory for a different destination.
+
+### npm tarballs
+
+Install with Node.js 18 or later. Download `barakchamo-latch-0.1.5.tgz`
 and the matching binary tarball from the
-[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.4).
+[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.5).
 
 | Platform | Binary tarball |
 | --- | --- |
-| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.4.tgz` |
-| Intel Mac | `barakchamo-latch-darwin-x64-0.1.4.tgz` |
-| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.4.tgz` |
-| Linux x64 | `barakchamo-latch-linux-x64-0.1.4.tgz` |
+| Apple Silicon Mac | `barakchamo-latch-darwin-arm64-0.1.5.tgz` |
+| Intel Mac | `barakchamo-latch-darwin-x64-0.1.5.tgz` |
+| Linux ARM64 | `barakchamo-latch-linux-arm64-0.1.5.tgz` |
+| Linux x64 | `barakchamo-latch-linux-x64-0.1.5.tgz` |
 
 In the directory containing the downloads, install both files together.
 For example, on Linux x64:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.4.tgz ./barakchamo-latch-linux-x64-0.1.4.tgz
+npm install --global --offline ./barakchamo-latch-0.1.5.tgz ./barakchamo-latch-linux-x64-0.1.5.tgz
 latch --version
 ```
 
 Start your harness from a terminal that can run `latch --version`.
 
-</Tab>
+### Standalone
 
-<Tab value="Standalone">
+Download your platform’s archive, extract it, and add its `bin`
+directory to your `PATH`.
 
-Download the `latch-0.1.4-*.tar.gz` archive for your platform from the
-[GitHub release](https://github.com/BarakChamo/latch/releases/tag/v0.1.4).
-Extract it to a directory you can keep. Add its `bin` directory to your
-shell’s `PATH`. For example, on Apple Silicon:
+| Platform | Standalone archive |
+| --- | --- |
+| Apple Silicon | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-aarch64-apple-darwin.tar.gz) |
+| Intel Mac | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-x86_64-apple-darwin.tar.gz) |
+| Linux ARM64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-aarch64-unknown-linux-gnu.tar.gz) |
+| Linux x64 | [Download](https://github.com/BarakChamo/latch/releases/download/v0.1.5/latch-0.1.5-x86_64-unknown-linux-gnu.tar.gz) |
 
-```sh
-mkdir -p "$HOME/.local/share/latch"
-tar -xzf latch-0.1.4-aarch64-apple-darwin.tar.gz -C "$HOME/.local/share/latch"
-export LATCH_HOME="$HOME/.local/share/latch/latch-0.1.4-aarch64-apple-darwin"
-export PATH="$LATCH_HOME/bin:$PATH"
-latch --version
-```
+[Release checksums](https://github.com/BarakChamo/latch/releases/tag/v0.1.5)
 
-Add those exports to your shell’s startup file for future sessions.
-
-</Tab>
-
-<Tab value="Cargo">
+### Cargo
 
 With Rust 1.88 or later, clone the release tag and install from the checkout.
 
@@ -61,7 +68,7 @@ Run `cargo --version` first. If you installed Rust with rustup and the
 shell cannot find Cargo, open a new terminal or run `. "$HOME/.cargo/env"`.
 
 ```sh
-git clone --branch v0.1.4 https://github.com/BarakChamo/latch.git
+git clone --branch v0.1.5 https://github.com/BarakChamo/latch.git
 cd latch
 cargo install --locked --path crates/latch
 latch --version
@@ -70,12 +77,32 @@ latch --version
 See the [build guide](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md#build-the-artifacts)
 to build a bundled plugin and CLI together.
 
-</Tab>
-
-</Tabs>
-
 Once `latch --version` works, follow the [harness setup guide](/docs/plugins)
 to enable automatic checks in your agent.
+
+## Try the CLI in your project
+
+From the directory that contains your check configuration or package
+scripts, resolve and run a check. For example, add this to your
+`latch.json` if `make lint` is your project command.
+
+```json
+{
+  "hooks": {
+    "turn_end": { "commands": "make lint" }
+  }
+}
+```
+
+```sh
+latch status
+latch run turn_end
+```
+
+A passing check is quiet and exits 0. Make an edit that fails your lint
+rule and run `latch run turn_end` again. It reports the lint error and
+exits 1. Undo the test edit and run it once more to confirm the pass.
+Manual runs execute immediately from the current directory.
 
 ## Commands
 
@@ -87,6 +114,7 @@ Run these commands from the directory containing your `latch.json` or
 | `latch config init` | Create a starter `latch.json` in the current directory. Existing files are preserved. |
 | `latch --help` | List available commands. |
 | `latch --version` | Print the installed version. |
+| `latch status` | Show the resolved checks and recent prompt and automatic-check activity without running anything. |
 | `latch run after_edit` | Run all configured edit checks immediately. |
 | `latch run turn_end` or `latch` | Run all configured turn-end checks immediately. |
 | `latch explain after_edit` | Show the resolved edit commands, settings, and filters as JSON. |

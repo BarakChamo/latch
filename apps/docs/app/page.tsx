@@ -1,7 +1,17 @@
-// Opens the introduction at the docs site's root.
+// Provides a readable entry point for static hosts and browsers without JavaScript.
 
-import { redirect } from "next/navigation";
+import Link from "next/link";
 
 export default function Home() {
-  redirect("/docs");
+  return (
+    <main className="mx-auto max-w-prose px-6 py-16">
+      <h1 className="text-4xl font-bold">Latch Docs</h1>
+      <p className="my-5">Run your project’s checks as your coding agent works and bring failures back into the session.</p>
+      <ul className="list-disc space-y-2 pl-6">
+        <li><Link className="underline" href="/docs/quickstart">Install a plugin and run your first check</Link></li>
+        <li><Link className="underline" href="/docs/cli#install-the-cli">Install the standalone CLI</Link></li>
+        <li><Link className="underline" href="/docs">Read the documentation</Link></li>
+      </ul>
+    </main>
+  );
 }

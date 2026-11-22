@@ -8,6 +8,7 @@ mod mcp;
 mod output;
 mod rtk;
 mod run;
+mod status;
 mod workspace;
 
 use std::env;
@@ -18,7 +19,7 @@ use std::process::ExitCode;
 use config::{HookEntries, HookEntry, HookName};
 use serde_json::{Map, Value, json};
 
-const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
+const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch status | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
 
 fn main() -> ExitCode {
     let mut args = env::args_os().skip(1).peekable();
@@ -27,6 +28,9 @@ fn main() -> ExitCode {
     }
     use config::HookName::TurnEnd;
     let selected = match args.next() {
+        Some(arg) if arg == "status" && args.next().is_none() => {
+            return print_json(env::current_dir().map(|directory| status::snapshot(&directory)));
+        }
         None => TurnEnd,
         Some(arg) if arg == "run" || arg == "explain" => {
             let name = args.next();
@@ -202,37 +206,53 @@ fn replay_output(id: &str, query: Option<&str>) -> ExitCode {
 }
 
 fn explain(selected: config::HookName) -> ExitCode {
-    let result = (|| -> Result<(), Box<dyn std::error::Error>> {
-        let directory = env::current_dir()?;
-        let config::LoadedHook {
-            config_path,
-            turn_end_feedback,
-            entries,
-        } = config::load_with_source(&directory, selected)?;
-        let mut response = Map::from_iter([
-            ("config".into(), json!(config_path)),
-            ("hook".into(), json!(selected.name())),
-            ("configured".into(), json!(entries.is_some())),
-        ]);
-        if selected == HookName::TurnEnd {
-            response.insert("turn_end_feedback".into(), json!(turn_end_feedback));
+    print_json(
+        env::current_dir()
+            .map_err(Box::<dyn std::error::Error>::from)
+            .and_then(|directory| explanation(&directory, selected).map_err(Into::into)),
+    )
+}
+
+fn explanation(
+    directory: &Path,
+    selected: HookName,
+) -> Result<Map<String, Value>, config::ConfigError> {
+    let config::LoadedHook {
+        config_path,
+        turn_end_feedback,
+        entries,
+    } = config::load_with_source(directory, selected)?;
+    let mut response = Map::from_iter([
+        ("config".into(), json!(config_path)),
+        ("hook".into(), json!(selected.name())),
+        ("configured".into(), json!(entries.is_some())),
+    ]);
+    if selected == HookName::TurnEnd {
+        response.insert("turn_end_feedback".into(), json!(turn_end_feedback));
+    }
+    match entries {
+        None => {}
+        Some(HookEntries::Single(entry)) => response.extend(explain_entry(selected, entry)),
+        Some(HookEntries::Multiple(entries)) => {
+            let explanations: Vec<_> = entries
+                .into_iter()
+                .map(|entry| Value::Object(explain_entry(selected, entry)))
+                .collect();
+            response.insert("entries".into(), Value::Array(explanations));
         }
-        match entries {
-            None => {}
-            Some(HookEntries::Single(entry)) => response.extend(explain_entry(selected, entry)),
-            Some(HookEntries::Multiple(entries)) => {
-                let explanations: Vec<_> = entries
-                    .into_iter()
-                    .map(|entry| Value::Object(explain_entry(selected, entry)))
-                    .collect();
-                response.insert("entries".into(), Value::Array(explanations));
-            }
-        }
+    }
+    Ok(response)
+}
+
+fn print_json<T, E: std::fmt::Display>(result: Result<T, E>) -> ExitCode
+where
+    T: serde::Serialize,
+{
+    let result = result.map_err(|error| error.to_string()).and_then(|value| {
         let mut stdout = io::stdout().lock();
-        serde_json::to_writer_pretty(&mut stdout, &response)?;
-        writeln!(stdout)?;
-        Ok(())
-    })();
+        serde_json::to_writer_pretty(&mut stdout, &value).map_err(|error| error.to_string())?;
+        writeln!(stdout).map_err(|error| error.to_string())
+    });
     match result {
         Ok(()) => ExitCode::SUCCESS,
         Err(error) => {

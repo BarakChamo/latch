@@ -3,17 +3,13 @@ title: Quickstart
 description: Install Latch in your agent and run an existing project check at the end of a changed turn.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
-
 Start in a Git project with a check you already run, such as a linter. The plugin handles automatic checks, and the standalone CLI is available for terminal and CI runs.
 
 ## Install a plugin
 
 Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
 
-<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'Pi', 'OpenCode', 'Grok Build', 'Kimi Code', 'OpenHands']}>
-
-<Tab value="Codex">
+### Codex
 
 ```sh
 codex plugin marketplace add BarakChamo/latch
@@ -23,29 +19,23 @@ codex plugin add latch@latch-tools
 If Codex says `latch-tools` is already added from a different source, run
 `codex plugin marketplace remove latch-tools`, then rerun the two commands above.
 
-Open a new Codex session in your project, then review and approve the Latch hooks in `/hooks`.
+Open a new Codex session in your project. Choose **Review hooks** if Codex prompts at startup, or open `/hooks` in the session. Approve the Latch hooks there.
 
-</Tab>
-
-<Tab value="Claude Code">
+### Claude Code
 
 ```sh
 claude plugin marketplace add https://github.com/BarakChamo/latch.git
 claude plugin install latch@latch-tools
 ```
 
-</Tab>
-
-<Tab value="GitHub Copilot CLI">
+### GitHub Copilot CLI
 
 ```sh
 copilot plugin marketplace add BarakChamo/latch
 copilot plugin install latch@latch-tools
 ```
 
-</Tab>
-
-<Tab value="Pi">
+### Pi
 
 Use Pi 1.5.2 or later.
 
@@ -53,21 +43,29 @@ Use Pi 1.5.2 or later.
 pi install git:github.com/BarakChamo/latch
 ```
 
-</Tab>
+### OpenCode
 
-<Tab value="OpenCode">
+Check your version with `opencode --version`.
 
-For OpenCode 2.3.2 or later:
+**OpenCode v2.3.2 or later**
 
 ```sh
 opencode plugin add 'github:BarakChamo/latch'
 ```
 
-[OpenCode v1 and project-local setup](/docs/plugins#opencode)
+**OpenCode v1**
 
-</Tab>
+With Node.js and npm installed, run:
 
-<Tab value="Grok Build">
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh --install-plugin opencode
+```
+
+This prepares the OpenCode plugin dependencies before its first startup.
+[Project-local setup and headless output](/docs/plugins#opencode)
+
+### Grok Build
 
 ```sh
 grok plugin install BarakChamo/latch --trust
@@ -75,9 +73,7 @@ grok plugin install BarakChamo/latch --trust
 
 Verified with Grok Build 1.0.92.
 
-</Tab>
-
-<Tab value="Kimi Code">
+### Kimi Code
 
 In Kimi Code, run the command below. Choose **Trust and install**, then run `/reload`.
 
@@ -85,9 +81,7 @@ In Kimi Code, run the command below. Choose **Trust and install**, then run `/re
 /plugins install https://github.com/BarakChamo/latch/tree/main
 ```
 
-</Tab>
-
-<Tab value="OpenHands">
+### OpenHands
 
 In Agent Canvas, open **Customize → Plugins → Add plugin**. Enter
 `github:BarakChamo/latch` as the source and select **Install**.
@@ -100,10 +94,6 @@ curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install
 ```
 
 [OpenHands SDK setup](/docs/plugins#openhands-sdk)
-
-</Tab>
-
-</Tabs>
 
 [Plugin settings, updates, and removal](/docs/plugins)
 
@@ -140,9 +130,7 @@ from the [standalone CLI](/docs/cli#install-the-cli). [Configuration examples](/
 Latch discovers these names in the project directory. If your project
 already defines one, start a session with the plugin enabled.
 
-<Tabs items={['package.json', 'pyproject.toml with uv']}>
-
-<Tab value="package.json">
+### package.json
 
 For example, add `hook:turnend` to the existing `scripts` object in an npm project that already has a `lint` script.
 
@@ -156,9 +144,7 @@ For example, add `hook:turnend` to the existing `scripts` object in an npm proje
 
 Use `hook:afteredit` to run a script after a supported edit. Latch supports npm, pnpm, Yarn, and Bun. [Package manager selection](/docs/project-scripts#javascript-and-typescript)
 
-</Tab>
-
-<Tab value="pyproject.toml with uv">
+### pyproject.toml with uv
 
 In a packaged uv project, add a console entry point under `[project.scripts]`. For example, the [runnable Python project](/docs/project-scripts#python-example) points to a function that runs the project’s unit tests and returns their exit status.
 
@@ -169,15 +155,11 @@ hook-turnend = "latch_python_example.checks:turn_end"
 
 Use `hook-afteredit` for checks after a supported edit. For a regular command such as `uv run pytest`, use the `latch.json` recipe above. [Python entry-point setup](/docs/project-scripts#python-with-uv)
 
-</Tab>
-
-</Tabs>
-
 ### Try it in your agent
 
 1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a file and let the turn finish.
 2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples](/docs/project-scripts#try-the-examples) show exactly what to change.
-3. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` or `latch explain turn_end` to see which command Latch found.
+3. Ask the agent to call `latch_status` to see whether Latch ran or skipped. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` or `latch explain turn_end` to see which command Latch found.
 
 ## Run the same check from a terminal
 

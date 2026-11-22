@@ -124,8 +124,7 @@ can match either path. Empty filter lists are invalid.
 
 | Use | Example value for `commands` |
 | --- | --- |
-| One command on v0.1.4 or later | `[["bun", "run", "lint"]]` |
-| One command when building from `main` | `"bun run lint"` |
+| One command as text (v0.1.5+) | `"bun run lint"` |
 | Several commands in order | `[["make", "lint"], ["make", "test"]]` |
 
 Latch splits strings with POSIX shell-style quotes and escapes. For example,

@@ -164,8 +164,7 @@ config and set `"$schema": "./latch.schema.json"`.
 
 | Use | Example value for `commands` |
 | --- | --- |
-| One command on v0.1.4 or later | `[["bun", "run", "lint"]]` |
-| One command when building from `main` | `"bun run lint"` |
+| One command as text (v0.1.5+) | `"bun run lint"` |
 | Several commands in order | `[["make", "lint"], ["make", "test"]]` |
 
 Strings use POSIX shell-style quotes and escapes to split arguments. For
@@ -186,9 +185,9 @@ Download your platform’s archive from [GitHub Releases](https://github.com/Bar
 For Apple Silicon, from your downloads directory:
 
 ```sh
-tar -xzf latch-0.1.4-aarch64-apple-darwin.tar.gz
+tar -xzf latch-0.1.5-aarch64-apple-darwin.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 latch-0.1.4-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
+install -m 755 latch-0.1.5-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
 export PATH="$HOME/.local/bin:$PATH"
 latch --version
 ```
@@ -200,7 +199,7 @@ Use the archive name for your platform in the first and third lines. Add the `ex
 Download the wrapper and the matching platform tarball from the same release. For Apple Silicon:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.4.tgz ./barakchamo-latch-darwin-arm64-0.1.4.tgz
+npm install --global --offline ./barakchamo-latch-0.1.5.tgz ./barakchamo-latch-darwin-arm64-0.1.4.tgz
 latch --version
 ```
 
@@ -211,7 +210,7 @@ The other binary tarballs contain `darwin-x64`, `linux-arm64`, or `linux-x64` in
 With Rust 1.88 or later:
 
 ```sh
-git clone --branch v0.1.4 https://github.com/BarakChamo/latch.git
+git clone --branch v0.1.5 https://github.com/BarakChamo/latch.git
 cd latch
 cargo install --locked --path crates/latch
 latch --version

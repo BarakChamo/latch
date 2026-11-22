@@ -1,6 +1,6 @@
 //! Exposes turn-end checks and saved output search over local MCP stdio.
 
-use crate::{config, output, run};
+use crate::{config, output, run, status};
 use rmcp::model::{
     CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, ErrorData,
     ListToolsResult, PaginatedRequestParams, ServerCapabilities, ServerConfig, Tool,
@@ -13,6 +13,7 @@ use serde_json::{Map, Value, json};
 use std::path::PathBuf;
 use std::process::ExitCode;
 
+const STATUS_TOOL: &str = "latch_status";
 const RUN_TOOL: &str = "run_turn_end";
 const SEARCH_TOOL: &str = "search_output";
 
@@ -137,6 +138,12 @@ impl ServerHandler for ProjectDirectory {
                 ]),
                 vec!["id", "query"],
             ).with_annotations(ToolAnnotations::new().read_only(true).open_world(false)),
+            self.tool(
+                STATUS_TOOL,
+                "Show resolved project checks and latest automatic hook activity without running commands.",
+                Map::new(),
+                vec![],
+            ).with_annotations(ToolAnnotations::new().read_only(true).open_world(false)),
         ]))
     }
 
@@ -147,6 +154,14 @@ impl ServerHandler for ProjectDirectory {
     ) -> Result<CallToolResponse, ErrorData> {
         if request.name == SEARCH_TOOL {
             return self.search(request.arguments).map(Into::into);
+        }
+        if request.name == STATUS_TOOL {
+            let directory = self.resolve(request.arguments)?;
+            return Ok(CallToolResult::success(vec![ContentBlock::text(format!(
+                "{:#}",
+                status::snapshot(&directory)
+            ))])
+            .into());
         }
         if request.name != RUN_TOOL {
             return Err(ErrorData::invalid_params("unknown Latch tool", None));

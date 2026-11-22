@@ -3,10 +3,11 @@
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
+import { fileURLToPath } from "node:url";
 import { parseArgs, promisify } from "node:util";
 
 const exec = promisify(execFile);
@@ -238,11 +239,9 @@ async function install(host, isOpenCodeV2, bundle, cwd, env) {
   } else if (isOpenCodeV2) {
     await exec("opencode", ["plugin", "add", "github:BarakChamo/latch"], options);
   } else {
-    const config = join(env.XDG_CONFIG_HOME, "opencode");
-    mkdirSync(join(config, "plugins"), { recursive: true });
-    await exec("git", ["clone", "--depth", "1",
-      "https://github.com/BarakChamo/latch.git", join(config, "latch")], options);
-    symlinkSync("../latch/plugins/opencode/index.js", join(config, "plugins", "latch.js"));
+    const launcher = new URL("../plugins/extension-launch.sh", import.meta.url);
+    await exec("sh", [fileURLToPath(launcher), "--install-plugin", "opencode"],
+      { ...options, timeout: 120_000 });
   }
 }
 

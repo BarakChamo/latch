@@ -218,6 +218,14 @@ fn tool_returns_collected_failures_as_an_error_and_keeps_success_quiet() {
     .unwrap();
     assert_eq!(response(2)["tools"][0]["name"], "run_turn_end");
 
+    let status = json!({"jsonrpc":"2.0","id":9,"method":"tools/call","params":{"name":"latch_status","arguments":{}}});
+    writeln!(input, "{status}").unwrap();
+    let result = response(9);
+    let snapshot: Value =
+        serde_json::from_str(result["content"][0]["text"].as_str().unwrap()).unwrap();
+    assert_eq!(snapshot["checks"][1]["config"]["configured"], true);
+    assert!(snapshot["last_prompt_unix_seconds"].is_null());
+
     let call = |id| json!({"jsonrpc":"2.0","id":id,"method":"tools/call","params":{"name":"run_turn_end","arguments":{}}});
     writeln!(input, "{}", call(3)).unwrap();
     let failure = response(3);

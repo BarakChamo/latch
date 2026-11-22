@@ -10,6 +10,7 @@ use std::process::{Command, Output};
 
 pub(crate) struct Report {
     failed: bool,
+    command_count: usize,
     entries: Vec<Entry>,
 }
 
@@ -32,6 +33,10 @@ enum Preview {
 impl Report {
     pub(crate) fn failed(&self) -> bool {
         self.failed
+    }
+
+    pub(crate) fn command_count(&self) -> usize {
+        self.command_count
     }
 
     /// Replays configured output on its original streams for direct CLI use.
@@ -256,12 +261,14 @@ fn utf8_prefix(text: &str, limit: usize) -> &str {
 pub(crate) fn run(directory: &Path, entries: impl IntoIterator<Item = HookEntry>) -> Report {
     let mut report = Report {
         failed: false,
+        command_count: 0,
         entries: Vec::new(),
     };
     let mut number = 0;
     for entry in entries {
         run_entry(directory, entry, &mut report, &mut number);
     }
+    report.command_count = number;
     report
 }
 

@@ -49,7 +49,7 @@ fn cache_root() -> io::Result<PathBuf> {
     Ok(base.join("latch").join("output-v1"))
 }
 
-fn project_cache(project: &Path) -> io::Result<PathBuf> {
+pub(crate) fn project_cache(project: &Path) -> io::Result<PathBuf> {
     let project = project.canonicalize()?;
     let key = Sha256::digest(project.as_os_str().as_encoded_bytes());
     Ok(cache_root()?.join(format!("{key:x}")))
