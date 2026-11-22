@@ -1,4 +1,6 @@
-<h1 align="center">Latch</h1>
+<h1 align="center">
+  <img src="apps/docs/app/latch-logo.png" width="360" alt="Latch">
+</h1>
 <p align="center"><strong>Give your coding agent a feedback loop.</strong></p>
 <p align="center">Latch runs your project’s linters, tests, and other checks as your agent works, and brings failures back into the session.</p>
 <p align="center">
