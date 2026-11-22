@@ -20,6 +20,79 @@ fn run_with_args(config: Option<&str>, args: &[&str]) -> Output {
 }
 
 #[test]
+fn single_command_forms_resolve_to_the_same_arguments() {
+    let expected = serde_json::json!([["bun", "run", "lint", "two words", "", "$HOME", "&&"]]);
+    for commands in [
+        serde_json::json!("bun run lint \"two words\" '' '$HOME' &&"),
+        expected.clone(),
+    ] {
+        for config in [
+            serde_json::json!({"commands": commands}),
+            serde_json::json!({"hooks": {"turn_end": {"commands": commands}}}),
+        ] {
+            let output = run_with_args(Some(&config.to_string()), &["explain", "turn_end"]);
+            assert!(output.status.success(), "{output:?}");
+            let plan: serde_json::Value =
+                serde_json::from_slice(&output.stdout).expect("parse explanation");
+            assert_eq!(plan["commands"], expected);
+        }
+    }
+}
+
+#[test]
+fn rejects_flat_command_arrays() {
+    for commands in [
+        serde_json::json!(["make", "lint"]),
+        serde_json::json!(["bun run test", "bun run lint"]),
+    ] {
+        let config = serde_json::json!({"hooks": {"turn_end": {"commands": commands}}});
+        let output = run_latch(Some(&config.to_string()));
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(
+            stderr.contains("a command string or an array of argument arrays"),
+            "{stderr}"
+        );
+    }
+}
+
+#[test]
+fn malformed_command_text_is_rejected_before_running_any_checks() {
+    for (command, diagnostic) in [
+        ("make 'lint", "unterminated quote or escape"),
+        ("make lint\\", "unterminated quote or escape"),
+        (" \t\n", "nonempty executable"),
+        ("make lint\0", "without NUL bytes"),
+    ] {
+        let config = serde_json::json!({
+            "hooks": {
+                "turn_end": [
+                    {"commands": [["./must-not-launch"]]},
+                    {"commands": command}
+                ]
+            }
+        });
+        let output = run_latch(Some(&config.to_string()));
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        assert_eq!(output.status.code(), Some(1));
+        assert!(stderr.contains(diagnostic), "{stderr}");
+        assert!(!stderr.contains("must-not-launch"), "{stderr}");
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn command_string_runs_directly_without_expanding_shell_syntax() {
+    let config = serde_json::json!({
+        "defaults": {"on_success": "output"},
+        "hooks": {"turn_end": {"commands": "printf '%s\\n' 'two words' $HOME |" }}
+    });
+    let output = run_latch(Some(&config.to_string()));
+    assert!(output.status.success(), "{output:?}");
+    assert!(String::from_utf8_lossy(&output.stdout).contains("two words\n$HOME\n|\n"));
+}
+
+#[test]
 fn help_succeeds_without_loading_project_configuration() {
     for flag in ["--help", "-h"] {
         let output = run_with_args(Some("invalid json"), &[flag]);

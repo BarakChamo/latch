@@ -146,19 +146,35 @@ config and set `"$schema": "./latch.schema.json"`.
   "defaults": { "failure_output": "tail", "tail_lines": 12 },
   "hooks": {
     "after_edit": [
-      { "commands": [["npm", "run", "lint"]] },
-      { "extensions": ["md", "mdx"], "commands": [["npm", "run", "lint:md"]] }
+      { "commands": "npm run lint" },
+      { "extensions": ["md", "mdx"], "commands": "npm run lint:md" }
     ],
-    "turn_end": { "commands": [["npm", "test"]] }
+    "turn_end": { "commands": "npm test" }
   }
 }
 ```
 
-- An event accepts one object or an array. Matching objects run in order. Command arrays start with the executable and list its arguments separately.
+- An event accepts one object or an array. Matching objects run in order.
 - `paths` matches Git-worktree-relative globs. `extensions` matches filename suffixes. When both are set, one changed file must satisfy both filters for the object to run.
 - Global `defaults` apply unless an object overrides them. Discovered scripts run after explicit objects, with JavaScript before Python, and inherit the global defaults.
 - By default, `when` is `workspace_changed`, `on_success` is `silent`, and `on_failure` is `collect`. Use `always` to run unfiltered checks without changes, `output` to show passing output, or `stop` to stop the current command list on its first failure.
 - Set an event to `[]` to disable it, including discovery. Set `"hooks": {}` to disable both events.
+
+### Command syntax
+
+| Use | Example value for `commands` |
+| --- | --- |
+| One command | `"bun run lint"` |
+| Several commands in order | `[["make", "lint"], ["make", "test"]]` |
+
+Strings use POSIX shell-style quotes and escapes to split arguments. For
+example, `"node check.js 'file with spaces.ts'"` passes the filename as one
+argument. Latch launches the executable directly. For pipes, redirects, or
+expansion, invoke a shell explicitly, such as
+`[["sh", "-c", "make lint && make test"]]`.
+
+Nested arrays can contain one or more commands. Flat arrays are invalid. `commands: []` adds no explicit commands and keeps
+discovery enabled.
 
 ## Install the CLI
 

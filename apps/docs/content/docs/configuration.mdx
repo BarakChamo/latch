@@ -24,7 +24,7 @@ explicit commands, file filters, or defaults for [discovered scripts](/docs/proj
 ## Editor completion and validation
 
 The starter points to the hosted schema. For offline editor completion,
-copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/v0.1.4/latch.schema.json)
+copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/main/latch.schema.json)
 from the Latch repository, standalone archive, or npm wrapper into your
 project next to `latch.json`. Add `"$schema": "./latch.schema.json"` as
 a top-level property. Editors that support JSON Schema can then suggest
@@ -41,7 +41,7 @@ path globs at runtime.
 {
   "hooks": {
     "turn_end": {
-      "commands": [["cargo", "fmt", "--all", "--", "--check"]]
+      "commands": "cargo fmt --all -- --check"
     }
   }
 }
@@ -57,12 +57,12 @@ Run a Rust formatting check at turn end when the worktree changes.
 {
   "hooks": {
     "after_edit": [
-      { "commands": [["npm", "run", "lint"]] },
-      { "extensions": ["md", "mdx"], "commands": [["npm", "run", "lint:md"]] },
+      { "commands": "npm run lint" },
+      { "extensions": ["md", "mdx"], "commands": "npm run lint:md" },
       {
         "paths": ["src/**"],
         "extensions": ["ts", "tsx"],
-        "commands": [["npm", "run", "typecheck"]]
+        "commands": "npm run typecheck"
       }
     ]
   }
@@ -99,13 +99,13 @@ its first failure.
   turn_end_feedback: { type: '"report" | "continue_once"', description: 'Since v0.1.3. Automatically give compatible agents one follow-up on failure, with no new user message or automatic recheck. Defaults to report.' },
   defaults: { type: 'object', description: 'Default values for when, on_success, on_failure, failure_output, tail_lines, and rtk_filter.' },
   hooks: { type: 'object', description: 'Accepts after_edit and turn_end. Each event takes a hook object or an array of hook objects.' },
-  commands: { type: 'string[][]', description: 'Legacy shorthand for turn-end commands. Use it as an alternative to hooks.' },
+  commands: { type: 'string | string[][]', description: 'Legacy shorthand for turn-end commands. Use it as an alternative to hooks.' },
 }} />
 
 ## Hook fields
 
 <TypeTable type={{
-  commands: { type: 'string[][]', required: true, description: 'Each command is an executable followed by its arguments. Use an explicit shell for shell syntax.' },
+  commands: { type: 'string | string[][]', required: true, description: 'One command as a string, or a list of commands as nested argument arrays.' },
   when: { type: '"workspace_changed" | "always"', default: 'workspace_changed', description: 'The default compares against a Git baseline and runs when a comparison is unavailable. Always skips the change gate unless a file filter is set.' },
   on_success: { type: '"silent" | "output"', default: 'silent', description: 'Output includes stdout and stderr from successful commands.' },
   on_failure: { type: '"collect" | "stop"', default: 'collect', description: 'Collect finishes the command list and reports every failure. Stop ends the current list after its first failure. Later matching hook objects still run.' },
@@ -119,6 +119,22 @@ its first failure.
 An object runs once if any changed file passes its filters. When both filters
 are set, the same file must match at least one pattern and one suffix. Renames
 can match either path. Empty filter lists are invalid.
+
+## Command syntax
+
+| Use | Example value for `commands` |
+| --- | --- |
+| One command | `"bun run lint"` |
+| Several commands in order | `[["make", "lint"], ["make", "test"]]` |
+
+Latch splits strings with POSIX shell-style quotes and escapes. For example,
+`"node check.js 'file with spaces.ts'"` passes the filename as one argument.
+Latch launches the executable directly, so pipes, redirects, environment
+variable references, and globs are literal arguments. To use shell features,
+invoke a shell explicitly, for example `[["sh", "-c", "make lint && make test"]]`.
+Use nested arrays to preserve exact arguments, including for a single
+command such as `[["make", "lint"]]`. Flat arrays are invalid.
+`commands: []` adds no explicit commands and leaves discovery enabled.
 
 ## Ordering and overrides
 
@@ -179,7 +195,7 @@ and make sure `rtk` is on your harness's `PATH`. For a Vitest project:
     "turn_end": {
       "failure_output": "rtk",
       "rtk_filter": "vitest",
-      "commands": [["npm", "test"]]
+      "commands": "npm test"
     }
   }
 }

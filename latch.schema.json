@@ -25,7 +25,7 @@
       }
     },
     "commands": {
-      "description": "Legacy turn-end command list. Use hooks for new configurations.",
+      "description": "Legacy turn-end commands. Use hooks for new configurations.",
       "anyOf": [{ "$ref": "#/$defs/commands" }, { "type": "null" }]
     }
   },
@@ -33,20 +33,28 @@
     "type": "object",
     "required": ["commands", "hooks"],
     "properties": {
-      "commands": { "type": "array" },
+      "commands": { "type": ["array", "string"] },
       "hooks": { "type": "object" }
     }
   },
   "$defs": {
     "commands": {
+      "description": "One command as a string, or an array of argument arrays in execution order.",
+      "examples": ["bun run lint", [["make", "lint"], ["make", "test"]]],
+      "oneOf": [
+        {
+          "type": "string",
+          "pattern": "^(?=[\\s\\S]*[^ \\t\\n])[^\\u0000]*$",
+          "description": "Split into executable and arguments using shell-style quoting. Latch runs the executable directly."
+        },
+        { "type": "array", "items": { "$ref": "#/$defs/arguments" } }
+      ]
+    },
+    "arguments": {
       "type": "array",
-      "description": "Commands in execution order. Each command starts with an executable and includes one string per argument.",
-      "items": {
-        "type": "array",
-        "minItems": 1,
-        "prefixItems": [{ "type": "string", "minLength": 1, "pattern": "^[^\\u0000]*$" }],
-        "items": { "type": "string", "pattern": "^[^\\u0000]*$" }
-      }
+      "minItems": 1,
+      "prefixItems": [{ "type": "string", "minLength": 1, "pattern": "^[^\\u0000]*$" }],
+      "items": { "type": "string", "pattern": "^[^\\u0000]*$" }
     },
     "settings": {
       "type": "object",
