@@ -37,6 +37,9 @@ codex plugin marketplace add BarakChamo/latch
 codex plugin add latch@latch-tools
 ```
 
+If Codex says `latch-tools` is already added from a different source, run
+`codex plugin marketplace remove latch-tools`, then rerun the two commands above.
+
 In a new Codex session in your project, review and approve the Latch hooks in `/hooks`.
 
 ### Claude Code
