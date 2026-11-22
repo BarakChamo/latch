@@ -14,7 +14,7 @@ Template-Version: 1
 | --- | --- |
 | `npm ci` | Install locked development tooling |
 | `cargo run --locked -p latch -- --version` | Check the CLI version during iteration |
-| `npm run build` | Build the Cargo workspace |
+| `npm run build:rust` | Build the Cargo workspace |
 | `npm run check` | Full acceptance gate covering formatting, Clippy, Cargo tests, and JSON Schema validation |
 | `npm run fmt` | Apply Rust formatting |
 | `npm run package:release -- <target-or-npm>` | Stage packages and archives as described in the release guide |
