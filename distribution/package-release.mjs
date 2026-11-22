@@ -19,6 +19,8 @@ const targets = {
 const pluginManifests = [
   "package.json",
   "plugins/package.json",
+  ".grok-plugin/plugin.json",
+  "kimi.plugin.json",
   "plugins/codex/.codex-plugin/plugin.json",
   "plugins/claude-code/.claude-plugin/plugin.json",
   "plugins/copilot/plugin.json",
