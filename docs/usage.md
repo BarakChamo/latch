@@ -102,15 +102,15 @@ can call `run_turn_end` before responding.
 ## Hosted sessions
 
 Start with the [Cloud sessions guide](https://barakchamo.github.io/latch/docs/cloud/)
-to choose a setup for your provider. A cloud session needs both a Latch
-binary and a supported hook registration for automatic feedback.
+to choose a setup for your provider. With Latch 0.1.6 or later, run the
+setup command in your checkout. It adds hooks alongside existing settings.
 
 | Harness | Automatic hook setup and evidence |
 | --- | --- |
 | Codex Cloud | Managed orchestration accepts admin-configured Global MCP hooks. Latch ships command hooks, so use `latch run turn_end` directly in the checkout or in CI. Running Codex CLI in a VM you control uses the local setup. |
-| Claude Code cloud | Download and commit [the Claude settings file](https://barakchamo.github.io/latch/docs/cloud/#claude-code). Single-repository sessions outside Claude Projects load these hooks. Hosted Latch delivery remains unverified. |
-| GitHub Copilot cloud agent | Commit [the Copilot hook file](https://barakchamo.github.io/latch/docs/cloud/#github-copilot) on the default branch. The earlier Actions wiring passed a Linux fixture. Hosted delivery remains unverified. |
-| OpenHands Cloud and Canvas | Commit [the OpenHands hook file](https://barakchamo.github.io/latch/docs/cloud/#openhands) for a hosted workspace. For a Canvas backend you control, use the native plugin. Hosted delivery remains unverified. |
+| Claude Code cloud | Run `latch install cloud claude` and commit `.claude/settings.json`. Single-repository sessions outside Claude Projects load these hooks. Hosted Latch delivery remains unverified. |
+| GitHub Copilot cloud agent | Run `latch install cloud copilot` and commit `.github/hooks/latch.json` to the default branch. The earlier Actions wiring passed a Linux fixture. Hosted delivery remains unverified. |
+| OpenHands Cloud and Canvas | Run `latch install cloud openhands` and commit `.openhands/hooks.json` for a hosted workspace. For a Canvas backend you control, use the native plugin. Hosted delivery remains unverified. |
 
 For OpenCode, Pi, Kimi Code, and Grok Build, install the shipped integration
 where the agent process and checkout run. Managed-service reports remain
@@ -188,43 +188,9 @@ discovery enabled.
 
 ## Install the CLI
 
-Download your platform’s archive from [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest). The packages cover Apple Silicon and Intel Macs, plus glibc Linux on ARM64 and x64.
-
-### Standalone download
-
-For Apple Silicon, from your downloads directory:
-
-```sh
-tar -xzf latch-0.1.5-aarch64-apple-darwin.tar.gz
-mkdir -p "$HOME/.local/bin"
-install -m 755 latch-0.1.5-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
-export PATH="$HOME/.local/bin:$PATH"
-latch --version
-```
-
-Use the archive name for your platform in the first and third lines. Add the `export PATH` line to your shell startup file to keep it in new terminals.
-
-### npm
-
-Download the wrapper and the matching platform tarball from the same release. For Apple Silicon:
-
-```sh
-npm install --global --offline ./barakchamo-latch-0.1.5.tgz ./barakchamo-latch-darwin-arm64-0.1.4.tgz
-latch --version
-```
-
-The other binary tarballs contain `darwin-x64`, `linux-arm64`, or `linux-x64` in their names.
-
-### Cargo
-
-With Rust 1.88 or later:
-
-```sh
-git clone --branch v0.1.5 https://github.com/BarakChamo/latch.git
-cd latch
-cargo install --locked --path crates/latch
-latch --version
-```
+Follow the [CLI installation guide](https://barakchamo.github.io/latch/docs/cli/#install-the-cli)
+for standalone downloads, npm tarballs, and Cargo. Run `latch --version`
+to confirm your install.
 
 ## Commands and saved logs
 

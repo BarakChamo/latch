@@ -3,21 +3,19 @@ title: Cloud sessions
 description: Find the simplest way to run Latch in your hosted coding environment.
 ---
 
-Run one Latch command in your project and commit the file it updates.
-Latch adds its hooks alongside your existing settings. The first cloud
-prompt downloads and verifies the Latch binary.
-
-These setup commands are available in a [build from `main`](/docs/cli#cargo).
-On the published 0.1.5 release, ask your agent to merge the linked hook
-example into the listed file and show you the diff.
+Install [Latch 0.1.6 or later](/docs/cli#install-the-cli) on your machine,
+run your harness’s setup command in the project, and commit the file it
+updates. Latch adds its hooks alongside your existing settings. Running
+setup again keeps the file unchanged. The first cloud prompt downloads
+and verifies the Latch binary.
 
 | Where your session runs | Start here | Latch verification |
 | --- | --- | --- |
-| Claude Code cloud, one repository outside Projects | [Commit the settings file](#single-repository-cloud-session). | Provider-documented hook path. Hosted Latch delivery unverified. |
+| Claude Code cloud, one repository outside Projects | [`latch install cloud claude`](#single-repository-cloud-session) | Provider-documented hook path. Hosted Latch delivery unverified. |
 | Claude Projects or Anthropic-hosted multi-repo sessions | [Use Remote Control or run the check directly](#claude-projects-and-multi-repository-sessions). | Repository command hooks do not load on these surfaces. |
-| GitHub Copilot cloud agent | [Commit the hook file](#github-copilot). | Linux fixture passed. The hosted task attempt returned 403. |
+| GitHub Copilot cloud agent | [`latch install cloud copilot`](#github-copilot) | Linux fixture passed. The hosted task attempt returned 403. |
 | Codex Cloud | [Run the CLI in the checkout or in CI](#codex). | Managed orchestration does not run Latch command hooks. |
-| OpenHands Cloud, remote Canvas, or Enterprise | [Commit the hook file](#openhands). | Local Canvas verified. Hosted delivery unverified. |
+| OpenHands Cloud, remote Canvas, or Enterprise | [`latch install cloud openhands`](#openhands) | Local Canvas verified. Hosted delivery unverified. |
 | OpenCode, Pi, Kimi, or Grok Build on a host you control | [Install where the agent runs](#other-integrations). | Local integration verified. Managed-service delivery unverified. |
 
 [Check local compatibility](/docs/hooks#where-reports-appear) · [Verify a hosted session](#verify-a-new-environment)

@@ -226,7 +226,12 @@ The local columns show when the agent gets failures by default, except where mar
 
 “Next prompt” means your next message in the same session and project. Kimi 2.7.2 supports
 `continue_once` in interactive and ACP sessions. Use `report` with `kimi -p`.
-Hosted agent feedback is unverified.
+
+With Latch 0.1.6 or later, run `latch install cloud claude`,
+`latch install cloud copilot`, or `latch install cloud openhands` in
+your checkout and commit the file Latch updates. Existing settings are
+preserved. Hosted agent feedback is unverified.
+
 [Hook and feedback details](https://barakchamo.github.io/latch/docs/hooks/) · [Cloud setup](https://barakchamo.github.io/latch/docs/cloud/)
 
 ## Docs
