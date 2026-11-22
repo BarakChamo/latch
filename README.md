@@ -59,7 +59,7 @@ copilot plugin install latch@latch-tools
 pi install git:github.com/BarakChamo/latch
 ```
 
-Use Pi 1.5.2 or later with MCP enabled.
+Use Pi 1.5.2 or later.
 
 ### OpenCode
 

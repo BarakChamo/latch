@@ -15,7 +15,7 @@ For a restricted network, see [offline setup](#offline-setup) or
 
 ### Pi
 
-Use Pi 1.5.2 or later with MCP enabled.
+Use Pi 1.5.2 or later.
 
 ```sh
 pi install git:github.com/BarakChamo/latch
@@ -74,7 +74,7 @@ from inside the extracted archive with `./install opencode`.
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-tools` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-tools` |
-| OpenCode v2 | `opencode plugin list --standalone` | `opencode plugin remove 'github:BarakChamo/latch'` for the global package. Remove a project entry or checkout from its project. |
+| OpenCode v2 | Look for `github:BarakChamo/latch` in the `plugins` array of the `opencode.json` shown by the installer. | `opencode plugin remove 'github:BarakChamo/latch'` for the global package. Remove a project entry or checkout from its project. |
 | OpenCode v1 | Check the OpenCode config directory's `plugins/latch.js` link. | Remove that link. |
 | Pi | `pi list` | `pi remove git:github.com/BarakChamo/latch`. Add `--local` for a project install. |
 | Grok Build | `grok plugin list` | `grok plugin uninstall latch` |
@@ -161,7 +161,8 @@ same project. Native edits and changed turns run checks. Failures reach the
 next prompt by default. [OpenHands hook docs](https://docs.openhands.dev/openhands/usage/customization/hooks)
 
 To uninstall, remove the hook entries whose command ends in
-`# latch-installed` from `.openhands/hooks.json`. Remove the `latch` MCP
+`# latch-installed` from `.openhands/hooks.json` or the user hook file if the installer updated
+that file. Remove the `latch` MCP
 entry from your OpenHands user configuration once no project uses it.
 
 ### Preview integrations
