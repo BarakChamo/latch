@@ -10,3 +10,18 @@ html > body[data-scroll-locked] {
   margin-right: 0px !important;
   --removed-body-scroll-bar-size: 0px !important;
 }
+
+.latch-hero {
+  background-image:
+    linear-gradient(transparent 5%, var(--color-fd-background) 92%),
+    radial-gradient(ellipse 68% 65% at 50% 0%, var(--latch-hero-glow), transparent),
+    linear-gradient(var(--color-fd-border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-fd-border) 1px, transparent 1px);
+  background-size: auto, auto, 2rem 2rem, 2rem 2rem;
+  background-repeat: no-repeat, no-repeat, repeat, repeat;
+  --latch-hero-glow: var(--color-violet-100);
+}
+
+.dark .latch-hero {
+  --latch-hero-glow: color-mix(in oklab, var(--color-violet-950) 70%, transparent);
+}
