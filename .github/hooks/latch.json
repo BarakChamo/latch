@@ -1,0 +1,46 @@
+{
+  "version": 1,
+  "hooks": {
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "bash": "sh distribution/cloud/copilot-hook.sh userPromptSubmitted"
+      }
+    ],
+    "userPromptTransformed": [
+      {
+        "type": "command",
+        "bash": "sh distribution/cloud/copilot-hook.sh userPromptTransformed"
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit|str_replace_editor|apply_patch",
+        "bash": "sh distribution/cloud/copilot-hook.sh postToolUse",
+        "timeoutSec": 120
+      }
+    ],
+    "agentStop": [
+      {
+        "type": "command",
+        "bash": "sh distribution/cloud/copilot-hook.sh agentStop",
+        "timeoutSec": 120
+      }
+    ],
+    "sessionEnd": [
+      {
+        "type": "command",
+        "bash": "sh distribution/cloud/copilot-hook.sh sessionEnd"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "create|edit|str_replace_editor|apply_patch",
+        "bash": "sh distribution/cloud/copilot-hook.sh preToolUse || true",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}
