@@ -9,9 +9,9 @@ Latch runs your project’s linters, tests, and other checks as your coding agen
 
 ## When to use Latch
 
-If your agent edits TypeScript, run a quick lint check after the edit so it can catch a mistake while it still has the file in context. If the agent changes a Python service over several edits, run the unit tests once at turn end. The same project commands work across Latch integrations and can still run in CI.
+Use Latch when you want your agent to see whether its changes pass your project’s checks without asking it to run them. Run fast checks, such as lint or formatting, after an edit so failures are easy to trace. Run tests, builds, or broader checks at the end of the turn, once the related edits are in place.
 
-Start with a command you already trust. Keep fast checks close to edits and save slower checks for turn end. [Install a plugin and run your first check](/docs/quickstart)
+Start with one command you already run locally or in CI. [Install a plugin and run your first check](/docs/quickstart)
 
 ## How it works
 
