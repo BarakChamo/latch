@@ -162,7 +162,10 @@ Use `hook-afteredit` for checks after a supported edit. For a regular command su
 
 1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a file and let the turn finish.
 2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples](/docs/project-scripts#try-the-examples) show exactly what to change.
-3. Ask the agent to call `latch_status` to see whether Latch ran or skipped. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` or `latch explain turn_end` to see which command Latch found.
+3. Ask the agent to call `latch_status` to see whether Latch ran or skipped. If the tool is unavailable in chat, use `latch status` with the standalone CLI. [First-run tool availability](/docs/plugins#confirm-a-first-run)
+
+If a check failed and the report hasn’t appeared, check when your harness
+delivers failure feedback. [Report delivery by harness](/docs/hooks#where-reports-appear)
 
 ## Run the same check from a terminal
 
