@@ -1,109 +1,184 @@
 ---
 title: Cloud sessions
-description: Install Latch in a hosted coding environment and connect the available lifecycle hooks.
+description: Find the simplest way to run Latch in your hosted coding environment.
 ---
 
-Use the same `latch.json` in your cloud checkout. Install Latch and your
-project’s check dependencies when the environment starts. The harness
-also needs to load the corresponding hook definitions before the first
-prompt for automatic checks to run.
+Use the same checks you use locally. The setup depends on **where the
+harness process runs** and **which hooks the provider loads**. Installing
+the binary is enough for manual checks. Automatic feedback also needs
+the lifecycle hooks.
 
-The [compatibility matrix](/docs#compatibility) distinguishes verified local
-feedback from provider-documented cloud hooks. The Claude and OpenHands
-setup paths below have no hosted Latch verification. The Copilot setup
-passed a Linux fixture, and the hosted task attempt returned 403.
-[Hosted Copilot test record](https://github.com/BarakChamo/latch/pull/1)
+| Where your session runs | Start here | Latch verification |
+| --- | --- | --- |
+| Claude Code cloud, one repository outside Projects | [Commit the launcher and Claude hooks](#single-repository-cloud-session). | Provider-documented hook path. Hosted Latch delivery unverified. |
+| Claude Projects or Anthropic-hosted multi-repo sessions | [Use Remote Control or run the check directly](#claude-projects-and-multi-repository-sessions). | Repository command hooks do not load on these surfaces. |
+| GitHub Copilot cloud agent | [Choose Actions and commit the setup and hooks](#github-copilot). | Linux fixture passed. The hosted task attempt returned 403. |
+| Codex Cloud | [Run the CLI in the checkout or in CI](#codex). | Managed orchestration does not run Latch command hooks. |
+| OpenHands Cloud, remote Canvas, or Enterprise | [Commit repository hooks](#openhands) and provision the workspace. | Local Canvas verified. Hosted delivery unverified. |
+| OpenCode, Pi, Kimi, or Grok Build on a host you control | [Install where the agent runs](#other-integrations). | Local integration verified. Managed-service delivery unverified. |
+
+[Check local compatibility](/docs/hooks#where-reports-appear) · [Verify a hosted session](#verify-a-new-environment)
 
 ## Install in the environment
 
-Use a versioned Linux archive for the runner architecture. Stage the
-archive and its matching `.sha256` file from your release assets or
-internal mirror. Run this in the setup phase from the directory with
-both files. Change the base name for Linux ARM64 or a different version.
+Use this for a manual check, CI, or a provider setup step that installs
+tools before the agent starts. This example pins Latch and lets the installer
+select and verify the correct binary for glibc Linux on x64 or ARM64.
 
 ```sh
-set -eu
-bundle=latch-0.1.4-x86_64-unknown-linux-gnu
-sha256sum --check "$bundle.tar.gz.sha256"
-tar -xzf "$bundle.tar.gz"
-install -Dm755 "$bundle/bin/latch" "$HOME/.local/bin/latch"
-"$HOME/.local/bin/latch" --version
+latch_setup=$(mktemp -d)
+curl -fsSL https://github.com/BarakChamo/latch/releases/download/v0.1.5/install-latch-plugin.sh \
+  -o "$latch_setup/install-latch-plugin.sh" &&
+  sh "$latch_setup/install-latch-plugin.sh" --install-cli &&
+  "$HOME/.local/bin/latch" --version
 ```
 
-Keep downloaded files in a setup scratch directory outside the checkout
-so they stay out of the Git change scan. Install Git and your project’s
-check dependencies in the same setup phase.
+Set `LATCH_INSTALL_DIR` to a writable absolute directory if your provider
+uses a different user for setup and sessions. Use the same destination in
+your hook commands. In a restricted network, stage the platform archive
+and verify it against its release checksum.
+[Standalone archives and checksums](/docs/cli#standalone)
+
+Install Git and your check dependencies in the same environment. From the
+checkout, run `"$HOME/.local/bin/latch" run turn_end` to verify the binary
+and dependencies before wiring hooks.
 
 ## Claude Code
 
-For a single-repository cloud session outside a Claude Project, add the
-install step to the cloud environment setup script. Merge the archive's
-`plugins/claude-code/hooks/hooks.json` into the repository's
-`.claude/settings.json`. In each copied command, use
-`"$HOME/.local/bin/latch" hook claude-code` so it can find Latch even when
-the setup shell’s `PATH` differs from the session’s. Commit the settings.
+**Can it work without a separate cloud install?** In a single-repository
+cloud session outside Claude Projects, yes: commit project hooks and the
+release launcher. It downloads and verifies Latch the first time it
+runs. Local plugins and plugins declared in repository settings do not
+install themselves in a cloud session.
+[What Claude Code carries into cloud sessions](https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup)
 
-If you also want the explicit tool, add the archive's Claude Code
-`.mcp.json` to your repository MCP configuration. Use
-`${HOME}/.local/bin/latch` as its command and enable the project MCP
-server in the cloud session. Claude Projects and multi-repository sessions
-have different settings rules. [Claude Code cloud environment guide](https://code.claude.com/docs/en/cloud-environments#whats-available-in-cloud-sessions) · [Cloud settings precedence](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
+### Single-repository cloud session
+
+Run these once from your project root. The second command prints the
+hook settings with the same events and matchers as the Latch plugin.
+
+```sh
+mkdir -p .claude
+curl -fsSL https://github.com/BarakChamo/latch/releases/download/v0.1.5/install-latch-plugin.sh \
+  -o .claude/latch.sh
+
+curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/v0.1.5/plugins/claude-code/hooks/hooks.json |
+  jq --arg command 'sh "${CLAUDE_PROJECT_DIR}/.claude/latch.sh" hook claude-code' \
+    '(.hooks[][] | .hooks[] | .command) = $command'
+```
+
+1. Save the printed JSON as `.claude/settings.json`. If it exists, merge
+   the entries into its `hooks` object, preserving your other settings and hooks.
+2. Commit `.claude/latch.sh` and `.claude/settings.json` and start a fresh
+   single-repository cloud session. Claude’s default allowlist with
+   **Allow package managers** enabled includes `github.com` and
+   `release-assets.githubusercontent.com`. If downloads are restricted,
+   provision Latch in your environment setup script and point the hook
+   at that binary. [Cloud network access](https://code.claude.com/docs/en/cloud-environments#network-access)
+3. Make a deliberately failing edit and [verify the report](#verify-a-new-environment).
+   If you use the same checkout locally, use either the committed hooks
+   or the Latch plugin there to avoid duplicate checks.
+
+For the optional chat tools, commit a project `.mcp.json` that launches
+the same script with `sh` and arguments `[".claude/latch.sh", "mcp"]`.
+Enable the project MCP server in the session.
+[Claude Code command hooks](https://code.claude.com/docs/en/hooks) · [Cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
+
+### Claude Projects and multi-repository sessions
+
+Anthropic-hosted Project threads and multi-repository sessions do not
+run these repository hooks. Project settings can add plugins from the
+cloud UI. Latch’s GitHub marketplace install and command hooks have
+not been verified through that path.
+
+Use **Remote Control** if you want the regular Claude Code plugin to run
+in a checkout you control. For hosted execution, install Latch in the
+environment and run the check directly from the repository or in CI.
+If you manage your own Claude runner, you can configure hooks in the runner
+image’s managed settings. [Claude Projects and repository settings](https://code.claude.com/docs/en/projects#what-threads-pick-up-from-your-repositories) · [Self-hosted settings](https://code.claude.com/docs/en/self-hosted-environments)
 
 ## GitHub Copilot
 
-For Copilot sessions on GitHub Actions, install Latch in the
-`copilot-setup-steps` job in `.github/workflows/copilot-setup-steps.yml`.
-Copy the archive's `plugins/copilot/hooks.json` to
-`.github/hooks/latch.json` and update its Bash commands to use
-`"$HOME/.local/bin/latch"`. Keep the `|| true` guard on `preToolUse` so a
-setup problem does not deny the edit. GitHub loads the hook file from
-the default branch. On the standard Cloud sandbox, the Actions setup
-job is unavailable. Use Actions for this recipe. [GitHub environment setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment) · [GitHub hook setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/use-hooks)
+**Use the Actions environment** when you can choose a runner. Copilot
+reads repository hooks from the default branch. The setup workflow also
+needs to be on the default branch and runs only in Actions sessions.
 
-The cloud agent supports same-turn context after tool use. A delegated
-job may have only its initial prompt, so plan to see after-edit feedback
-and use CI to enforce checks before merge. GitHub documents stop-hook
-continuation for hosted agents. Latch’s opt-in follow-up has local
-verification. To enable the explicit tool
-in the hosted GitHub agent, configure a local stdio server in the
-repository’s Copilot MCP settings. Use `bash` as the command with
-`["-c", "exec \"$HOME/.local/bin/latch\" mcp --require-project-directory"]`
-as its arguments and allow `run_turn_end` and `search_output`. [GitHub hook events](https://docs.github.com/en/copilot/reference/hooks-reference) · [GitHub repository MCP settings](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/configure-mcp-servers)
+1. In the `copilot-setup-steps` job, check out the repository and
+   [install Latch](#install-in-the-environment) and your check dependencies.
+   Set `LATCH_INSTALL_DIR="$GITHUB_WORKSPACE/.latch/bin"` on the install
+   command and add `.latch/` to `.gitignore`. Use
+   `"$GITHUB_WORKSPACE/.latch/bin/latch" --version` in the setup step.
+2. Copy the [released Copilot hooks](https://github.com/BarakChamo/latch/blob/v0.1.5/plugins/copilot/hooks.json)
+   to `.github/hooks/latch.json`. Replace each `"${PLUGIN_ROOT}/bin/latch"`
+   command prefix with `./.latch/bin/latch`. Run the hooks from the checkout
+   root and keep the `|| true` guard on `preToolUse`.
+3. Start an Actions session and [verify an edit](#verify-a-new-environment).
+   The Latch repository’s own setup builds a binary in its checkout and
+   passes its path to the hooks through a wrapper.
+   [Setup workflow](https://github.com/BarakChamo/latch/blob/main/.github/workflows/copilot-setup-steps.yml) · [Repository hook file](https://github.com/BarakChamo/latch/blob/main/.github/hooks/latch.json)
+
+For the standard cloud sandbox, Actions provisioning does not run. Use
+a custom environment you control if you need a preinstalled binary, or
+keep CI as your enforcement step. GitHub documents repository hooks in
+the sandbox, but the hook still needs access to the Latch binary and
+your check dependencies. Verify the events and reports you depend on
+before relying on them, especially stop-hook continuation.
+[GitHub cloud hooks](https://docs.github.com/en/copilot/reference/hooks-reference) · [Runner setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment) · [Hosted test record](https://github.com/BarakChamo/latch/pull/1)
+
+For explicit tool calls, register Latch as a stdio server in the
+[repository’s Copilot MCP settings](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/configure-mcp-servers).
+Use the installed executable with `["mcp", "--require-project-directory"]`
+and allow the tools you want, such as `latch_status` and `run_turn_end`.
 
 ## Codex
 
-Install Latch as part of the environment setup and use
-`"$HOME/.local/bin/latch" run turn_end` from the checkout as a project
-check. This command can also run in CI. Managed cloud orchestration
-supports administrator-configured Global MCP hooks on eligible
-workspaces. The Latch plugin uses local command hooks, so its automatic
-feedback requires a Codex runtime where the command hooks can load and
-be trusted. If you run Codex CLI directly inside a cloud VM or container,
-follow the [plugin setup](/docs/plugins) inside that machine.
-[Codex cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments) · [Cloud orchestration hooks](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration)
+**Use the CLI or CI in managed Codex Cloud.** Add the [install
+snippet](#install-in-the-environment) to the environment setup, then run
+`"$HOME/.local/bin/latch" run turn_end` from the checkout. A committed
+`.codex/hooks.json` does not enable Latch command hooks under managed
+cloud orchestration. Admin-configured Global MCP hooks are a different
+mechanism from Latch’s local plugin.
+
+For automatic feedback, run Codex CLI directly in a VM or container
+with the checkout, [install the plugin](/docs/quickstart#codex), and trust
+its hooks there.
+[Codex cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments) · [Cloud orchestration hook limits](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration)
 
 ## OpenHands
 
-For [local Agent Canvas](/docs/plugins#agent-canvas), Latch installs through
-the built-in plugin manager. For hosted workspaces, OpenHands documents
-repository hooks for Cloud, Canvas, and Enterprise.
-Provision Latch inside the workspace and commit the hook definitions in
-`.openhands/hooks.json`. Use the installed binary’s absolute path for the
-hook commands and verify model feedback in a hosted session.
-[OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
+- **Canvas with a backend you control.** Open the project on that backend,
+  then use [Customize → Plugins](/docs/plugins#agent-canvas). The binary and
+  project dependencies must be available to the backend.
+- **Hosted Cloud or Enterprise.** Commit `.openhands/hooks.json` in the
+  selected working folder. Use [.openhands/setup.sh](https://docs.openhands.dev/openhands/usage/customization/repository#setup-script)
+  to [install Latch](#install-in-the-environment) in the workspace. Point
+  your hooks to the installed binary with `hook openhands`. The
+  [Latch OpenHands hook definitions](https://github.com/BarakChamo/latch/blob/v0.1.5/dev.openhands/hooks/hooks.json)
+  show the events and matchers. For repository hooks, use the event keys
+  and structure in the [OpenHands hook reference](https://docs.openhands.dev/openhands/usage/customization/hooks).
+
+Start a fresh conversation in that working folder and verify delivery there.
 
 ## Other integrations
 
-Use the [local setup](/docs/plugins) on a VM you control if both the
-agent process and checkout run there. Managed-service feedback for
-OpenCode, Pi, Kimi Code, and Grok Build remains unverified. Kimi’s
-remote-tool hooks run beside the CLI and see its local files.
-[Kimi hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks)
+Use the regular plugin install when the harness itself runs alongside the
+checkout on a VM or container you control.
+
+| Harness | Where to install |
+| --- | --- |
+| OpenCode | [Install on the OpenCode server](/docs/quickstart#opencode), even if you connect from a separate desktop app or TUI. [OpenCode plugin loading](https://opencode.ai/docs/plugins/) |
+| Pi | [Install on the machine running Pi](/docs/quickstart#pi) and start Pi in the project. You can also commit the project package declaration and trust the workspace on that machine. [Pi package scope](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md) |
+| Kimi Code | [Install on the host running Kimi Code](/docs/quickstart#kimi-code). Browser and Remote Control use that host. A local CLI with remote tools runs hooks beside the CLI, so use a CLI hosted with the checkout for automatic checks. [Kimi Remote Control](https://moonshotai.github.io/kimi-code/en/guides/web.html) · [Hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks) |
+| Grok Build | [Install into Grok Build](/docs/quickstart#grok-build) on the machine you connect to. [Remote sign-in](https://docs.x.ai/build/overview) |
+| Cursor, Devin, Kiro | [Preview adapters](/docs/plugins#preview-integrations) cover local CLI setups. Use the project’s check directly or in CI on managed cloud services. |
 
 ## Verify a new environment
 
-Start a fresh session with a known failing check. Confirm a read-only
-turn skips the check, an edit runs it once, and the failure is visible
-in the intended surface. Try a passing check and confirm it stays quiet
-with the default settings. A manual run verifies the binary and
-dependencies. The edit verifies the hosted hook wiring separately.
+1. Run `latch run turn_end` from the checkout to verify the binary, config,
+   and dependencies.
+2. In a fresh agent session, try a read-only turn and then a real edit
+   that fails a check. With defaults, the read-only turn should skip and
+   the edit or changed turn should run its configured check once.
+3. Confirm where the report lands, then restore the file and try a passing
+   change. Passing checks are quiet by default.
+   [Report timing and `continue_once`](/docs/hooks)

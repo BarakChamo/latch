@@ -3,15 +3,19 @@ title: Latch
 description: Run the checks your project already uses and bring failures into your coding agent’s session.
 ---
 
-Latch runs your project’s linters, tests, and other checks as your coding agent works, and brings failures back into the session.
+Latch gives your coding agent a feedback loop using commands your project
+already runs. Install a plugin to run checks automatically, or use the
+standalone CLI from your terminal or CI.
 
-[Quickstart](/docs/quickstart) · [Compatibility](#compatibility) · [CLI install](/docs/cli#install-the-cli) · [Examples](#examples)
+- [Run your first check](/docs/quickstart) with an existing project command.
+- [See what your harness supports](#compatibility) for local or hosted sessions.
+- [Try a complete example](#examples) for script discovery or file filters.
 
 ## When to use Latch
 
-Use Latch when you want your agent to see whether its changes pass your project’s checks without asking it to run them. Run fast checks, such as lint or formatting, after an edit so failures are easy to trace. Run tests, builds, or broader checks at the end of the turn, once the related edits are in place.
-
-Start with one command you already run locally or in CI. [Install a plugin and run your first check](/docs/quickstart)
+Use Latch when you want checks to happen consistently across agent sessions.
+An edit can trigger a quick lint check, and a changed turn can trigger the
+tests or build that need the complete set of changes.
 
 ## How it works
 
@@ -20,9 +24,9 @@ Start with one command you already run locally or in CI. [Install a plugin and r
 | `after_edit` | Fast checks after a supported native file edit, such as lint or formatting. |
 | `turn_end` | Checks that should run once after a changed turn, including turns with shell edits. |
 
-Latch compares Git-visible changes across the event. Read-only turns and no-op edits skip checks by default, even in an already-dirty worktree. Path and extension filters narrow which checks run. Passing checks are quiet. Long failure output can be shortened and linked to the original log. [Hook lifecycle](/docs/hooks) · [Filters and output settings](/docs/configuration)
-
-Use `latch.json` to run commands in any language. You can skip it when Latch discovers the checks you want in `package.json` or in a packaged uv project. [Quickstart](/docs/quickstart#run-your-first-check) · [Configuration and JSON schema](/docs/configuration)
+- **Run only what’s relevant.** Git comparison skips unchanged turns and no-op edits by default. Filter by path or extension to narrow it further. [Hook lifecycle](/docs/hooks)
+- **Keep feedback focused.** Passing checks are quiet by default. Latch can shorten long failures and link to the original log. [Output modes](/docs/configuration#failure-output-modes)
+- **Use your existing commands.** Set them in `latch.json` for any language, or skip the file when Latch discovers the scripts you want. [Set up checks](/docs/quickstart#run-your-first-check)
 
 ## Examples
 

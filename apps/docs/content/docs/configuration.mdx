@@ -6,10 +6,22 @@ description: Define checks, filter by changed files, and choose how failures are
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
 
-Use `latch.json` to run your own commands in any language or customize how
-checks run. You can skip the file if [package script discovery](/docs/project-scripts)
-finds the checks you want. Create the file by hand or generate a starter
-with the [standalone CLI](/docs/cli#install-the-cli) from your project directory.
+Use `latch.json` to run commands in any language and customize automatic
+checks. The file is optional when [package script discovery](/docs/project-scripts)
+finds the checks you want.
+
+| To change | Set |
+| --- | --- |
+| Which commands run and when | `hooks.after_edit` or `hooks.turn_end`. Checks run on changes by default. [Examples](#examples) |
+| Which changes count | `paths` or `extensions` on an individual hook object. [Hook fields](#hook-fields) |
+| What checks report | `on_success` defaults to `"silent"`, and `on_failure` defaults to `"collect"`. Set these in `defaults` or override them per hook. [Ordering and overrides](#ordering-and-overrides) |
+| How much output to show | `failure_output` chooses an excerpt, compact diagnostics, the last few lines, or RTK. [Output modes](#failure-output-modes) |
+| Whether the agent responds automatically | Top-level `turn_end_feedback` defaults to `"report"`. Opt in to `"continue_once"` on supported harnesses. [Turn-end feedback](/docs/hooks#act-on-a-turn-end-failure) |
+
+## Create a config
+
+Create `latch.json` in the directory where checks should run, or generate a
+starter there with the [standalone CLI](/docs/cli#install-the-cli).
 
 ```sh
 latch config init
@@ -17,9 +29,6 @@ latch config init
 
 The starter keeps package script discovery enabled. If `latch.json` already
 exists, the command leaves it in place.
-
-Put `latch.json` in the directory where your checks should run. Use it for
-explicit commands, file filters, or defaults for [discovered scripts](/docs/project-scripts).
 
 ## Editor completion and validation
 
@@ -148,12 +157,21 @@ Set an event to `[]` to disable it, including discovery. Set `hooks` to
 Use `latch explain after_edit` or `latch explain turn_end` to see which
 commands and settings Latch resolved.
 
-## Compact failure output
+## Failure output modes
 
-When any mode shortens failed command output, the report shows the path
-to a readable log. You can search that file directly or pass its path
-to `search_output` or `latch output`.
-This includes a truncated `excerpt`.
+| Mode | What the report shows |
+| --- | --- |
+| `"excerpt"` (default) | A bounded preview of stdout and stderr. |
+| [`"compact"`](#compact-failure-output) | Selected diagnostics such as assertion messages and failure names. |
+| [`"tail"`](#tail-failure-output) | The last `tail_lines` lines of each stream. |
+| [`"rtk"`](#rtk-failure-output) | Output from a locally installed RTK filter, with compact output as a fallback. |
+
+When a report shortens output, it includes a path to the saved log if
+Latch could save it. Open the log directly, search it from chat, or use
+the [CLI to replay the original streams](/docs/cli#retrieve-saved-output).
+Direct `latch run` calls print the original streams.
+
+### Compact failure output
 
 ```json title="latch.json"
 {
@@ -164,14 +182,9 @@ This includes a truncated `excerpt`.
 Compact mode keeps streams up to 1,200 bytes as-is. For each longer stream, it selects
 diagnostics such as failure names and assertions, drops repeats, and
 keeps a few lines from the end. Command failures and exit statuses
-still appear in order. When a failed command is compacted, Latch saves
-both original streams in one local log and includes its path in the
-preview. [Output retrieval](/docs/cli#retrieve-saved-output)
+still appear in order. The renderer runs locally without a model call.
 
-The renderer runs locally without a model call. Direct `latch run` calls
-continue to print the original streams.
-
-## Tail failure output
+### Tail failure output
 
 ```json title="latch.json"
 {
@@ -184,7 +197,7 @@ example. Latch shortens unusually long lines from the left. When the preview
 omits output, the report includes the saved log path. Override the mode or
 line count on an individual hook.
 
-## RTK failure output
+### RTK failure output
 
 Install [RTK](https://github.com/rtk-ai/rtk/blob/develop/INSTALL.md) separately
 and make sure `rtk` is on your harness's `PATH`. For a Vitest project:

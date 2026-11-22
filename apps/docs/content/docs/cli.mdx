@@ -3,6 +3,16 @@ title: CLI reference
 description: Run project checks from a terminal and inspect their resolved configuration.
 ---
 
+Use the standalone CLI to run checks from a terminal or CI, debug automatic
+hooks, or inspect a saved failure.
+
+| I want to | Use |
+| --- | --- |
+| Get Latch on my machine | [Install the CLI](#install-the-cli). The installer handles macOS and glibc Linux. |
+| Run a check now | [`latch run turn_end`](#try-the-cli-in-your-project). Manual runs bypass Git and file filters. |
+| See what Latch found | [`latch status` or `latch explain`](#commands). Both are read-only. |
+| See the full output from a failed hook | [`latch output`](#retrieve-saved-output) with the reported path or ID. |
+
 ## Install the CLI
 
 From your downloads directory, run:
@@ -22,6 +32,8 @@ latch --version
 ```
 
 Set `LATCH_INSTALL_DIR` to an absolute directory for a different destination.
+
+[npm tarballs](#npm-tarballs) · [Standalone archives](#standalone) · [Build with Cargo](#cargo)
 
 ### npm tarballs
 
@@ -153,6 +165,8 @@ latch output <id> --grep 'test_create_user'
 Full replay sends the original bytes to stdout and stderr. Search matches a
 literal, case-sensitive string and returns up to 40 lines per stream, with
 long lines shortened around the match.
+
+### Cache location and retention
 
 The cache is under `$XDG_STATE_HOME/latch/output-v1`, or under
 `~/.local/state/latch/output-v1` by default. On Windows the fallback uses

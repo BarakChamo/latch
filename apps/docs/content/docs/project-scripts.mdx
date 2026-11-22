@@ -8,6 +8,14 @@ If discovery finds the checks you need, you can skip `latch.json`. For any
 other project command, [configure it directly](/docs/quickstart#run-any-project-command).
 Latch looks in the harness or CLI working directory.
 
+| Project file | After a supported edit | At turn end |
+| --- | --- | --- |
+| [`package.json`](#javascript-and-typescript) | `hook:afteredit` | `hook:turnend` |
+| [`pyproject.toml` with uv](#python-with-uv) | `hook-afteredit` | `hook-turnend` |
+
+[Try the runnable examples](#try-the-examples) or run `latch explain turn_end`
+to see which script Latch resolved.
+
 ## JavaScript and TypeScript
 
 ```json title="package.json"

@@ -3,9 +3,19 @@ title: Hooks and feedback
 description: Understand what triggers a check and where each harness shows its result.
 ---
 
-Plugins map their agents’ native hooks to the same Latch events. Commands
-come from the project’s [package scripts](/docs/project-scripts), optional
-[`latch.json`](/docs/configuration), or both.
+Use `after_edit` for fast checks after a file edit and `turn_end` for broader
+checks after an agent turn. By default, Latch runs them when the workspace
+changes and stays quiet when they pass.
+
+**Choose how the agent receives a turn-end failure** with the top-level
+`turn_end_feedback` setting in `latch.json`.
+
+| Value | What happens after a failed check |
+| --- | --- |
+| `"report"` (default) | The turn ends normally. The harness decides where the report appears and when the agent sees it. |
+| `"continue_once"` | A supported harness gives the agent one automatic chance to act on the failure. You don’t send another message, and Latch does not automatically rerun the check. |
+
+[When checks run](#when-checks-run) · [Default delivery by harness](#where-reports-appear) · [Enable automatic continuation](#act-on-a-turn-end-failure)
 
 ## When checks run
 
@@ -14,20 +24,18 @@ come from the project’s [package scripts](/docs/project-scripts), optional
 | `after_edit` | A native edit tool finishes. | Immediately before and after that edit. |
 | `turn_end` | The agent finishes a turn. | The start and end of the turn, including changes made through shell commands. |
 
-A pre-existing dirty file triggers a check only if it changes again during
-the comparison window. Latch checks Git-visible files and runs the commands
-without change-based filters when a reliable comparison is unavailable.
-Use [path or extension filters](/docs/configuration#examples) to run just
-the checks that match the files changed during the event.
+Commands come from [package scripts](/docs/project-scripts),
+[`latch.json`](/docs/configuration), or both.
 
-Linked worktrees have their own change baselines, whether they sit inside
-the main checkout or beside it. Start Latch or your harness from the
-directory where you want to read config and run commands. Path filters are
-relative to that Git worktree’s root. Edits inside an untracked nested
-checkout do not trigger checks in the parent checkout.
+### How Latch detects changes
 
-These tables cover shipped integrations in local sessions. For hosted
-environments, see [Cloud sessions](/docs/cloud).
+- **Already-dirty files.** A file triggers a check only if it changes during the event. When Latch can’t compare Git-visible changes reliably, it runs the commands without change-based filters.
+- **File filters.** Use [path or extension filters](/docs/configuration#examples) to run checks only for matching changes. Paths are relative to the Git worktree root.
+- **Git worktrees.** Each linked worktree has its own baseline, even inside the main checkout. Changes in an untracked nested checkout stay outside the parent’s check. Start your harness in the directory where the checks should run.
+
+### Native file edits by harness
+
+These are local integrations. See [Cloud sessions](/docs/cloud) for hosted setup.
 
 | Harness | Native edit tools |
 | --- | --- |
@@ -43,8 +51,8 @@ environments, see [Cloud sessions](/docs/cloud).
 
 ## Where reports appear
 
-Passing checks are silent by default. “Next prompt” means your next
-message in the same session and project.
+This table shows the default `report` behavior. “Next prompt” means your
+next message in the same session and project.
 
 | Harness | Edit failure reaches model | Turn-end failure reaches model |
 | --- | --- | --- |
@@ -57,11 +65,11 @@ message in the same session and project.
 | Kimi Code 2.7.2 | — | Next prompt |
 | Grok Build 1.0.92 | Same turn | No model feedback |
 
-Turn-end reports can also appear in the harness UI or logs. The tested
-`codex exec --json` output omitted the app-server warning. For OpenCode v2,
-`opencode --standalone --print-logs run "..."` shows the report on stderr.
-Grok Build writes the failure to hook stderr. The tested headless session
-showed no turn-end report in its terminal output.
+### Headless output
+
+- **Codex.** The tested `codex exec --json` output omitted the app-server warning.
+- **OpenCode v2.** `opencode --standalone --print-logs run "..."` shows the turn-end report on stderr.
+- **Grok Build.** The failure goes to hook stderr. The tested headless session did not surface it in its terminal output.
 
 Use [compact failure output](/docs/configuration#compact-failure-output)
 to keep useful lines such as errors and assertions. When a report includes
@@ -79,10 +87,11 @@ add this top-level option to `latch.json`.
 }
 ```
 
-Keep your existing check definitions or package scripts. A supported agent
-automatically receives the failure and gets one chance to act on it,
-without another message from you or an automatic recheck. The default
-`report` mode lets the turn finish as usual.
+Keep your existing check definitions or package scripts. OpenCode v1 uses
+its default delivery. For sessions without automatic continuation, ask the
+agent to call [`run_turn_end`](/docs/plugins#run-checks-from-chat) before responding.
+
+### How supported harnesses continue
 
 | Harness | How the model sees the failure |
 | --- | --- |
@@ -98,9 +107,8 @@ OpenCode v2, Pi, OpenHands CLI, local Agent Canvas, Grok Build, and Kimi
 Code CLI sessions with scripted models.
 
 A model needs another request to act on a report produced after its final
-response. Use `after_edit` to attach feedback to an existing tool result
-while the agent is still working. OpenCode v1 uses its default delivery. For sessions without automatic continuation, the agent
-can call `run_turn_end` before responding.
+response. On supported edit hooks, `after_edit` can attach feedback to an
+existing tool result while the agent is still working.
 
 [Claude Code Stop hooks](https://code.claude.com/docs/en/hooks#stop-decision-control) ·
 [Codex Stop hooks](https://learn.chatgpt.com/docs/hooks#stop) ·

@@ -3,11 +3,19 @@ title: Quickstart
 description: Install Latch in your agent and run an existing project check at the end of a changed turn.
 ---
 
-Start in a Git project with a check you already run, such as a linter. The plugin handles automatic checks, and the standalone CLI is available for terminal and CI runs.
+Start in a Git project with a command you already run, such as a linter.
+
+1. [Install the plugin](#install-a-plugin) for your agent and open a new session.
+2. [Tell Latch what to run](#run-your-first-check). Use `latch.json` for any command, or use the supported package script names with no config file.
+3. [Verify your first check](#try-it-in-your-agent) with a change that makes it fail. Passing checks are quiet by default.
+
+For terminal or CI use, [start with the standalone CLI](#run-the-same-check-from-a-terminal).
 
 ## Install a plugin
 
 Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
+
+[Codex](#codex) · [Claude Code](#claude-code) · [Copilot](#github-copilot-cli) · [Pi](#pi) · [OpenCode](#opencode) · [Grok](#grok-build) · [Kimi](#kimi-code) · [OpenHands](#openhands)
 
 ### Codex
 
@@ -112,16 +120,15 @@ Create `latch.json` in the directory where you run your checks. If you already u
 {
   "hooks": {
     "turn_end": {
-      "commands": [["make", "lint"]]
+      "commands": "make lint"
     }
   }
 }
 ```
 
-Replace the example with your own command, such as `[["go", "test", "./..."]]`
-or `[["uv", "run", "ruff", "check", "."]]`. Each inner array contains the
-executable and its arguments. Install your project’s dependencies so the
-agent can run the command. Every shipped integration supports
+Replace the example with your own command, such as `"go test ./..."` or
+`"uv run ruff check ."`. Install your project’s dependencies so the agent
+can run the command. Every shipped integration supports
 `turn_end`. For feedback while the agent edits, see
 [which file edits trigger checks](/docs/hooks#when-checks-run).
 

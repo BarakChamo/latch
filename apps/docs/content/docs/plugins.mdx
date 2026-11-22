@@ -3,6 +3,18 @@ title: Harness plugins
 description: Install and manage Latch in your harness, and run checks from chat.
 ---
 
+Plugins wire Latch into the agent’s lifecycle and expose tools in chat. Use
+the [quickstart](/docs/quickstart#install-a-plugin) to install one, then open a
+new session in your project.
+
+| In chat | Ask for |
+| --- | --- |
+| Confirm checks are configured and see recent hook activity | [`latch_status`](#confirm-a-first-run) |
+| Run turn-end checks immediately | [`run_turn_end`](#run-checks-from-chat) |
+| Search an existing log for a missing detail | [`search_output`](#look-up-details-from-a-failure) |
+
+[Project and offline setup](#install-from-github) · [Find or remove a plugin](#find-or-remove-a-plugin) · [Preview integrations](#preview-integrations)
+
 ## Install from GitHub
 
 Use the [quickstart](/docs/quickstart#install-a-plugin) for the exact
@@ -93,15 +105,13 @@ package, remove that entry before switching to the quickstart commands.
 grok plugin install BarakChamo/latch --trust
 ```
 
-This installs and trusts the plugin’s hooks and MCP server. Start a new
-session. Run `grok plugin list` to see it and `grok mcp doctor latch` to check
-the tool server. Automatic turn-end checks and MCP passed on Grok Build
-1.0.92. Upgrade if you use 1.0.34, where the native plugin’s MCP server
-loaded but its hooks did not run. On 1.0.92, the edit failure reached the
-model in the same turn. With the default `report` mode, the model saw no turn-end failure in either
-the current turn or the next prompt. With Latch v0.1.4 or later,
-[`continue_once`](/docs/hooks#act-on-a-turn-end-failure) gives Grok one response
-to a turn-end failure.
+Start a new session. Use `grok plugin list` to confirm installation and
+`grok mcp doctor latch` to check the tool server.
+
+Automatic hooks and MCP passed on Grok Build 1.0.92. In 1.0.34, only MCP
+loaded. See [default report delivery](/docs/hooks#where-reports-appear)
+and [automatic continuation](/docs/hooks#act-on-a-turn-end-failure) for how
+Grok receives failures.
 [Grok Build plugin docs](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md)
 
 ### Kimi Code

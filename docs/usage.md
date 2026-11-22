@@ -22,6 +22,12 @@ standalone CLI, run `latch install openhands` in the project.
 
 The plugin translates its agent’s native lifecycle events into Latch events. Latch uses the same project commands and settings regardless of which plugin calls it.
 
+Top-level `turn_end_feedback` controls what happens when a turn-end check
+fails. The default `"report"` lets the turn end normally. Set
+`"continue_once"` to give a supported agent one automatic response to
+the failure, without a new message from you or an automatic recheck.
+[Enable automatic continuation](#act-on-a-turn-end-failure)
+
 | Event | Comparison | Use |
 | --- | --- | --- |
 | `after_edit` | Before and after a supported native file edit. | Fast lint, formatting, or type checks. |
@@ -95,10 +101,14 @@ can call `run_turn_end` before responding.
 
 ## Hosted sessions
 
+Start with the [Cloud sessions guide](https://barakchamo.github.io/latch/docs/cloud/)
+to choose a setup for your provider. A cloud session needs both a Latch
+binary and a supported hook registration for automatic feedback.
+
 | Harness | Automatic hook setup and evidence |
 | --- | --- |
 | Codex Cloud | Managed orchestration accepts admin-configured Global MCP hooks. Latch ships command hooks, so use `latch run turn_end` directly in the checkout or in CI. Running Codex CLI in a VM you control uses the local setup. |
-| Claude Code cloud | For a single-repository session outside a Claude Project, install the matching Linux binary in the environment setup and commit command hooks in `.claude/settings.json`. Use the installed binary’s absolute path. Hosted Latch execution and report delivery remain unverified. |
+| Claude Code cloud | For a single-repository session outside Claude Projects, commit project hooks and the release launcher. It installs Latch on first use when downloads are allowed. [Claude setup](https://barakchamo.github.io/latch/docs/cloud/#claude-code). Hosted Latch delivery remains unverified. |
 | GitHub Copilot cloud agent | Select the Actions runner, provision Latch via `copilot-setup-steps`, and put the hooks in `.github/hooks/` on the default branch. Latch’s hosted wiring was exercised in a Linux fixture. The hosted task attempt returned 403. |
 | OpenHands Cloud and Canvas | The platforms document repository hooks in `.openhands/hooks.json`. Make Latch available inside the workspace and point the hook command at it. Hosted Latch execution and report delivery remain unverified. |
 

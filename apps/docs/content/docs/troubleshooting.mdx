@@ -3,7 +3,18 @@ title: Troubleshooting
 description: Inspect the checks Latch found and diagnose missing output.
 ---
 
-See the [CLI reference](/docs/cli) for command syntax and exit codes.
+Start with `latch status` from the project directory, or ask the agent for
+`latch_status` in a plugin session. It shows the resolved checks and recent
+hook activity. Use `latch explain turn_end` to inspect one event in more
+detail. [CLI reference](/docs/cli#commands)
+
+| What you see | Start here |
+| --- | --- |
+| Install or startup fails | [Release download](#the-release-download-returns-404) or [agent startup](#the-agent-cannot-sign-in-or-start-a-turn) |
+| An edit or turn produces no output | [The hook is quiet](#the-hook-is-quiet) |
+| Latch reports that a command couldn’t start | [A command failed to launch](#a-command-failed-to-launch) |
+| Your agent can’t call a Latch tool | [Tool availability](#the-agent-cannot-find-the-latch-tool) |
+| Your check fails but the agent doesn’t see it | [Turn-end delivery](#a-turn-end-failure-is-missing-from-the-chat) |
 
 ## The release download returns 404
 
