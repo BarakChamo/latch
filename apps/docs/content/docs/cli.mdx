@@ -67,6 +67,13 @@ cargo install --locked --git https://github.com/BarakChamo/latch --tag v0.1.5 la
 See the [build guide](https://github.com/BarakChamo/latch/blob/main/docs/releasing.md#build-the-artifacts)
 to build a bundled plugin and CLI together.
 
+For commands available on `main` ahead of a release, such as
+[`latch install cloud`](/docs/cloud), install from the default branch.
+
+```sh
+cargo install --locked --git https://github.com/BarakChamo/latch latch
+```
+
 Once `latch --version` works, follow the [harness setup guide](/docs/plugins)
 to enable automatic checks in your agent.
 
@@ -102,6 +109,7 @@ Run these commands from the directory containing your `latch.json` or
 | Command | What it does |
 | --- | --- |
 | `latch config init` | Create a starter `latch.json` in the current directory. Existing files are preserved. |
+| `latch install cloud <claude\|copilot\|openhands>` | Add cloud hooks to the harness config at the Git worktree root. Existing settings are preserved. [Cloud setup](/docs/cloud) |
 | `latch --help` | List available commands. |
 | `latch --version` | Print the installed version. |
 | `latch status` | Show the resolved checks and recent prompt and automatic-check activity without running anything. |

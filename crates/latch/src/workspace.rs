@@ -90,7 +90,8 @@ fn git(directory: &Path, args: &[&str]) -> io::Result<Vec<u8>> {
     Ok(output.stdout)
 }
 
-fn worktree(directory: &Path) -> io::Result<PathBuf> {
+/// Resolves the Git worktree that contains the given directory.
+pub(crate) fn worktree(directory: &Path) -> io::Result<PathBuf> {
     let output = git(directory, &["rev-parse", "--show-toplevel"])?;
     Ok(PathBuf::from(path_bytes(without_newline(&output))?))
 }

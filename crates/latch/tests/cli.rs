@@ -573,3 +573,107 @@ fn cursor_devin_and_kiro_install_only_when_preview_is_selected() {
         );
     }
 }
+
+#[test]
+fn cloud_setup_merges_existing_hooks_and_leaves_reruns_unchanged() {
+    use serde_json::{Value, json};
+
+    for (host, path, event, nested) in [
+        ("claude", ".claude/settings.json", "Stop", true),
+        ("copilot", ".github/hooks/latch.json", "agentStop", true),
+        ("openhands", ".openhands/hooks.json", "Stop", false),
+    ] {
+        // Given a project with its own settings and a hook for the same event.
+        let project = tempfile::tempdir().unwrap();
+        assert!(
+            Command::new("git")
+                .args(["init", "-q"])
+                .current_dir(project.path())
+                .status()
+                .unwrap()
+                .success()
+        );
+        let settings = project.path().join(path);
+        fs::create_dir_all(settings.parent().unwrap()).unwrap();
+        let existing = json!({"matcher":"custom","hooks":[{"type":"command","command":"keep me"}]});
+        let mut initial = json!({"permissions":{"allow":["Read"]}});
+        if nested {
+            initial["hooks"] = json!({(event):[existing.clone()]});
+        } else {
+            initial[event] = json!([existing.clone()]);
+        }
+        fs::write(&settings, initial.to_string()).unwrap();
+
+        let subdirectory = project.path().join("src");
+        fs::create_dir(&subdirectory).unwrap();
+        let install = || {
+            Command::new(env!("CARGO_BIN_EXE_latch"))
+                .args(["install", "cloud", host])
+                .current_dir(&subdirectory)
+                .output()
+                .unwrap()
+        };
+
+        // When setup runs from inside the worktree, it adds Latch beside the existing hook.
+        let output = install();
+        assert!(output.status.success(), "{host}: {output:?}");
+        let mut merged: Value = serde_json::from_slice(&fs::read(&settings).unwrap()).unwrap();
+        assert_eq!(merged["permissions"], initial["permissions"]);
+        let hooks = if nested {
+            &mut merged["hooks"]
+        } else {
+            &mut merged
+        };
+        assert_eq!(hooks[event][0], existing);
+        assert_eq!(hooks[event].as_array().unwrap().len(), 2);
+
+        // Then a rerun also preserves any customizations made to the Latch hook.
+        if host == "copilot" {
+            hooks[event][1]["timeoutSec"] = json!(75);
+        } else {
+            hooks[event][1]["hooks"][0]["timeout"] = json!(75);
+        }
+        let custom = merged.to_string();
+        fs::write(&settings, &custom).unwrap();
+        let output = install();
+        assert!(output.status.success(), "{host}: {output:?}");
+        assert_eq!(fs::read_to_string(settings).unwrap(), custom);
+    }
+}
+
+#[test]
+fn cloud_setup_leaves_invalid_settings_untouched() {
+    let project = tempfile::tempdir().unwrap();
+    assert!(
+        Command::new("git")
+            .args(["init", "-q"])
+            .current_dir(project.path())
+            .status()
+            .unwrap()
+            .success()
+    );
+    fs::create_dir(project.path().join(".claude")).unwrap();
+    let settings = project.path().join(".claude/settings.json");
+
+    for (original, expected) in [
+        ("{invalid", "settings.json"),
+        (r#"{"hooks":{"Stop":false}}"#, "Stop must be a JSON array"),
+        (
+            r#"{"hooks":{"Stop":[{"hooks":[{"command":"sh .claude/latch.sh hook claude-code"}]}]}}"#,
+            "already has a different Latch hook",
+        ),
+    ] {
+        fs::write(&settings, original).unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .args(["install", "cloud", "claude"])
+            .current_dir(project.path())
+            .output()
+            .unwrap();
+        assert_eq!(output.status.code(), Some(1));
+        assert!(
+            String::from_utf8_lossy(&output.stderr).contains(expected),
+            "{output:?}"
+        );
+        assert_eq!(fs::read_to_string(&settings).unwrap(), original);
+    }
+}

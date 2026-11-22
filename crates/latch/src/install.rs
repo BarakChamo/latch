@@ -1,5 +1,7 @@
 //! Registers local command-hook integrations and their bundled stdio tool.
 
+pub(crate) mod cloud;
+
 use serde_json::{Map, Value, json};
 use std::{env, fs, io, path::Path, path::PathBuf};
 

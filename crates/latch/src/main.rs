@@ -19,7 +19,7 @@ use std::process::ExitCode;
 use config::{HookEntries, HookEntry, HookName};
 use serde_json::{Map, Value, json};
 
-const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch status | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
+const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch status | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch install cloud <claude|copilot|openhands> | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
 
 fn main() -> ExitCode {
     let mut args = env::args_os().skip(1).peekable();
@@ -96,12 +96,17 @@ fn main() -> ExitCode {
             _ => return usage(),
         },
         Some(arg) if arg == "install" => {
-            let Some(target) = args
-                .next()
-                .as_deref()
-                .and_then(|name| name.to_str())
-                .and_then(install::Target::parse)
-            else {
+            let target = args.next().and_then(|name| name.into_string().ok());
+            if target.as_deref() == Some("cloud") {
+                let host = args.next().and_then(|name| name.into_string().ok());
+                return match host.as_deref().and_then(install::cloud::Target::parse) {
+                    Some(host) if args.next().is_none() => {
+                        report_install(install::cloud::install(host))
+                    }
+                    _ => usage(),
+                };
+            }
+            let Some(target) = target.as_deref().and_then(install::Target::parse) else {
                 return usage();
             };
             let option = args.next();
@@ -112,13 +117,7 @@ fn main() -> ExitCode {
                 eprintln!("latch: this harness is in preview. Pass --preview to install it.");
                 return ExitCode::from(2);
             }
-            return match install::install(target) {
-                Ok(()) => ExitCode::SUCCESS,
-                Err(error) => {
-                    eprintln!("latch: could not install integration: {error}");
-                    ExitCode::FAILURE
-                }
-            };
+            return report_install(install::install(target));
         }
         Some(arg) if arg == "hook" => {
             let harness = args.next();
@@ -156,6 +155,16 @@ fn main() -> ExitCode {
         ExitCode::FAILURE
     } else {
         ExitCode::SUCCESS
+    }
+}
+
+fn report_install(result: io::Result<()>) -> ExitCode {
+    match result {
+        Ok(()) => ExitCode::SUCCESS,
+        Err(error) => {
+            eprintln!("latch: could not install integration: {error}");
+            ExitCode::FAILURE
+        }
     }
 }
 
