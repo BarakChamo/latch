@@ -108,9 +108,9 @@ binary and a supported hook registration for automatic feedback.
 | Harness | Automatic hook setup and evidence |
 | --- | --- |
 | Codex Cloud | Managed orchestration accepts admin-configured Global MCP hooks. Latch ships command hooks, so use `latch run turn_end` directly in the checkout or in CI. Running Codex CLI in a VM you control uses the local setup. |
-| Claude Code cloud | For a single-repository session outside Claude Projects, commit project hooks and the release launcher. It installs Latch on first use when downloads are allowed. [Claude setup](https://barakchamo.github.io/latch/docs/cloud/#claude-code). Hosted Latch delivery remains unverified. |
-| GitHub Copilot cloud agent | Select the Actions runner, provision Latch via `copilot-setup-steps`, and put the hooks in `.github/hooks/` on the default branch. Latch’s hosted wiring was exercised in a Linux fixture. The hosted task attempt returned 403. |
-| OpenHands Cloud and Canvas | The platforms document repository hooks in `.openhands/hooks.json`. Make Latch available inside the workspace and point the hook command at it. Hosted Latch execution and report delivery remain unverified. |
+| Claude Code cloud | Run the [Claude setup command](https://barakchamo.github.io/latch/docs/cloud/#claude-code) and commit the generated files. Single-repository sessions outside Claude Projects load these hooks. Hosted Latch delivery remains unverified. |
+| GitHub Copilot cloud agent | Run the [Copilot setup command](https://barakchamo.github.io/latch/docs/cloud/#github-copilot) and merge the generated files into the default branch. The earlier Actions wiring passed a Linux fixture. Hosted delivery remains unverified. |
+| OpenHands Cloud and Canvas | Run the [OpenHands setup command](https://barakchamo.github.io/latch/docs/cloud/#openhands) for a hosted workspace. For a Canvas backend you control, use the native plugin. Hosted delivery remains unverified. |
 
 For OpenCode, Pi, Kimi Code, and Grok Build, install the shipped integration
 where the agent process and checkout run. Managed-service reports remain

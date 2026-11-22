@@ -58,9 +58,10 @@ In a new Codex session, choose **Review hooks** when prompted or open
 
 ### Claude Code
 
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
+
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh --install-plugin claude
+sh ~/Downloads/install-latch-plugin.sh --install-plugin claude
 ```
 
 The installer downloads Latch before registering the plugin through Claude
@@ -91,9 +92,10 @@ opencode plugin add 'github:BarakChamo/latch'
 
 For v1 with Node.js and npm installed:
 
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
+
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh --install-plugin opencode
+sh ~/Downloads/install-latch-plugin.sh --install-plugin opencode
 ```
 
 [OpenCode project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
@@ -123,11 +125,12 @@ In Agent Canvas, go to **Customize → Plugins → Add plugin**. Enter
 plugin loads in new local conversations.
 [OpenHands SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
 
-For OpenHands CLI, run this from the Git project you want to check.
+For OpenHands CLI, run the installer from the Git project you want to check.
+
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
 
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh install openhands
+sh ~/Downloads/install-latch-plugin.sh install openhands
 ```
 
 Already have `latch` on your path? Run `latch install openhands` in the project.
@@ -217,11 +220,10 @@ requires Latch v0.1.4 or later for this option.
 
 ## Install the standalone CLI
 
-For terminal or CI use, run this from your downloads directory.
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
 
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh --install-cli
+sh ~/Downloads/install-latch-plugin.sh --install-cli
 ```
 
 The installer puts `latch` in `~/.local/bin`. Add that directory to your
@@ -237,7 +239,7 @@ The local columns show when the agent gets failures by default, except where mar
 | --- | --- | --- | --- |
 | Codex | Same turn | Next prompt | Latch CLI or CI |
 | Claude Code | Same turn | Next prompt | Single-repo setup |
-| GitHub Copilot CLI | Same turn | Next prompt | Actions runner setup |
+| GitHub Copilot CLI | Same turn | Next prompt | Repository setup |
 | OpenCode v1 and v2 | Same turn | Next prompt | Unverified |
 | Pi | Same turn | Next model request | Unverified |
 | OpenHands CLI and SDK | Next prompt | Next prompt | Workspace setup |

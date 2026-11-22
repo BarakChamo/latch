@@ -10,154 +10,79 @@ the lifecycle hooks.
 
 | Where your session runs | Start here | Latch verification |
 | --- | --- | --- |
-| Claude Code cloud, one repository outside Projects | [Commit the launcher and Claude hooks](#single-repository-cloud-session). | Provider-documented hook path. Hosted Latch delivery unverified. |
+| Claude Code cloud, one repository outside Projects | [Run the Claude setup command](#single-repository-cloud-session). | Provider-documented hook path. Hosted Latch delivery unverified. |
 | Claude Projects or Anthropic-hosted multi-repo sessions | [Use Remote Control or run the check directly](#claude-projects-and-multi-repository-sessions). | Repository command hooks do not load on these surfaces. |
-| GitHub Copilot cloud agent | [Choose Actions and commit the setup and hooks](#github-copilot). | Linux fixture passed. The hosted task attempt returned 403. |
+| GitHub Copilot cloud agent | [Run the Copilot setup command](#github-copilot). | Linux fixture passed. The hosted task attempt returned 403. |
 | Codex Cloud | [Run the CLI in the checkout or in CI](#codex). | Managed orchestration does not run Latch command hooks. |
-| OpenHands Cloud, remote Canvas, or Enterprise | [Commit repository hooks](#openhands) and provision the workspace. | Local Canvas verified. Hosted delivery unverified. |
+| OpenHands Cloud, remote Canvas, or Enterprise | [Run the OpenHands setup command](#openhands). | Local Canvas verified. Hosted delivery unverified. |
 | OpenCode, Pi, Kimi, or Grok Build on a host you control | [Install where the agent runs](#other-integrations). | Local integration verified. Managed-service delivery unverified. |
 
 [Check local compatibility](/docs/hooks#where-reports-appear) · [Verify a hosted session](#verify-a-new-environment)
 
-## Install in the environment
-
-Use this for a manual check, CI, or a provider setup step that installs
-tools before the agent starts. This example pins Latch and lets the installer
-select and verify the correct binary for glibc Linux on x64 or ARM64.
-
-```sh
-latch_setup=$(mktemp -d)
-curl -fsSL https://github.com/BarakChamo/latch/releases/download/v0.1.5/install-latch-plugin.sh \
-  -o "$latch_setup/install-latch-plugin.sh" &&
-  sh "$latch_setup/install-latch-plugin.sh" --install-cli &&
-  "$HOME/.local/bin/latch" --version
-```
-
-Set `LATCH_INSTALL_DIR` to a writable absolute directory if your provider
-uses a different user for setup and sessions. Use the same destination in
-your hook commands. In a restricted network, stage the platform archive
-and verify it against its release checksum.
-[Standalone archives and checksums](/docs/cli#standalone)
-
-Install Git and your check dependencies in the same environment. From the
-checkout, run `"$HOME/.local/bin/latch" run turn_end` to verify the binary
-and dependencies before wiring hooks.
-
 ## Claude Code
-
-**Can it work without a separate cloud install?** In a single-repository
-cloud session outside Claude Projects, yes: commit project hooks and the
-release launcher. It downloads and verifies Latch the first time it
-runs. Local plugins and plugins declared in repository settings do not
-install themselves in a cloud session.
-[What Claude Code carries into cloud sessions](https://code.claude.com/docs/en/cloud-environments#what-carries-over-from-your-setup)
 
 ### Single-repository cloud session
 
-Run these once from your project root. The second command prints the
-hook settings with the same events and matchers as the Latch plugin.
+From your Git project, run this once with Python 3.9 or later.
 
 ```sh
-mkdir -p .claude
-curl -fsSL https://github.com/BarakChamo/latch/releases/download/v0.1.5/install-latch-plugin.sh \
-  -o .claude/latch.sh
-
-curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/v0.1.5/plugins/claude-code/hooks/hooks.json |
-  jq --arg command 'sh "${CLAUDE_PROJECT_DIR}/.claude/latch.sh" hook claude-code' \
-    '(.hooks[][] | .hooks[] | .command) = $command'
+curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/main/distribution/cloud/setup-hooks.py | python3 - claude
 ```
 
-1. Save the printed JSON as `.claude/settings.json`. If it exists, merge
-   the entries into its `hooks` object, preserving your other settings and hooks.
-2. Commit `.claude/latch.sh` and `.claude/settings.json` and start a fresh
-   single-repository cloud session. Claude’s default allowlist with
-   **Allow package managers** enabled includes `github.com` and
-   `release-assets.githubusercontent.com`. If downloads are restricted,
-   provision Latch in your environment setup script and point the hook
-   at that binary. [Cloud network access](https://code.claude.com/docs/en/cloud-environments#network-access)
-3. Make a deliberately failing edit and [verify the report](#verify-a-new-environment).
-   If you use the same checkout locally, use either the committed hooks
-   or the Latch plugin there to avoid duplicate checks.
-
-For the optional chat tools, commit a project `.mcp.json` that launches
-the same script with `sh` and arguments `[".claude/latch.sh", "mcp"]`.
-Enable the project MCP server in the session.
-[Claude Code command hooks](https://code.claude.com/docs/en/hooks) · [Cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
+Commit the two files the command writes, then start a new cloud session
+outside Claude Projects. Your existing settings and hooks are preserved.
+The first hook downloads and verifies Latch. Use either these hooks or
+the Latch plugin in local sessions to avoid running the checks twice.
+[Claude cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
 
 ### Claude Projects and multi-repository sessions
 
-Anthropic-hosted Project threads and multi-repository sessions do not
-run these repository hooks. Project settings can add plugins from the
-cloud UI. Latch’s GitHub marketplace install and command hooks have
-not been verified through that path.
-
-Use **Remote Control** if you want the regular Claude Code plugin to run
-in a checkout you control. For hosted execution, install Latch in the
-environment and run the check directly from the repository or in CI.
-If you manage your own Claude runner, you can configure hooks in the runner
-image’s managed settings. [Claude Projects and repository settings](https://code.claude.com/docs/en/projects#what-threads-pick-up-from-your-repositories) · [Self-hosted settings](https://code.claude.com/docs/en/self-hosted-environments)
+Anthropic-hosted Project threads and multi-repo sessions skip repository
+hooks. Use Remote Control with your regular Claude Code plugin, or run
+the check directly in the hosted checkout or in CI.
+[Claude Projects](https://code.claude.com/docs/en/projects#what-threads-pick-up-from-your-repositories)
 
 ## GitHub Copilot
 
-**Use the Actions environment** when you can choose a runner. Copilot
-reads repository hooks from the default branch. The setup workflow also
-needs to be on the default branch and runs only in Actions sessions.
+From your Git project, run this once with Python 3.9 or later.
 
-1. In the `copilot-setup-steps` job, check out the repository and
-   [install Latch](#install-in-the-environment) and your check dependencies.
-   Set `LATCH_INSTALL_DIR="$GITHUB_WORKSPACE/.latch/bin"` on the install
-   command and add `.latch/` to `.gitignore`. Use
-   `"$GITHUB_WORKSPACE/.latch/bin/latch" --version` in the setup step.
-2. Copy the [released Copilot hooks](https://github.com/BarakChamo/latch/blob/v0.1.5/plugins/copilot/hooks.json)
-   to `.github/hooks/latch.json`. Replace each `"${PLUGIN_ROOT}/bin/latch"`
-   command prefix with `./.latch/bin/latch`. Run the hooks from the checkout
-   root and keep the `|| true` guard on `preToolUse`.
-3. Start an Actions session and [verify an edit](#verify-a-new-environment).
-   The Latch repository’s own setup builds a binary in its checkout and
-   passes its path to the hooks through a wrapper.
-   [Setup workflow](https://github.com/BarakChamo/latch/blob/main/.github/workflows/copilot-setup-steps.yml) · [Repository hook file](https://github.com/BarakChamo/latch/blob/main/.github/hooks/latch.json)
+```sh
+curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/main/distribution/cloud/setup-hooks.py | python3 - copilot
+```
 
-For the standard cloud sandbox, Actions provisioning does not run. Use
-a custom environment you control if you need a preinstalled binary, or
-keep CI as your enforcement step. GitHub documents repository hooks in
-the sandbox, but the hook still needs access to the Latch binary and
-your check dependencies. Verify the events and reports you depend on
-before relying on them, especially stop-hook continuation.
-[GitHub cloud hooks](https://docs.github.com/en/copilot/reference/hooks-reference) · [Runner setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment) · [Hosted test record](https://github.com/BarakChamo/latch/pull/1)
-
-For explicit tool calls, register Latch as a stdio server in the
-[repository’s Copilot MCP settings](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/configure-mcp-servers).
-Use the installed executable with `["mcp", "--require-project-directory"]`
-and allow the tools you want, such as `latch_status` and `run_turn_end`.
+Merge the two generated files into the **default branch**, then start a
+new Copilot cloud task. The first hook downloads Latch. Choose Actions
+if your checks need dependency setup before the session starts.
+[GitHub cloud hooks](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/use-hooks) · [Dependency setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment)
 
 ## Codex
 
-**Use the CLI or CI in managed Codex Cloud.** Add the [install
-snippet](#install-in-the-environment) to the environment setup, then run
-`"$HOME/.local/bin/latch" run turn_end` from the checkout. A committed
-`.codex/hooks.json` does not enable Latch command hooks under managed
-cloud orchestration. Admin-configured Global MCP hooks are a different
-mechanism from Latch’s local plugin.
-
-For automatic feedback, run Codex CLI directly in a VM or container
-with the checkout, [install the plugin](/docs/quickstart#codex), and trust
-its hooks there.
-[Codex cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments) · [Cloud orchestration hook limits](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration)
+In managed Codex Cloud, [install the CLI](#install-in-the-environment)
+and run `latch run turn_end` in the checkout or in CI. For automatic
+checks, [install the plugin](/docs/quickstart#codex) in a Codex CLI
+session running on the machine with the checkout.
+[Codex cloud hook support](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration)
 
 ## OpenHands
 
-- **Canvas with a backend you control.** Open the project on that backend,
-  then use [Customize → Plugins](/docs/plugins#agent-canvas). The binary and
-  project dependencies must be available to the backend.
-- **Hosted Cloud or Enterprise.** Commit `.openhands/hooks.json` in the
-  selected working folder. Use [.openhands/setup.sh](https://docs.openhands.dev/openhands/usage/customization/repository#setup-script)
-  to [install Latch](#install-in-the-environment) in the workspace. Point
-  your hooks to the installed binary with `hook openhands`. The
-  [Latch OpenHands hook definitions](https://github.com/BarakChamo/latch/blob/v0.1.5/dev.openhands/hooks/hooks.json)
-  show the events and matchers. For repository hooks, use the event keys
-  and structure in the [OpenHands hook reference](https://docs.openhands.dev/openhands/usage/customization/hooks).
+If you control the Canvas backend, use [Customize → Plugins](/docs/plugins#agent-canvas).
+For a hosted workspace, run this once in your Git repository with Python
+3.9 or later.
 
-Start a fresh conversation in that working folder and verify delivery there.
+```sh
+curl -fsSL https://raw.githubusercontent.com/BarakChamo/latch/main/distribution/cloud/setup-hooks.py | python3 - openhands
+```
+
+Commit the two generated files and open the repository root as the working
+folder for a new conversation. [OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
+
+## Install in the environment
+
+For manual checks or CI, use the [standalone installer](/docs/cli#install-the-cli)
+in the environment setup and run `latch run turn_end` in the checkout.
+Automatic hooks need access to GitHub release assets on first use. For
+restricted networks, allow the release download or run your checks in CI.
+[Standalone downloads](/docs/cli#standalone)
 
 ## Other integrations
 
@@ -174,11 +99,9 @@ checkout on a VM or container you control.
 
 ## Verify a new environment
 
-1. Run `latch run turn_end` from the checkout to verify the binary, config,
-   and dependencies.
-2. In a fresh agent session, try a read-only turn and then a real edit
+1. In a fresh agent session, try a read-only turn and then a real edit
    that fails a check. With defaults, the read-only turn should skip and
    the edit or changed turn should run its configured check once.
-3. Confirm where the report lands, then restore the file and try a passing
+2. Confirm where the report lands, then restore the file and try a passing
    change. Passing checks are quiet by default.
    [Report timing and `continue_once`](/docs/hooks)

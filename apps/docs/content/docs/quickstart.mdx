@@ -31,9 +31,10 @@ Open a new Codex session in your project. Choose **Review hooks** if Codex promp
 
 ### Claude Code
 
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
+
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh --install-plugin claude
+sh ~/Downloads/install-latch-plugin.sh --install-plugin claude
 ```
 
 The installer downloads Latch before registering the plugin through Claude
@@ -68,9 +69,10 @@ opencode plugin add 'github:BarakChamo/latch'
 
 With Node.js and npm installed, run:
 
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
+
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh --install-plugin opencode
+sh ~/Downloads/install-latch-plugin.sh --install-plugin opencode
 ```
 
 This prepares the OpenCode plugin dependencies before its first startup.
@@ -97,11 +99,12 @@ In Kimi Code, run the command below. Choose **Trust and install**, then run `/re
 In Agent Canvas, open **Customize → Plugins → Add plugin**. Enter
 `github:BarakChamo/latch` as the source and select **Install**.
 
-For OpenHands CLI, run this from your Git project.
+For OpenHands CLI, run the installer from your Git project.
+
+[Download the Latch installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh), then run:
 
 ```sh
-curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
-  sh install-latch-plugin.sh install openhands
+sh ~/Downloads/install-latch-plugin.sh install openhands
 ```
 
 [OpenHands SDK setup](/docs/plugins#openhands-sdk)

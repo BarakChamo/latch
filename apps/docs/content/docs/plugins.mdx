@@ -54,13 +54,6 @@ For a project, add the Git package to the existing `plugins` array in
 }
 ```
 
-To use OpenCode’s directory discovery, run this from the project root instead.
-
-```sh
-mkdir -p .opencode/plugins
-git clone --depth 1 https://github.com/BarakChamo/latch.git .opencode/plugins/latch
-```
-
 For OpenCode v1, use the [v1 installer](/docs/quickstart#opencode) to
 prepare OpenCode’s npm dependencies before it first loads the plugin.
 If a project has its own `.opencode` directory, OpenCode can also provision
