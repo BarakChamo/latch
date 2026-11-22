@@ -10,7 +10,7 @@ turn end when several edits should be checked together. Start with the
 
 ## Install the plugin from a terminal
 
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.3/install-latch-plugin.sh), then run it in your terminal.
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.4/install-latch-plugin.sh), then run it in your terminal.
 
 ```sh
 sh install-latch-plugin.sh --install-plugin codex
@@ -24,6 +24,9 @@ Run the terminal installer as the same user on the machine where the agent
 runs to fill that cache in advance. Once the binary is cached, its hooks and
 tools can run offline. In Codex, open `/hooks` and approve the hooks
 after installation.
+
+In local Agent Canvas, open **Customize → Plugins → Add plugin** and install
+from `github:BarakChamo/latch`. Start a new conversation in your Git workspace.
 
 For OpenHands CLI, run `sh /path/to/install-latch-plugin.sh install openhands`
 from your Git project. The script downloads the CLI and registers the
@@ -87,17 +90,17 @@ without another message from you or an automatic recheck. The default
 | Claude Code | Native Stop hook context keeps the current turn open without a separate user prompt. Claude makes another model request to act on the report. |
 | OpenCode v2 and Pi | The extension adds its report to session context and resumes the current execution. |
 | Codex and Copilot CLI | The host creates a continuation prompt from the stop-hook response. |
-| Kimi Code CLI | In 2.7.2, a persistent `kimi acp` session delivered the failure and continued once. `kimi -p` finished without continuing. Use `report` for next-prompt feedback in that mode. |
-| OpenHands CLI | The Stop hook denies completion once and supplies the failure as feedback. |
+| Grok Build | With Latch v0.1.4 or later, the Stop hook supplies the failure and Grok continues once in the same turn. |
+| Kimi Code CLI | In 2.7.2, the interactive CLI and persistent ACP sessions delivered the failure and continued once. `kimi -p` finished without continuing. Use `report` for next-prompt feedback in that mode. |
+| OpenHands CLI and local Agent Canvas | The Stop hook denies completion once and supplies the failure as feedback. |
 
 Verified in live Codex, Claude Code, and Copilot CLI sessions, and in real
-OpenCode v2, Pi, OpenHands CLI, and Kimi Code CLI sessions with scripted
-models.
+OpenCode v2, Pi, OpenHands CLI, local Agent Canvas, Grok Build, and Kimi
+Code CLI sessions with scripted models.
 
 A model needs another request to act on a report produced after its final
 response. Use `after_edit` to attach feedback to an existing tool result
-while the agent is still working. OpenCode v1 and Grok Build keep their
-default delivery. For sessions without automatic continuation, the agent
+while the agent is still working. OpenCode v1 uses its default delivery. For sessions without automatic continuation, the agent
 can call `run_turn_end` before responding.
 
 [Claude Code Stop hooks](https://code.claude.com/docs/en/hooks#stop-decision-control) ·
@@ -180,9 +183,9 @@ Download your platform’s archive from [GitHub Releases](https://github.com/Bar
 For Apple Silicon, from your downloads directory:
 
 ```sh
-tar -xzf latch-0.1.3-aarch64-apple-darwin.tar.gz
+tar -xzf latch-0.1.4-aarch64-apple-darwin.tar.gz
 mkdir -p "$HOME/.local/bin"
-install -m 755 latch-0.1.3-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
+install -m 755 latch-0.1.4-aarch64-apple-darwin/bin/latch "$HOME/.local/bin/latch"
 export PATH="$HOME/.local/bin:$PATH"
 latch --version
 ```
@@ -194,7 +197,7 @@ Use the archive name for your platform in the first and third lines. Add the `ex
 Download the wrapper and the matching platform tarball from the same release. For Apple Silicon:
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.3.tgz ./barakchamo-latch-darwin-arm64-0.1.3.tgz
+npm install --global --offline ./barakchamo-latch-0.1.4.tgz ./barakchamo-latch-darwin-arm64-0.1.4.tgz
 latch --version
 ```
 
@@ -205,7 +208,7 @@ The other binary tarballs contain `darwin-x64`, `linux-arm64`, or `linux-x64` in
 With Rust 1.88 or later:
 
 ```sh
-git clone --branch v0.1.3 https://github.com/BarakChamo/latch.git
+git clone --branch v0.1.4 https://github.com/BarakChamo/latch.git
 cd latch
 cargo install --locked --path crates/latch
 latch --version

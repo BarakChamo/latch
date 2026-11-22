@@ -89,8 +89,10 @@ Confirm installation and start a new session.
 
 ### OpenHands
 
-Load the native plugin from `github:BarakChamo/latch` in the OpenHands SDK.
-[SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
+In Agent Canvas, go to **Customize → Plugins → Add plugin**. Enter
+`github:BarakChamo/latch` as the source, then click **Install**. The enabled
+plugin loads in new local conversations.
+[OpenHands SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
 
 For OpenHands CLI, download
 [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh),
@@ -181,7 +183,8 @@ for the default excerpt.
 With Latch v0.1.3 or later, set `"turn_end_feedback": "continue_once"` at the
 top level of `latch.json`. On supported agents, this delivers the failed
 turn-end report automatically and gives the agent one chance to respond
-without another message from you or an automatic recheck.
+without another message from you or an automatic recheck. Grok Build
+requires Latch v0.1.4 or later for this option.
 
 [Supported agents and how they receive failures](docs/usage.md#act-on-a-turn-end-failure)
 
@@ -193,7 +196,7 @@ From your project, run `latch run after_edit` or `latch run turn_end` to execute
 
 ## Compatibility
 
-The local columns show when the agent gets failures by default.
+The local columns show when the agent gets failures by default, except where marked opt-in.
 
 | Harness | Local test | After edit | Turn end | Managed cloud |
 | --- | --- | --- | --- | --- |
@@ -203,12 +206,13 @@ The local columns show when the agent gets failures by default.
 | OpenCode v1 and v2 | Scripted | Same turn | Next prompt | Unverified |
 | Pi | Scripted | Same turn | Next model request | Unverified |
 | OpenHands CLI and SDK | Scripted | Next prompt | Next prompt | Workspace setup |
+| OpenHands Agent Canvas | Scripted | — | Opt-in verified | Unverified |
 | Kimi Code CLI | Scripted | — | Next prompt | Unverified |
 | Grok Build 1.0.92 | Scripted | Same turn | No model feedback | Unverified |
 
-“Scripted” means a real CLI with a scripted model. “Next prompt” means your
+“Scripted” means a real harness session with a scripted model. “Next prompt” means your
 next message in the same session and project. Kimi 2.7.2 supports
-`continue_once` in ACP sessions. Use `report` with `kimi -p`.
+`continue_once` in interactive and ACP sessions. Use `report` with `kimi -p`.
 Hosted agent feedback is unverified.
 [Hook and feedback details](docs/usage.md#hooks-and-feedback) · [Cloud setup](docs/usage.md#hosted-sessions)
 

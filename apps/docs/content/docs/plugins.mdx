@@ -12,7 +12,7 @@ downloads the binary from GitHub if its cache is empty.
 
 ### Install from a terminal
 
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.3/install-latch-plugin.sh), then run it in your terminal.
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.4/install-latch-plugin.sh), then run it in your terminal.
 
 ```sh
 sh install-latch-plugin.sh --install-plugin codex
@@ -105,8 +105,10 @@ session. Run `grok plugin list` to see it and `grok mcp doctor latch` to check
 the tool server. Automatic turn-end checks and MCP passed on Grok Build
 1.0.92. Upgrade if you use 1.0.34, where the native plugin’s MCP server
 loaded but its hooks did not run. On 1.0.92, the edit failure reached the
-model in the same turn. The model saw no turn-end failure in either the
-current turn or the next prompt.
+model in the same turn. With the default `report` mode, the model saw no turn-end failure in either
+the current turn or the next prompt. With Latch v0.1.4 or later,
+[`continue_once`](/docs/hooks#act-on-a-turn-end-failure) gives Grok one response
+to a turn-end failure.
 [Grok Build plugin docs](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md)
 
 ### Kimi Code
@@ -119,11 +121,23 @@ In Kimi Code, run:
 
 Choose **Trust and install**, then run `/reload` or open a new session.
 Changed turns run checks. Failures reach the next prompt by default.
-Kimi Code 2.7.2 supports `continue_once` in a persistent `kimi acp` session.
+Kimi Code 2.7.2 supports `continue_once` in the interactive CLI and in ACP sessions.
 Use `report` with `kimi -p`.
 [Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)
 
 ### OpenHands
+
+#### Agent Canvas
+
+Open **Customize → Plugins → Add plugin**, enter `github:BarakChamo/latch`
+as the source, and click **Install**. Enabled plugins load automatically in
+new conversations. Open a local Git workspace and configure your checks there.
+
+Verified in the Canvas web app (1.43.0) against a local workspace. With
+[`continue_once`](/docs/hooks#act-on-a-turn-end-failure), Canvas delivered the
+turn-end failure to the agent once and Latch ran the check once.
+
+#### OpenHands SDK
 
 Load the native GitHub plugin when you create an SDK conversation:
 
@@ -141,9 +155,7 @@ conversation = Conversation(
 ```
 
 Here `agent` is your configured OpenHands agent. The plugin includes hooks
-and MCP. For Agent Canvas, clone Latch into `~/.agents/plugins/latch`, then
-select it in the Plugins picker. The SDK path was tested with 1.63.1.
-Canvas execution is unverified. [OpenHands plugin docs](https://docs.openhands.dev/overview/plugins)
+and MCP. The SDK path was tested with 1.63.1. [OpenHands plugin docs](https://docs.openhands.dev/overview/plugins)
 
 #### OpenHands CLI
 
