@@ -215,11 +215,11 @@ The local columns show when the agent gets failures by default, except where mar
 | Harness | After edit | Turn end | Managed cloud |
 | --- | --- | --- | --- |
 | Codex | Same turn | Next prompt | Latch CLI or CI |
-| Claude Code | Same turn | Next prompt | Single-repo setup |
-| GitHub Copilot CLI | Same turn | Next prompt | Repository setup |
+| Claude Code | Same turn | Next prompt | Verified for single repos |
+| GitHub Copilot CLI | Same turn | Next prompt | Repository hooks · unverified |
 | OpenCode v1 and v2 | Same turn | Next prompt | Unverified |
 | Pi | Same turn | Next model request | Unverified |
-| OpenHands CLI and SDK | Next prompt | Next prompt | Workspace setup |
+| OpenHands CLI and SDK | Next prompt | Next prompt | Workspace hooks · unverified |
 | OpenHands Agent Canvas | — | Opt-in verified | Unverified |
 | Kimi Code CLI | — | Next prompt | Unverified |
 | Grok Build 1.0.92 | Same turn | No model feedback | Unverified |
@@ -230,7 +230,9 @@ The local columns show when the agent gets failures by default, except where mar
 With Latch 0.1.6 or later, run `latch install cloud claude`,
 `latch install cloud copilot`, or `latch install cloud openhands` in
 your checkout and commit the file Latch updates. Existing settings are
-preserved. Hosted agent feedback is unverified.
+preserved. In Claude Code cloud, edit failures reach the agent immediately.
+Turn-end failures reach it on the next prompt by default or automatically
+with `continue_once`.
 
 [Hook and feedback details](https://barakchamo.github.io/latch/docs/hooks/) · [Cloud setup](https://barakchamo.github.io/latch/docs/cloud/)
 

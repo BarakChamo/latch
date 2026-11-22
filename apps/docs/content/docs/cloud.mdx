@@ -11,11 +11,11 @@ and verifies the Latch binary.
 
 | Where your session runs | Start here | Latch verification |
 | --- | --- | --- |
-| Claude Code cloud, one repository outside Projects | [`latch install cloud claude`](#single-repository-cloud-session) | Provider-documented hook path. Hosted Latch delivery unverified. |
+| Claude Code cloud, one repository outside Projects | [`latch install cloud claude`](#single-repository-cloud-session) | Verified. Edit failures reach the model immediately. Turn-end failures reach it on the next prompt or automatically with `continue_once`. |
 | Claude Projects or Anthropic-hosted multi-repo sessions | [Use Remote Control or run the check directly](#claude-projects-and-multi-repository-sessions). | Repository command hooks do not load on these surfaces. |
-| GitHub Copilot cloud agent | [`latch install cloud copilot`](#github-copilot) | Linux fixture passed. The hosted task attempt returned 403. |
+| GitHub Copilot cloud agent | [`latch install cloud copilot`](#github-copilot) | Linux fixture passed. GitHub denied cloud agent access for the test account or repository. Hosted feedback is unverified. |
 | Codex Cloud | [Run the CLI in the checkout or in CI](#codex). | Managed orchestration does not run Latch command hooks. |
-| OpenHands Cloud, remote Canvas, or Enterprise | [`latch install cloud openhands`](#openhands) | Local Canvas verified. Hosted delivery unverified. |
+| OpenHands Cloud, remote Canvas, or Enterprise | [`latch install cloud openhands`](#openhands) | Linux fixture and local Canvas verified. Hosted feedback is unverified. |
 | OpenCode, Pi, Kimi, or Grok Build on a host you control | [Install where the agent runs](#other-integrations). | Local integration verified. Managed-service delivery unverified. |
 
 [Check local compatibility](/docs/hooks#where-reports-appear) · [Verify a hosted session](#verify-a-new-environment)
@@ -30,7 +30,13 @@ latch install cloud claude
 
 Commit `.claude/settings.json` and start a single-repository cloud session
 outside Claude Projects.
-[Claude hook example](https://github.com/BarakChamo/latch/blob/main/apps/docs/public/downloads/claude/settings.json) · [Claude cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
+
+In hosted tests using the v0.1.6 installer, a read-only turn skipped checks
+and an edit ran each configured check once. Claude quoted the edit failure
+in the same turn and the turn-end failure on the next prompt. With
+[`turn_end_feedback: "continue_once"`](/docs/hooks#act-on-a-turn-end-failure),
+Claude quoted the turn-end failure without another user message.
+[Claude cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
 
 ### Claude Projects and multi-repository sessions
 
@@ -46,9 +52,10 @@ latch install cloud copilot
 ```
 
 Commit `.github/hooks/latch.json` to the **default branch**, then start a
-new cloud task. Choose Actions if your checks need dependencies installed
+new cloud task. Your GitHub account and repository need access to Copilot
+cloud agent. Choose Actions if your checks need dependencies installed
 before the session.
-[Copilot hook example](https://github.com/BarakChamo/latch/blob/main/apps/docs/public/downloads/copilot/latch.json) · [GitHub cloud hooks](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/use-hooks) · [Dependency setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment)
+[GitHub cloud hooks](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/use-hooks) · [Dependency setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment)
 
 ## Codex
 
@@ -69,7 +76,7 @@ latch install cloud openhands
 
 Commit `.openhands/hooks.json` and start a conversation with the repository
 root as the working folder.
-[OpenHands hook example](https://github.com/BarakChamo/latch/blob/main/apps/docs/public/downloads/openhands/hooks.json) · [OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
+[OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
 
 ## Install in the environment
 

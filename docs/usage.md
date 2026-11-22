@@ -108,9 +108,9 @@ setup command in your checkout. It adds hooks alongside existing settings.
 | Harness | Automatic hook setup and evidence |
 | --- | --- |
 | Codex Cloud | Managed orchestration accepts admin-configured Global MCP hooks. Latch ships command hooks, so use `latch run turn_end` directly in the checkout or in CI. Running Codex CLI in a VM you control uses the local setup. |
-| Claude Code cloud | Run `latch install cloud claude` and commit `.claude/settings.json`. Single-repository sessions outside Claude Projects load these hooks. Hosted Latch delivery remains unverified. |
-| GitHub Copilot cloud agent | Run `latch install cloud copilot` and commit `.github/hooks/latch.json` to the default branch. The earlier Actions wiring passed a Linux fixture. Hosted delivery remains unverified. |
-| OpenHands Cloud and Canvas | Run `latch install cloud openhands` and commit `.openhands/hooks.json` for a hosted workspace. For a Canvas backend you control, use the native plugin. Hosted delivery remains unverified. |
+| Claude Code cloud | Run `latch install cloud claude` and commit `.claude/settings.json`. Verified in single-repository sessions outside Claude Projects. Edit failures reach the agent immediately. Turn-end failures reach it on the next prompt or automatically with `continue_once`. |
+| GitHub Copilot cloud agent | Run `latch install cloud copilot` and commit `.github/hooks/latch.json` to the default branch. Linux fixture passed. GitHub denied cloud agent access for the test account or repository, so hosted feedback is unverified. |
+| OpenHands Cloud and Canvas | Run `latch install cloud openhands` and commit `.openhands/hooks.json` for a hosted workspace. The native plugin works in local Canvas. Hosted feedback is unverified. |
 
 For OpenCode, Pi, Kimi Code, and Grok Build, install the shipped integration
 where the agent process and checkout run. Managed-service reports remain
@@ -120,7 +120,6 @@ does not validate a remote checkout from your local hooks.
 [Codex Cloud hook limits](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration) ·
 [Claude cloud settings](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions) ·
 [Copilot Cloud hooks](https://docs.github.com/en/copilot/reference/hooks-reference) ·
-[Hosted Copilot attempt](https://github.com/BarakChamo/latch/pull/1) ·
 [OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks) ·
 [Kimi hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks)
 
