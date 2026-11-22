@@ -3,7 +3,7 @@
 Use OpenCode 2.3.2 or later for the global install.
 
 ```sh
-opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
+opencode plugin add 'github:BarakChamo/latch#main::path:plugins'
 ```
 
 Start a new session. The plugin verifies and caches the Latch binary on first

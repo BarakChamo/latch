@@ -3,7 +3,7 @@
 Use Pi 1.5.2 or later with MCP enabled.
 
 ```sh
-pi install git:github.com/BarakChamo/latch@codex/marketplace
+pi install git:github.com/BarakChamo/latch
 ```
 
 Start a new session. The plugin verifies and caches the Latch binary on first

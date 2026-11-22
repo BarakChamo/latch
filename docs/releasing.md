@@ -1,8 +1,9 @@
 # Releasing Latch
 
-Keep the version in `crates/latch/Cargo.toml`, `distribution/npm/package.json`,
-and the harness plugin manifests aligned. Update `Cargo.lock` when the Rust
-version changes. The packager verifies the versions before creating artifacts.
+Keep the version in `crates/latch/Cargo.toml`, the root and distribution npm
+manifests, and the harness plugin manifests aligned. Update `Cargo.lock` and
+`package-lock.json` when the version changes. The packager verifies the
+versions before creating artifacts.
 
 ## Build the artifacts
 

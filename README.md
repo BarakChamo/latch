@@ -56,7 +56,7 @@ copilot plugin install latch@latch-tools
 ### Pi
 
 ```sh
-pi install git:github.com/BarakChamo/latch@codex/marketplace
+pi install git:github.com/BarakChamo/latch
 ```
 
 Use Pi 1.5.2 or later with MCP enabled.
@@ -64,7 +64,7 @@ Use Pi 1.5.2 or later with MCP enabled.
 ### OpenCode
 
 ```sh
-opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
+opencode plugin add 'github:BarakChamo/latch#main::path:plugins'
 ```
 
 Use OpenCode 2.3.2 or later. [OpenCode v1 and project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
