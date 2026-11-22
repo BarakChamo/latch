@@ -1,0 +1,64 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/plugins/extension-launch.sh\" hook openhands",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "file_editor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/plugins/extension-launch.sh\" hook openhands",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "file_editor",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/plugins/extension-launch.sh\" hook openhands",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/plugins/extension-launch.sh\" hook openhands",
+            "timeout": 120
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "matcher": "*",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$PLUGIN_ROOT/plugins/extension-launch.sh\" hook openhands",
+            "timeout": 120
+          }
+        ]
+      }
+    ]
+  }
+}
