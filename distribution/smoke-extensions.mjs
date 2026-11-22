@@ -3,17 +3,20 @@
 import assert from "node:assert/strict";
 import { execFile, execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
-import { promisify } from "node:util";
+import { parseArgs, promisify } from "node:util";
 
 const exec = promisify(execFile);
-const [archive, ...selected] = process.argv.slice(2);
+const { positionals: [archive, ...selected], values: { marketplace } } = parseArgs({
+  options: { marketplace: { type: "boolean" } },
+  allowPositionals: true,
+});
 const harnesses = selected.length ? selected : ["opencode", "pi"];
 assert(archive && harnesses.every((host) => ["opencode", "pi"].includes(host)),
-  "Use npm run test:extensions -- <archive.tar.gz> [opencode|pi ...]");
+  "Use npm run test:extensions -- <archive.tar.gz> [opencode|pi ...] [--marketplace]");
 const scratch = mkdtempSync(join(tmpdir(), "latch extension smoke "));
 const editMarker = "LATCH_FIXTURE_EDIT_FAILURE";
 const secondEditMarker = "LATCH_FIXTURE_SECOND_FAILURE";
@@ -155,7 +158,7 @@ async function verify(host, bundle) {
       execFileSync("git", ["-c", "user.name=Latch Smoke", "-c", "user.email=latch@example.test",
         "-c", "commit.gpgsign=false", "commit", "-qm", "Add model configuration"], { cwd: project, env });
     }
-    await exec(join(bundle, "install"), [host], { cwd: project, env, timeout: 20_000 });
+    await install(host, isOpenCodeV2, bundle, project, env);
     const piSession = randomUUID();
     let opencodeSession;
     const turn = async (marker) => {
@@ -218,10 +221,28 @@ async function verify(host, bundle) {
       assert(JSON.stringify(continuation[2].model.messages).includes("Review the Latch failure below"));
       assert.equal(readFileSync(counter, "utf8"), "edit\nsecond-edit\nturn\nturn\nedit\nsecond-edit\nturn\n");
     }
-    console.log(`${host}: no-op, same-turn feedback, turn-end failure, next prompt, and MCP passed`);
+    console.log(`${host}: ${marketplace ? "Git package" : "archive"} install, no-op, same-turn feedback, turn-end failure, next prompt, and MCP passed`);
   } finally {
     server.closeAllConnections();
     await new Promise((done) => server.close(done));
+  }
+}
+
+async function install(host, isOpenCodeV2, bundle, cwd, env) {
+  const options = { cwd, env, timeout: 60_000 };
+  if (!marketplace) {
+    await exec(join(bundle, "install"), [host], options);
+  } else if (host === "pi") {
+    const { PI_OFFLINE, ...onlineEnv } = env;
+    await exec("pi", ["install", "git:github.com/BarakChamo/latch@codex/marketplace"], { ...options, env: onlineEnv });
+  } else if (isOpenCodeV2) {
+    await exec("opencode", ["plugin", "add", "github:BarakChamo/latch#codex/marketplace"], options);
+  } else {
+    const config = join(env.XDG_CONFIG_HOME, "opencode");
+    mkdirSync(join(config, "plugins"), { recursive: true });
+    await exec("git", ["clone", "--branch", "codex/marketplace", "--depth", "1",
+      "https://github.com/BarakChamo/latch.git", join(config, "latch")], options);
+    symlinkSync("../latch/plugins/opencode/index.js", join(config, "plugins", "latch.js"));
   }
 }
 

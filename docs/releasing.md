@@ -55,14 +55,15 @@ platform selection, installation, and offline reuse.
 node distribution/package-marketplace.mjs /tmp/latch-plugin-marketplace
 ```
 
-Use a new output directory. Commit its generated files on the dedicated
-`codex/marketplace` branch. For updates, preserve that branch’s history
-and use the matching plugin version. Replace the generated plugin directories
-to remove binaries left by earlier marketplace versions. Install from GitHub in clean Codex, Claude Code, and Copilot CLI
-profiles and check edit feedback and MCP startup with no Latch on `PATH`.
+Use a new output directory. Commit the generated catalogs, plugins, root
+`package.json`, and README on the dedicated `codex/marketplace` branch. For
+updates, preserve that branch’s history and use the matching plugin version.
+Install from GitHub in clean profiles and check feedback and MCP startup
+with no Latch on `PATH`.
 
 ```sh
 npm run test:live -- dist/latch-0.1.3-aarch64-apple-darwin.tar.gz --marketplace
+npm run test:extensions -- dist/latch-0.1.3-aarch64-apple-darwin.tar.gz --marketplace
 ```
 
 ## Verify a real harness session
@@ -123,6 +124,12 @@ npm publish dist/barakchamo-latch-0.1.3.tgz --access public
 
 Attach the native archives and checksums to the matching GitHub release.
 From source, users can also install with `cargo install --locked --path crates/latch`.
+
+The npm build also emits `barakchamo-latch-agent-plugins-0.1.3.tgz`, a
+separate Pi and OpenCode package. Publishing it to npm with public access
+makes its `pi-package` keyword discoverable in the
+[Pi package gallery](https://pi.dev/packages). Publish the corresponding
+GitHub release assets first so the plugin launcher can download the CLI.
 
 ## Distribute the plugins
 

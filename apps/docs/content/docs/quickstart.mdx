@@ -11,7 +11,7 @@ Start in a Git project with a check you already run, such as a linter. The plugi
 
 Choose your agent. The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
 
-<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI']}>
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'Pi', 'OpenCode']}>
 
 <Tab value="Codex">
 
@@ -42,9 +42,31 @@ copilot plugin install latch@latch-tools
 
 </Tab>
 
+<Tab value="Pi">
+
+Use Pi 1.5.2 or later with MCP enabled.
+
+```sh
+pi install git:github.com/BarakChamo/latch@codex/marketplace
+```
+
+</Tab>
+
+<Tab value="OpenCode">
+
+For OpenCode 2.3.2 or later:
+
+```sh
+opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
+```
+
+[OpenCode v1 and project-local setup](/docs/plugins#opencode)
+
+</Tab>
+
 </Tabs>
 
-The plugin downloads the Latch binary from GitHub on first use and caches it. [OpenCode, Pi, and other integrations](/docs/plugins) · [Pre-download the binary](/docs/plugins#install-from-a-terminal)
+The plugin downloads the Latch binary from GitHub on first use and caches it. [Other integrations](/docs/plugins#additional-local-integrations)
 
 ## Run your first check
 

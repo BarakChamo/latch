@@ -53,12 +53,28 @@ copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/ma
 copilot plugin install latch@latch-tools
 ```
 
-Start a new session in your project. On first use, the plugin downloads the
-matching Latch binary from GitHub and caches it for future sessions. To
-download it before opening the agent, use the [terminal installer](docs/usage.md#install-the-plugin-from-a-terminal)
-as the same user on that machine.
+### Pi
 
-For OpenCode, Pi, and other agents, see the [integration guides](plugins/).
+```sh
+pi install git:github.com/BarakChamo/latch@codex/marketplace
+```
+
+Use Pi 1.5.2 or later with MCP enabled.
+
+### OpenCode
+
+```sh
+opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
+```
+
+Use OpenCode 2.3.2 or later. [OpenCode v1 and project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
+
+Start a new session in your project. On first use, the plugin downloads the
+matching Latch binary from GitHub and caches it for future sessions.
+Codex, Claude Code, and Copilot CLI users can pre-download it with the
+[terminal installer](docs/usage.md#install-the-plugin-from-a-terminal).
+
+For other agents, see the [integration guides](plugins/).
 
 ## Run your first check
 

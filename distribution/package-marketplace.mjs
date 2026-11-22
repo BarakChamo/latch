@@ -1,6 +1,6 @@
 // Builds the binary-free Git marketplace for the supported harnesses.
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pluginLauncher } from "./plugin-launcher.mjs";
@@ -20,14 +20,46 @@ const plugins = [
   ...plugin,
   descriptor: readJson(join(root, "plugins", plugin.host, plugin.manifest)),
 }));
-const version = plugins[0].descriptor.version;
-if (plugins.some(({ descriptor }) => descriptor.version !== version)) {
+const extensions = ["pi", "opencode"];
+const cli = readJson(join(root, "distribution/npm/package.json"));
+const { version } = cli;
+if (plugins.some(({ descriptor }) => descriptor.version !== version)
+  || extensions.some((host) => readJson(join(root, "plugins", host, "package.json")).version !== version)) {
   throw new Error("Marketplace plugin versions must match.");
 }
 const launcher = pluginLauncher(version);
 mkdirSync(output);
 
 for (const plugin of plugins) writePlugin(plugin);
+writeExtensions();
+
+function writeExtensions() {
+  const server = "./plugins/opencode/index.js";
+  writeJson(join(output, "package.json"), {
+    name: "@barakchamo/latch-agent-plugins",
+    version,
+    description: "Run Latch checks automatically in Pi and OpenCode.",
+    license: cli.license,
+    homepage: "https://barakchamo.github.io/latch/",
+    repository: { type: "git", url: "git+https://github.com/BarakChamo/latch.git" },
+    keywords: ["pi-package", "opencode-plugin", "latch"],
+    type: "module",
+    exports: { ".": server, "./server": server },
+    pi: { extensions: ["./plugins/pi/index.ts"] },
+    peerDependencies: { "@earendil-works/pi-coding-agent": "*" },
+    peerDependenciesMeta: { "@earendil-works/pi-coding-agent": { optional: true } },
+    files: ["plugins/extension-hook.mjs", "plugins/pi", "plugins/opencode"],
+    publishConfig: { access: "public" },
+  });
+  const source = join(root, "plugins");
+  const target = join(output, "plugins");
+  cpSync(join(source, "extension-hook.mjs"), join(target, "extension-hook.mjs"));
+  for (const host of extensions) {
+    cpSync(join(source, host), join(target, host), { recursive: true });
+    writeExecutable(join(target, host, "bin/latch"), launcher);
+  }
+  cpSync(join(root, "distribution/extension-package.md"), join(output, "README.md"));
+}
 
 function writePlugin({ host, catalog, descriptor, manifest, rootVariable, hooksFile = "hooks/hooks.json" }) {
   const source = join(root, "plugins", host);

@@ -1,7 +1,9 @@
 # Harness plugins
 
-The macOS and Linux bundles include the Latch CLI. See the
-[installation instructions](../README.md) for setup.
+Install from GitHub through your agent’s plugin manager. The plugin
+downloads and verifies the Latch CLI on first use. For offline setup,
+the macOS and Linux archives include the CLI and plugins.
+[Installation instructions](../README.md#install-a-plugin)
 The CLI owns project configuration,
 command execution, and workspace snapshots. Each plugin wires its harness
 events and translates validation results into the host's hook protocol.

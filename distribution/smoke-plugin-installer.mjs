@@ -18,10 +18,17 @@ test("marketplace contains only a launcher and maps each supported platform to o
   try {
     const catalog = join(fixture.root, "marketplace");
     execFileSync(process.execPath, [packager, catalog]);
-    for (const host of ["codex", "claude-code", "copilot"]) {
+    for (const host of ["codex", "claude-code", "copilot", "pi", "opencode"]) {
       const directory = join(catalog, "plugins", host, "bin");
       assert.deepEqual(readdirSync(directory), ["latch"]);
       assert.equal(readFileSync(join(directory, "latch"), "utf8"), pluginLauncher(version));
+    }
+    const manifest = JSON.parse(readFileSync(join(catalog, "package.json"), "utf8"));
+    assert.equal(manifest.version, version);
+    assert(manifest.keywords.includes("pi-package"));
+    assert(manifest.keywords.includes("opencode-plugin"));
+    for (const entry of [...manifest.pi.extensions, manifest.exports["./server"], "plugins/extension-hook.mjs"]) {
+      assert(existsSync(join(catalog, entry)), `Missing extension package entry ${entry}`);
     }
     for (const [os, arch, platform] of [
       ["Darwin", "arm64", "darwin-arm64"],

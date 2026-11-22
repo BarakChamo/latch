@@ -1,36 +1,25 @@
 # OpenCode
 
-Latch supports OpenCode v1 and v2 from one plugin entry point. It was tested
-with 1.18.31, 1.19.6, and 2.3.2. The v2 integration uses the idle hook from
-OpenCode 2.3.2.
-
-Download the matching macOS or Linux archive from [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
-Extract it and open a terminal in the extracted directory. Run:
+Use OpenCode 2.3.2 or later for the global install.
 
 ```sh
-./install opencode
+opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
 ```
 
-Keep the extracted folder in place. Restart OpenCode from your project.
-Connect a provider and pick a model if needed, then use the
-[first-check instructions](https://github.com/BarakChamo/latch#run-your-first-check).
+Start a new session. The plugin verifies and caches the Latch binary on first
+use. Run `opencode plugin list --standalone` to see the active plugin.
 
-For a project-specific install, set the absolute path in `opencode.json`:
+For a project, add the same Git package to `plugins` in `opencode.json`, or
+put a checkout of the package in `.opencode/plugins/latch/` for automatic
+discovery. Use one setup per project. [OpenCode plugin discovery](https://opencode.ai/docs/plugins/#discover)
 
-- **v1:** add `/path/to/extracted-latch/plugins/opencode/index.js` to
-  the `plugin` array.
-- **v2:** add `/path/to/extracted-latch/plugins/opencode` to
-  the `plugins` array.
+For OpenCode v1, follow the [local plugin setup](https://barakchamo.github.io/latch/docs/plugins/#opencode).
+For offline setup, extract the [standalone archive](https://github.com/BarakChamo/latch/releases/latest)
+and run `./install opencode` from the extracted directory.
 
-Choose either the installer or the project-specific setup. To remove the
-installer’s registration, delete the `latch.js` link under
-`${XDG_CONFIG_HOME:-$HOME/.config}/opencode/plugins`.
-
-Latch adds diagnostics to results from `edit`, `write`, and the native
-patch tool. A failed turn-end check is included in the next prompt in the
-same session. In v1, the report also appears as a TUI toast or on headless
-stderr. In v2, the report goes to the server's stderr. To see it immediately
-in a headless run, use `opencode --standalone --print-logs run "..."`.
-Latch does not start another turn.
-The plugin registers the local Latch MCP server with `run_turn_end` and
-`search_output`.
+Latch adds diagnostics to results from `edit`, `write`, and the native patch
+tool. By default, the model gets failed turn-end reports on the next prompt.
+With `continue_once`, OpenCode v2 gives the agent one chance to respond
+without another user message or an automatic recheck. The plugin exposes
+`run_turn_end` and `search_output` through MCP.
+[Quickstart](https://barakchamo.github.io/latch/docs/quickstart/)

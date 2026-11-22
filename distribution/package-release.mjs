@@ -54,6 +54,9 @@ try {
     );
     writeJson(join(packageRoot, "package.json"), { ...packageManifest, private: false, optionalDependencies });
     npmPack(packageRoot);
+    const marketplace = join(staging, "marketplace");
+    execFileSync(process.execPath, [join(root, "distribution/package-marketplace.mjs"), marketplace]);
+    npmPack(marketplace);
     writeFileSync(join(output, "install-latch-plugin.sh"), pluginLauncher(version), { mode: 0o755 });
   } else {
     packPlatform(target);

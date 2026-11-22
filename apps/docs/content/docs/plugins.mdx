@@ -6,7 +6,7 @@ description: Install and manage Latch in your harness, and run checks from chat.
 ## Install from GitHub
 
 The [quickstart](/docs/quickstart#install-a-plugin) has
-the marketplace commands for Codex, Claude Code, and GitHub Copilot CLI.
+the install commands for Codex, Claude Code, GitHub Copilot CLI, Pi, and OpenCode.
 Start a new agent session after installing. On first use, the plugin
 downloads the binary from GitHub if its cache is empty.
 
@@ -23,34 +23,59 @@ plugin, downloads the binary for your system, and verifies its SHA-256 before
 caching it. Run the installer as the same user on the machine where the
 agent runs to make the binary available before opening a session.
 
-### OpenCode and Pi
+### Pi
 
-Download and extract the [standalone archive](/docs/cli#install-the-cli).
-Set `LATCH_PLUGIN_DIR` to the extracted folder and add its `bin` directory
-to your shell’s `PATH`. For example, on Apple Silicon:
+Use Pi 1.5.2 or later with MCP enabled.
 
 ```sh
-export LATCH_PLUGIN_DIR="$HOME/.local/share/latch/latch-0.1.3-aarch64-apple-darwin"
-export PATH="$LATCH_PLUGIN_DIR/bin:$PATH"
+pi install git:github.com/BarakChamo/latch@codex/marketplace
 ```
 
-For OpenCode, run the archive’s installer using
-`"$LATCH_PLUGIN_DIR/install" opencode`. For a project-specific
-registration, add the path below to the corresponding array in
+To share the install with your project, add `--local` from the project
+directory and commit `.pi/settings.json`. Pi loads project packages after you
+trust the workspace. [Pi package docs](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)
+
+### OpenCode
+
+Use OpenCode 2.3.2 or later for the global install.
+
+```sh
+opencode plugin add 'github:BarakChamo/latch#codex/marketplace'
+```
+
+For a project, add the Git package to the existing `plugins` array in
 `opencode.json`.
 
-- **OpenCode v1** uses the `plugin` array and the file
-  `$LATCH_PLUGIN_DIR/plugins/opencode/index.js`.
-- **OpenCode v2** uses the `plugins` array and the directory
-  `$LATCH_PLUGIN_DIR/plugins/opencode`.
+```json title="opencode.json"
+{
+  "plugins": ["github:BarakChamo/latch#codex/marketplace"]
+}
+```
 
-Use the expanded absolute path in the JSON file.
-
-For Pi 1.5.2 or later with MCP enabled:
+To use OpenCode’s directory discovery, run this from the project root instead.
 
 ```sh
-pi install "$LATCH_PLUGIN_DIR/plugins/pi"
+mkdir -p .opencode/plugins
+git clone --depth 1 --branch codex/marketplace https://github.com/BarakChamo/latch.git .opencode/plugins/latch
 ```
+
+For OpenCode v1, install through its local plugin directory.
+
+```sh
+opencode_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+mkdir -p "$opencode_dir/plugins"
+git clone --depth 1 --branch codex/marketplace https://github.com/BarakChamo/latch.git "$opencode_dir/latch"
+ln -s ../latch/plugins/opencode/index.js "$opencode_dir/plugins/latch.js"
+```
+
+Restart OpenCode after installation. [OpenCode plugin discovery](https://opencode.ai/docs/plugins/#discover)
+
+### Offline setup
+
+The [standalone archive](/docs/cli#install-the-cli) includes the CLI and plugin
+sources. Extract it and keep the folder in place. For Pi, pass its
+`plugins/pi` directory to `pi install`. For OpenCode, run the installer
+from inside the extracted archive with `./install opencode`.
 
 ### Find or remove a plugin
 
@@ -59,8 +84,9 @@ pi install "$LATCH_PLUGIN_DIR/plugins/pi"
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-tools` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-tools` |
-| OpenCode | See the project's or user's OpenCode configuration. | Remove the Latch entry or the installer-created link in the OpenCode plugin directory. |
-| Pi | `pi list` | `pi remove "$LATCH_PLUGIN_DIR/plugins/pi"` |
+| OpenCode v2 | `opencode plugin list --standalone` | `opencode plugin remove 'github:BarakChamo/latch#codex/marketplace'` for the global package. Remove a project entry or checkout from its project. |
+| OpenCode v1 | Check the OpenCode config directory's `plugins/latch.js` link. | Remove that link. |
+| Pi | `pi list` | `pi remove git:github.com/BarakChamo/latch@codex/marketplace`. Add `--local` for a project install. |
 
 Use one installation method per project to avoid duplicate hooks.
 
