@@ -17,6 +17,7 @@ const targets = {
   "x86_64-pc-windows-msvc": ["win32", "x64"],
 };
 const pluginManifests = [
+  "package.json",
   "plugins/codex/.codex-plugin/plugin.json",
   "plugins/claude-code/.claude-plugin/plugin.json",
   "plugins/copilot/plugin.json",

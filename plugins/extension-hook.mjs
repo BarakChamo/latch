@@ -6,14 +6,16 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 /**
- * Prefer the binary shipped beside the extension. Source and npm installs use PATH.
+ * Prefer the colocated binary or launcher. A checkout can use the release launcher.
  * @param {string} entryUrl
  * @returns {string}
  */
 export function latchExecutable(entryUrl) {
   const directory = dirname(realpathSync(fileURLToPath(entryUrl)));
   const bundled = join(directory, "bin", process.platform === "win32" ? "latch.exe" : "latch");
-  return existsSync(bundled) ? bundled : "latch";
+  if (existsSync(bundled)) return bundled;
+  const launcher = join(directory, "..", "..", "distribution", "native", "plugin-launch.sh");
+  return process.platform !== "win32" && existsSync(launcher) ? launcher : "latch";
 }
 
 /** @typedef {{cwd: string, session_id: string, turn_id: string}} Turn */

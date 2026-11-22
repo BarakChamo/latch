@@ -3,12 +3,23 @@
 set -eu
 
 version='@LATCH_VERSION@'
-release="https://github.com/BarakChamo/latch/releases/download/v$version"
 
 fail() {
   printf 'latch: %s\n' "$*" >&2
   exit 1
 }
+
+# The source package uses the release version from its checked-in manifest.
+case "$version" in
+  @*)
+    manifest="$(dirname -- "$0")/../npm/package.json"
+    version=$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest")
+    ;;
+esac
+case "$version" in
+  ''|*[!0-9A-Za-z.-]*) fail 'invalid Latch release version.' ;;
+esac
+release="https://github.com/BarakChamo/latch/releases/download/v$version"
 
 case "$(uname -s):$(uname -m)" in
   Darwin:arm64) platform=darwin-arm64 ;;

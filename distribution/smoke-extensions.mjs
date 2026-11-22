@@ -234,13 +234,13 @@ async function install(host, isOpenCodeV2, bundle, cwd, env) {
     await exec(join(bundle, "install"), [host], options);
   } else if (host === "pi") {
     const { PI_OFFLINE, ...onlineEnv } = env;
-    await exec("pi", ["install", "git:github.com/BarakChamo/latch@codex/marketplace"], { ...options, env: onlineEnv });
+    await exec("pi", ["install", "git:github.com/BarakChamo/latch"], { ...options, env: onlineEnv });
   } else if (isOpenCodeV2) {
-    await exec("opencode", ["plugin", "add", "github:BarakChamo/latch#codex/marketplace"], options);
+    await exec("opencode", ["plugin", "add", "github:BarakChamo/latch"], options);
   } else {
     const config = join(env.XDG_CONFIG_HOME, "opencode");
     mkdirSync(join(config, "plugins"), { recursive: true });
-    await exec("git", ["clone", "--branch", "codex/marketplace", "--depth", "1",
+    await exec("git", ["clone", "--depth", "1",
       "https://github.com/BarakChamo/latch.git", join(config, "latch")], options);
     symlinkSync("../latch/plugins/opencode/index.js", join(config, "plugins", "latch.js"));
   }
