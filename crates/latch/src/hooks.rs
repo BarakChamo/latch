@@ -61,6 +61,7 @@ impl Harness {
             Self::Grok => native::read_grok(input),
             Self::Cursor => native::read_cursor(input),
             Self::OpenHands => native::read_openhands(input),
+            Self::Kimi => native::read_kimi(input),
             _ => serde_json::from_reader::<_, Event>(input).map_err(io::Error::from),
         }
         .map_err(|error| io::Error::new(error.kind(), format!("invalid hook input: {error}")))?;
@@ -386,8 +387,17 @@ fn handle(harness: &Harness, event: Event) -> Value {
             }
             clear_edit_baselines(edits.as_deref());
             if let Some(path) = state {
-                // Invalidate any previous snapshot before trying to replace it.
-                let _ = fs::remove_file(&path);
+                if matches!(harness, Harness::Kimi) {
+                    // Print mode can exit before Stop claims the previous workspace snapshot.
+                    if let Some(Some(baseline)) = take::<Option<Baseline>>(&path)
+                        && let Some(feedback) =
+                            check_workspace(&event.cwd, HookName::TurnEnd, Some(baseline))
+                    {
+                        defer_report(harness, &event, feedback.message);
+                    }
+                } else {
+                    let _ = fs::remove_file(&path);
+                }
                 let result = if harness.requires_prompt_for_stop() {
                     // These hosts can emit Stop for internal sessions with no user prompt.
                     store(&path, &turn_baseline(&event.cwd))

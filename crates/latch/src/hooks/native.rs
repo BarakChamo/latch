@@ -2,7 +2,7 @@
 
 use super::{Event, EventKind};
 use serde::Deserialize;
-use serde_json::Value;
+use serde_json::{Map, Value};
 use std::{io, path::PathBuf};
 
 pub(super) fn read_openhands(input: impl io::Read) -> io::Result<Event> {
@@ -19,6 +19,13 @@ pub(super) fn read_grok(input: impl io::Read) -> io::Result<Event> {
 pub(super) fn read_cursor(input: impl io::Read) -> io::Result<Event> {
     let payload: CursorInput = serde_json::from_reader(input)?;
     Event::try_from(payload)
+}
+
+pub(super) fn read_kimi(input: impl io::Read) -> io::Result<Event> {
+    let mut payload: Map<String, Value> = serde_json::from_reader(input)?;
+    // Kimi sends numeric turn IDs. Pair its prompt and stop events by session.
+    payload.remove("turn_id");
+    Ok(serde_json::from_value(Value::Object(payload))?)
 }
 
 // Grok publishes both casing conventions in one payload. Read its native fields only.

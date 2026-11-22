@@ -1086,6 +1086,46 @@ fn a_rename_out_of_a_filtered_directory_still_triggers_checks() {
 }
 
 #[test]
+fn kimi_recovers_an_unfinished_stop_on_resume_without_repeating_the_check() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"commands":[["sh","-c","echo checked >> ignored; echo resume-failure >&2; exit 1"]]}"#,
+    );
+    project.init();
+    let send = |event| {
+        let output = project.invoke_hook(
+            &["kimi"],
+            json!({
+                "hook_event_name": event,
+                "cwd": project.root.path(),
+                "session_id": "resumed",
+                "turn_id": 1
+            }),
+        );
+        assert!(output.status.success(), "{output:?}");
+        String::from_utf8(output.stdout).unwrap()
+    };
+
+    // Given a read-only turn whose process exited before Stop could run.
+    assert!(send("UserPromptSubmit").is_empty());
+    assert!(send("UserPromptSubmit").is_empty());
+    assert!(!project.root.path().join("ignored").exists());
+
+    // When a later interrupted Stop leaves an edit to validate, the resumed prompt gets the failure.
+    project.write("tracked", "changed");
+    assert!(send("UserPromptSubmit").contains("resume-failure"));
+
+    // Then a normal Stop and another prompt produce neither a duplicate check nor a duplicate report.
+    assert!(send("Stop").is_empty());
+    assert!(send("UserPromptSubmit").is_empty());
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+        "checked\n"
+    );
+}
+
+#[test]
 fn openhands_and_kimi_deliver_collected_failures_on_the_next_prompt() {
     for (host, tool) in [("openhands", "file_editor"), ("kimi", "Edit")] {
         let has_edit_hook = host == "openhands";
@@ -1116,6 +1156,9 @@ fn openhands_and_kimi_deliver_collected_failures_on_the_next_prompt() {
                 payload["hook_event_name"] = json!(event);
                 payload["cwd"] = json!(project.root.path());
                 payload["stop_hook_active"] = json!(false);
+                if event == "Stop" {
+                    payload["turn_id"] = json!(1);
+                }
             }
             let output = project.invoke_hook(&[host], payload);
             assert!(output.status.success(), "{host}: {output:?}");

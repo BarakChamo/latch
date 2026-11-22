@@ -100,7 +100,7 @@ agent to call [`run_turn_end`](/docs/plugins#run-checks-from-chat) before respon
 | OpenCode v2 and Pi | The extension adds its report to session context and resumes the current execution. |
 | Codex and Copilot CLI | The host creates a continuation prompt from the stop-hook response. |
 | Grok Build | With Latch v0.1.4 or later, the Stop hook supplies the failure and Grok continues once in the same turn. |
-| Kimi Code CLI | In 2.7.2, the interactive CLI and persistent ACP sessions delivered the failure and continued once. `kimi -p` finished without continuing. Use `report` for next-prompt feedback in that mode. |
+| Kimi Code CLI | The interactive CLI and persistent ACP sessions in 2.7.2 deliver the failure and continue once. Use `report` with `kimi -p`. If print mode exits before Stop claims the saved snapshot, Latch checks the changes on the next prompt in that session. |
 | OpenHands CLI and local Agent Canvas | The Stop hook denies completion once and supplies the failure as feedback. |
 
 Verified in live Codex, Claude Code, and Copilot CLI sessions, and in real

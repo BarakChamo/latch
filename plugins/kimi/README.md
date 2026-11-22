@@ -12,5 +12,7 @@ The plugin downloads and verifies the Latch binary on first use.
 Latch runs checks after a changed turn. The model gets a failed report on
 your next prompt by default. `continue_once` works in the
 interactive CLI and ACP sessions on Kimi Code 2.7.2. Use `report` with `kimi -p`.
+If print mode exits before its Stop hook claims the workspace snapshot, Latch
+checks the changes when you next prompt the same session.
 The plugin exposes `run_turn_end` and `search_output` through MCP.
 [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/) · [Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)
