@@ -250,7 +250,7 @@ The local columns show when the agent gets failures by default, except where mar
 “Next prompt” means your next message in the same session and project. Kimi 2.7.2 supports
 `continue_once` in interactive and ACP sessions. Use `report` with `kimi -p`.
 Hosted agent feedback is unverified.
-[Hook and feedback details](docs/usage.md#hooks-and-feedback) · [Cloud setup](docs/usage.md#hosted-sessions)
+[Hook and feedback details](https://barakchamo.github.io/latch/docs/hooks/) · [Cloud setup](https://barakchamo.github.io/latch/docs/cloud/)
 
 ## Docs
 
