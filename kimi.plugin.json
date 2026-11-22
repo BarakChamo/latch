@@ -5,12 +5,12 @@
   "hooks": [
     {
       "event": "UserPromptSubmit",
-      "command": "./plugins/extension-launch.sh hook kimi",
+      "command": "./plugins/kimi/dispatch.sh",
       "timeout": 120
     },
     {
       "event": "Stop",
-      "command": "./plugins/extension-launch.sh hook kimi",
+      "command": "./plugins/kimi/dispatch.sh",
       "timeout": 120
     }
   ],
