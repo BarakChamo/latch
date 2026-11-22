@@ -1093,16 +1093,16 @@ fn kimi_recovers_an_unfinished_stop_on_resume_without_repeating_the_check() {
         r#"{"commands":[["sh","-c","echo checked >> ignored; echo resume-failure >&2; exit 1"]]}"#,
     );
     project.init();
+    let payload = |event| {
+        json!({
+            "hook_event_name": event,
+            "cwd": project.root.path(),
+            "session_id": "resumed",
+            "turn_id": 1
+        })
+    };
     let send = |event| {
-        let output = project.invoke_hook(
-            &["kimi"],
-            json!({
-                "hook_event_name": event,
-                "cwd": project.root.path(),
-                "session_id": "resumed",
-                "turn_id": 1
-            }),
-        );
+        let output = project.invoke_hook(&["kimi"], payload(event));
         assert!(output.status.success(), "{output:?}");
         String::from_utf8(output.stdout).unwrap()
     };
@@ -1112,8 +1112,15 @@ fn kimi_recovers_an_unfinished_stop_on_resume_without_repeating_the_check() {
     assert!(send("UserPromptSubmit").is_empty());
     assert!(!project.root.path().join("ignored").exists());
 
-    // When a later interrupted Stop leaves an edit to validate, the resumed prompt gets the failure.
+    // When Kimi exits during Stop's Git comparison, the resumed prompt still gets the failure.
     project.write("tracked", "changed");
+    let git = project.harness_home.path().join("git");
+    fs::write(&git, "#!/bin/sh\nkill -KILL \"$PPID\"\n").unwrap();
+    fs::set_permissions(&git, fs::Permissions::from_mode(0o755)).unwrap();
+    let stopped = project.invoke_hook(&["kimi"], payload("Stop"));
+    fs::remove_file(git).unwrap();
+    assert!(stopped.status.code().is_none(), "{stopped:?}");
+    assert!(!project.root.path().join("ignored").exists());
     assert!(send("UserPromptSubmit").contains("resume-failure"));
 
     // Then a normal Stop and another prompt produce neither a duplicate check nor a duplicate report.

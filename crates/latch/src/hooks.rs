@@ -391,7 +391,7 @@ fn handle(harness: &Harness, event: Event) -> Value {
                     // Print mode can exit before Stop claims the previous workspace snapshot.
                     if let Some(Some(baseline)) = take::<Option<Baseline>>(&path)
                         && let Some(feedback) =
-                            check_workspace(&event.cwd, HookName::TurnEnd, Some(baseline))
+                            check_workspace(&event.cwd, HookName::TurnEnd, Some(baseline), None)
                     {
                         defer_report(harness, &event, feedback.message);
                     }
@@ -452,7 +452,7 @@ fn handle(harness: &Harness, event: Event) -> Value {
                 .and_then(|dir| edit_path(dir, &event, tool_name))
                 .and_then(|path| take::<Option<Baseline>>(&path))
                 .flatten();
-            match check_workspace(&event.cwd, HookName::AfterEdit, baseline) {
+            match check_workspace(&event.cwd, HookName::AfterEdit, baseline, None) {
                 Some(feedback) if matches!(harness, Harness::Copilot(_)) => {
                     json!({ "additionalContext": feedback.message })
                 }
@@ -491,7 +491,17 @@ fn handle(harness: &Harness, event: Event) -> Value {
                 return json!({});
             }
             clear_edit_baselines(edits.as_deref());
-            let baseline = if harness.requires_prompt_for_stop() {
+            let claim = if matches!(harness, Harness::Kimi) {
+                state.as_deref()
+            } else {
+                None
+            };
+            let baseline = if let Some(path) = claim {
+                let Some(baseline) = read::<Option<Baseline>>(path) else {
+                    return json!({});
+                };
+                baseline
+            } else if harness.requires_prompt_for_stop() {
                 let Some(baseline) = state.as_deref().and_then(take::<Option<Baseline>>) else {
                     return json!({});
                 };
@@ -499,7 +509,8 @@ fn handle(harness: &Harness, event: Event) -> Value {
             } else {
                 state.as_deref().and_then(take)
             };
-            let Some(feedback) = check_workspace(&event.cwd, HookName::TurnEnd, baseline) else {
+            let Some(feedback) = check_workspace(&event.cwd, HookName::TurnEnd, baseline, claim)
+            else {
                 return json!({});
             };
             // Native Stop control is bounded only on hosts that supply the active-stop flag.
@@ -732,8 +743,23 @@ fn check_workspace(
     directory: &Path,
     name: HookName,
     baseline: Option<Baseline>,
+    claim: Option<&Path>,
 ) -> Option<Feedback> {
-    let (entries, turn_end_feedback) = match config::load_with_source(directory, name) {
+    let config = config::load_with_source(directory, name);
+    let changed = if matches!(&config, Ok(loaded) if loaded.entries.as_ref().is_some_and(|entries| entries.needs_comparison()))
+    {
+        baseline.and_then(|baseline| baseline.changed_paths(directory).ok())
+    } else {
+        None
+    };
+    // Kimi may terminate Stop during Git comparison. Keep the snapshot until
+    // validation has enough information to proceed, then claim it once.
+    if let Some(path) = claim
+        && fs::remove_file(path).is_err()
+    {
+        return None;
+    }
+    let (entries, turn_end_feedback) = match config {
         Ok(loaded) => {
             let Some(entries) = loaded.entries else {
                 status::record(directory, name, status::Outcome::NotConfigured);
@@ -749,11 +775,6 @@ fn check_workspace(
                 continue_once: false,
             });
         }
-    };
-    let changed = if entries.needs_comparison() {
-        baseline.and_then(|baseline| baseline.changed_paths(directory).ok())
-    } else {
-        None
     };
     let mut matching = entries
         .into_vec()
