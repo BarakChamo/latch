@@ -23,6 +23,14 @@
       "./plugins/pi/index.ts"
     ]
   },
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
   "files": [
     "plugins/extension-hook.mjs",
     "plugins/pi",
