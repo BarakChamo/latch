@@ -1,6 +1,8 @@
 # Latch for Claude Code
 
-Install Latch from the GitHub marketplace:
+Use the [Claude Code installer](https://barakchamo.github.io/latch/docs/quickstart/#claude-code)
+to download the binary and register the marketplace. If the binary is
+already cached, the native marketplace commands also work.
 
 ```sh
 claude plugin marketplace add https://github.com/BarakChamo/latch.git

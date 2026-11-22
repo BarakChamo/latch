@@ -46,9 +46,12 @@ In a new Codex session, choose **Review hooks** when prompted or open
 ### Claude Code
 
 ```sh
-claude plugin marketplace add https://github.com/BarakChamo/latch.git
-claude plugin install latch@latch-tools
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh --install-plugin claude
 ```
+
+The installer downloads Latch before registering the plugin through Claude
+Code’s marketplace, so its tools are ready for the first session.
 
 ### GitHub Copilot CLI
 
