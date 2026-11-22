@@ -56,12 +56,8 @@ npm run test:plugin-installer
 ```
 
 Publish the matching GitHub release before pushing a version update to
-`main`. The launchers download and verify the corresponding binary. Keep the
-existing `codex/marketplace` branch available for older installs. If you need
-to refresh that branch, run `node distribution/package-marketplace.mjs
-/tmp/latch-plugin-marketplace` and commit the output there, preserving its
-history. Verify the default-branch commands in clean profiles with no Latch
-on `PATH`.
+`main`. The launchers download and verify the corresponding binary. Verify
+the default-branch commands in clean profiles with no Latch on `PATH`.
 
 ```sh
 npm run test:live -- dist/latch-0.1.4-aarch64-apple-darwin.tar.gz --marketplace

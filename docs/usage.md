@@ -146,10 +146,10 @@ config and set `"$schema": "./latch.schema.json"`.
   "defaults": { "failure_output": "tail", "tail_lines": 12 },
   "hooks": {
     "after_edit": [
-      { "commands": "npm run lint" },
-      { "extensions": ["md", "mdx"], "commands": "npm run lint:md" }
+      { "commands": [["npm", "run", "lint"]] },
+      { "extensions": ["md", "mdx"], "commands": [["npm", "run", "lint:md"]] }
     ],
-    "turn_end": { "commands": "npm test" }
+    "turn_end": { "commands": [["npm", "test"]] }
   }
 }
 ```
@@ -164,7 +164,8 @@ config and set `"$schema": "./latch.schema.json"`.
 
 | Use | Example value for `commands` |
 | --- | --- |
-| One command | `"bun run lint"` |
+| One command on v0.1.4 or later | `[["bun", "run", "lint"]]` |
+| One command when building from `main` | `"bun run lint"` |
 | Several commands in order | `[["make", "lint"], ["make", "test"]]` |
 
 Strings use POSIX shell-style quotes and escapes to split arguments. For

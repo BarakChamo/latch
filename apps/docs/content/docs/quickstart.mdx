@@ -119,17 +119,16 @@ Create `latch.json` in the directory where you run your checks. If you already u
 {
   "hooks": {
     "turn_end": {
-      "commands": "make lint"
+      "commands": [["make", "lint"]]
     }
   }
 }
 ```
 
-Replace the example with your own command, such as `"go test ./..."` or
-`"uv run ruff check ."`. To run several commands, use
-[nested arrays](/docs/configuration#command-syntax). Latch v0.1.4 also requires
-the nested form for one command, such as `[["make", "lint"]]`. Install your project’s
-dependencies so the agent can run the command. Every shipped integration supports
+Replace the example with your own command, such as `[["go", "test", "./..."]]`
+or `[["uv", "run", "ruff", "check", "."]]`. Each inner array contains the
+executable and its arguments. Install your project’s dependencies so the
+agent can run the command. Every shipped integration supports
 `turn_end`. For feedback while the agent edits, see
 [which file edits trigger checks](/docs/hooks#when-checks-run).
 

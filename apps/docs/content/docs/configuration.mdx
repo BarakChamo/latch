@@ -41,7 +41,7 @@ path globs at runtime.
 {
   "hooks": {
     "turn_end": {
-      "commands": "cargo fmt --all -- --check"
+      "commands": [["cargo", "fmt", "--all", "--", "--check"]]
     }
   }
 }
@@ -57,12 +57,12 @@ Run a Rust formatting check at turn end when the worktree changes.
 {
   "hooks": {
     "after_edit": [
-      { "commands": "npm run lint" },
-      { "extensions": ["md", "mdx"], "commands": "npm run lint:md" },
+      { "commands": [["npm", "run", "lint"]] },
+      { "extensions": ["md", "mdx"], "commands": [["npm", "run", "lint:md"]] },
       {
         "paths": ["src/**"],
         "extensions": ["ts", "tsx"],
-        "commands": "npm run typecheck"
+        "commands": [["npm", "run", "typecheck"]]
       }
     ]
   }
@@ -124,7 +124,8 @@ can match either path. Empty filter lists are invalid.
 
 | Use | Example value for `commands` |
 | --- | --- |
-| One command | `"bun run lint"` |
+| One command on v0.1.4 or later | `[["bun", "run", "lint"]]` |
+| One command when building from `main` | `"bun run lint"` |
 | Several commands in order | `[["make", "lint"], ["make", "test"]]` |
 
 Latch splits strings with POSIX shell-style quotes and escapes. For example,
@@ -195,7 +196,7 @@ and make sure `rtk` is on your harness's `PATH`. For a Vitest project:
     "turn_end": {
       "failure_output": "rtk",
       "rtk_filter": "vitest",
-      "commands": "npm test"
+      "commands": [["npm", "test"]]
     }
   }
 }

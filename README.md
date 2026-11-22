@@ -123,16 +123,14 @@ For example, if `make lint` already works in your project, put this in
 {
   "hooks": {
     "turn_end": {
-      "commands": "make lint"
+      "commands": [["make", "lint"]]
     }
   }
 }
 ```
 
-Use a command string like `"bun run lint"` or nested arrays for several
-commands. Strings support quoting. For shell
-features such as pipes, invoke a shell explicitly. [Command syntax](docs/usage.md#command-syntax)
-Latch v0.1.4 requires the nested form, such as `[["make", "lint"]]`.
+List each check as an array containing its executable and arguments. Add
+more arrays to run checks in order. [Command syntax](docs/usage.md#command-syntax)
 
 Create the file by hand or use `latch config init` with the
 [standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
@@ -153,7 +151,7 @@ or `.tsx` file under `src/` changes. The same file must match both filters.
     "turn_end": {
       "paths": ["src/**"],
       "extensions": ["ts", "tsx"],
-      "commands": "npm test",
+      "commands": [["npm", "test"]],
       "failure_output": "compact"
     }
   }
