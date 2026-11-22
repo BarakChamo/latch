@@ -22,7 +22,7 @@ test("default-branch extensions find the release launcher and use the pinned CLI
     fixture.packageAsset("darwin-arm64");
     for (const entry of [...manifest.pi.extensions, manifest.exports["./server"]]) {
       const launcher = latchExecutable(new URL(entry, root).href);
-      assert.equal(launcher, fileURLToPath(new URL("distribution/native/plugin-launch.sh", root)));
+      assert.equal(launcher, fileURLToPath(new URL("plugins/extension-launch.sh", root)));
       const result = run(launcher, ["--version"], fixture.env);
       assert.equal(result.status, 0, result.stderr);
       assert.match(result.stdout, /^--version/m);

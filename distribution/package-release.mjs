@@ -18,6 +18,7 @@ const targets = {
 };
 const pluginManifests = [
   "package.json",
+  "plugins/package.json",
   "plugins/codex/.codex-plugin/plugin.json",
   "plugins/claude-code/.claude-plugin/plugin.json",
   "plugins/copilot/plugin.json",

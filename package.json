@@ -10,10 +10,9 @@
   "pi": { "extensions": ["./plugins/pi/index.ts"] },
   "files": [
     "plugins/extension-hook.mjs",
+    "plugins/extension-launch.sh",
     "plugins/opencode",
-    "plugins/pi",
-    "distribution/native/plugin-launch.sh",
-    "distribution/npm/package.json"
+    "plugins/pi"
   ],
   "scripts": {
     "build": "turbo run build:rust",

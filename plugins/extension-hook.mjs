@@ -14,7 +14,7 @@ export function latchExecutable(entryUrl) {
   const directory = dirname(realpathSync(fileURLToPath(entryUrl)));
   const bundled = join(directory, "bin", process.platform === "win32" ? "latch.exe" : "latch");
   if (existsSync(bundled)) return bundled;
-  const launcher = join(directory, "..", "..", "distribution", "native", "plugin-launch.sh");
+  const launcher = join(directory, "..", "extension-launch.sh");
   return process.platform !== "win32" && existsSync(launcher) ? launcher : "latch";
 }
 

@@ -12,7 +12,7 @@ fail() {
 # The source package uses the release version from its checked-in manifest.
 case "$version" in
   @*)
-    manifest="$(dirname -- "$0")/../npm/package.json"
+    manifest="$(dirname -- "$0")/opencode/package.json"
     version=$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$manifest")
     ;;
 esac
