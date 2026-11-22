@@ -1,4 +1,10 @@
-# OpenHands CLI
+# OpenHands
+
+Use `PluginSource(source="github:BarakChamo/latch")` in your OpenHands SDK
+conversation to load the native plugin with its hooks and tools.
+[SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
+
+## OpenHands CLI
 
 From the Git project you want to validate, run
 `sh /path/to/install-latch-plugin.sh install openhands` with the downloaded

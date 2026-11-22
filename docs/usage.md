@@ -56,9 +56,9 @@ prompt” means the next message in the same session and project.
 | OpenCode v1 | Same-turn context after `edit`, `write`, or `apply_patch`. | TUI toast or headless stderr. Failed checks also reach the next prompt. |
 | OpenCode v2 | Same-turn context after `edit`, `write`, or `patch`. | Server stderr. Failed checks also reach the next prompt. |
 | Pi | Same-turn context after `edit` or `write`. | Session history, visible to the next model request. |
-| OpenHands CLI | Next prompt after writes from `file_editor`. | Next prompt. |
+| OpenHands CLI and SDK | Next prompt after writes from `file_editor`. | Next prompt. |
 | Kimi Code CLI | Use `turn_end` for automatic checks. | Next prompt. |
-| Grok Build | Latch returns edit context for native writes, replacements, or patches. Model delivery unverified. | Hook stderr. |
+| Grok Build 1.0.92 | Same-turn context after a native `search_replace` edit. | Hook stderr. The tested session delivered no turn-end report to the model. |
 
 By default, a failed check lets the turn finish. For Codex, Claude Code, and
 Copilot, the warning at turn end is for the user or event stream. The model
@@ -87,7 +87,7 @@ without another message from you or an automatic recheck. The default
 | Claude Code | Native Stop hook context keeps the current turn open without a separate user prompt. Claude makes another model request to act on the report. |
 | OpenCode v2 and Pi | The extension adds its report to session context and resumes the current execution. |
 | Codex and Copilot CLI | The host creates a continuation prompt from the stop-hook response. |
-| Kimi Code CLI | The Stop hook supplies the failure as the reason for one continuation. Verified in 0.43.1. Headless 2.7.2 finished without continuing. Use `report` for next-prompt feedback there. |
+| Kimi Code CLI | In 2.7.2, a persistent `kimi acp` session delivered the failure and continued once. `kimi -p` finished without continuing. Use `report` for next-prompt feedback in that mode. |
 | OpenHands CLI | The Stop hook denies completion once and supplies the failure as feedback. |
 
 Verified in live Codex, Claude Code, and Copilot CLI sessions, and in real

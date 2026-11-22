@@ -104,8 +104,9 @@ This installs and trusts the plugin’s hooks and MCP server. Start a new
 session. Run `grok plugin list` to see it and `grok mcp doctor latch` to check
 the tool server. Automatic turn-end checks and MCP passed on Grok Build
 1.0.92. Upgrade if you use 1.0.34, where the native plugin’s MCP server
-loaded but its hooks did not run. Turn-end failures go to hook stderr.
-Agent receipt of edit feedback is unverified.
+loaded but its hooks did not run. On 1.0.92, the edit failure reached the
+model in the same turn. The model saw no turn-end failure in either the
+current turn or the next prompt.
 [Grok Build plugin docs](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md)
 
 ### Kimi Code
@@ -118,10 +119,33 @@ In Kimi Code, run:
 
 Choose **Trust and install**, then run `/reload` or open a new session.
 Changed turns run checks. Failures reach the next prompt by default.
-Use the default `report` mode for headless Kimi Code 2.7.2.
+Kimi Code 2.7.2 supports `continue_once` in a persistent `kimi acp` session.
+Use `report` with `kimi -p`.
 [Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)
 
-### OpenHands CLI
+### OpenHands
+
+Load the native GitHub plugin when you create an SDK conversation:
+
+```python
+from pathlib import Path
+
+from openhands.sdk import Conversation
+from openhands.sdk.plugin import PluginSource
+
+conversation = Conversation(
+    agent=agent,
+    workspace=Path.cwd(),
+    plugins=[PluginSource(source="github:BarakChamo/latch")],
+)
+```
+
+Here `agent` is your configured OpenHands agent. The plugin includes hooks
+and MCP. For Agent Canvas, clone Latch into `~/.agents/plugins/latch`, then
+select it in the Plugins picker. The SDK path was tested with 1.63.1.
+Canvas execution is unverified. [OpenHands plugin docs](https://docs.openhands.dev/overview/plugins)
+
+#### OpenHands CLI
 
 Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh).
 From the Git project you want to check, run:

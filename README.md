@@ -87,9 +87,13 @@ In Kimi Code, run:
 
 Confirm installation and start a new session.
 
-### OpenHands CLI
+### OpenHands
 
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh),
+Load the native plugin from `github:BarakChamo/latch` in the OpenHands SDK.
+[SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
+
+For OpenHands CLI, download
+[`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh),
 then run it from your project directory.
 
 ```sh
@@ -198,12 +202,14 @@ The local columns show when the agent gets failures by default.
 | GitHub Copilot CLI | Live | Same turn | Next prompt | Actions runner setup |
 | OpenCode v1 and v2 | Scripted | Same turn | Next prompt | Unverified |
 | Pi | Scripted | Same turn | Next model request | Unverified |
-| OpenHands CLI | Scripted | Next prompt | Next prompt | Workspace setup |
+| OpenHands CLI and SDK | Scripted | Next prompt | Next prompt | Workspace setup |
 | Kimi Code CLI | Scripted | — | Next prompt | Unverified |
-| Grok Build | Stop tested | Agent delivery unverified | Hook stderr | Unverified |
+| Grok Build 1.0.92 | Scripted | Same turn | No model feedback | Unverified |
 
 “Scripted” means a real CLI with a scripted model. “Next prompt” means your
-next message in the same session and project. Hosted agent feedback is unverified.
+next message in the same session and project. Kimi 2.7.2 supports
+`continue_once` in ACP sessions. Use `report` with `kimi -p`.
+Hosted agent feedback is unverified.
 [Hook and feedback details](docs/usage.md#hooks-and-feedback) · [Cloud setup](docs/usage.md#hosted-sessions)
 
 ## Docs
