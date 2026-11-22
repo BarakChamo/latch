@@ -2,7 +2,7 @@
   "mcpServers": {
     "latch": {
       "type": "stdio",
-      "command": "latch",
+      "command": "${CLAUDE_PLUGIN_ROOT}/bin/latch",
       "args": [
         "mcp"
       ]

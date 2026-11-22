@@ -1,0 +1,190 @@
+---
+title: Quickstart
+description: Install Latch in your agent and run an existing project check at the end of a changed turn.
+---
+
+import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+
+Start in a Git project with a check you already run, such as a linter. The plugin handles automatic checks, and the standalone CLI is available for terminal and CI runs.
+
+## Install a plugin
+
+Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
+
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'Pi', 'OpenCode', 'Grok Build', 'Kimi Code', 'OpenHands']}>
+
+<Tab value="Codex">
+
+```sh
+codex plugin marketplace add BarakChamo/latch
+codex plugin add latch@latch-tools
+```
+
+Open a new Codex session in your project, then review and approve the Latch hooks in `/hooks`.
+
+</Tab>
+
+<Tab value="Claude Code">
+
+```sh
+claude plugin marketplace add https://github.com/BarakChamo/latch.git
+claude plugin install latch@latch-tools
+```
+
+</Tab>
+
+<Tab value="GitHub Copilot CLI">
+
+```sh
+copilot plugin marketplace add BarakChamo/latch
+copilot plugin install latch@latch-tools
+```
+
+</Tab>
+
+<Tab value="Pi">
+
+Use Pi 1.5.2 or later.
+
+```sh
+pi install git:github.com/BarakChamo/latch
+```
+
+</Tab>
+
+<Tab value="OpenCode">
+
+For OpenCode 2.3.2 or later:
+
+```sh
+opencode plugin add 'github:BarakChamo/latch'
+```
+
+[OpenCode v1 and project-local setup](/docs/plugins#opencode)
+
+</Tab>
+
+<Tab value="Grok Build">
+
+```sh
+grok plugin install BarakChamo/latch --trust
+```
+
+Verified with Grok Build 1.0.92.
+
+</Tab>
+
+<Tab value="Kimi Code">
+
+In Kimi Code, run the command below. Choose **Trust and install**, then run `/reload`.
+
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
+
+</Tab>
+
+<Tab value="OpenHands">
+
+In Agent Canvas, open **Customize → Plugins → Add plugin**. Enter
+`github:BarakChamo/latch` as the source and select **Install**.
+
+For OpenHands CLI, run this from your Git project.
+
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh install openhands
+```
+
+[OpenHands SDK setup](/docs/plugins#openhands-sdk)
+
+</Tab>
+
+</Tabs>
+
+[Plugin settings, updates, and removal](/docs/plugins)
+
+## Run your first check
+
+Pick a command that already works in your project. **Use `latch.json` to run commands in any language.** You can skip the file if Latch can discover a named script in your `package.json` or a console entry point in your packaged uv project.
+
+### Run any project command
+
+Create `latch.json` in the directory where you run your checks. If you already use `make lint`, configure it like this.
+
+```json title="latch.json"
+{
+  "hooks": {
+    "turn_end": {
+      "commands": [["make", "lint"]]
+    }
+  }
+}
+```
+
+Replace the example with your own command, such as `["go", "test", "./..."]`,
+`["uv", "run", "ruff", "check", "."]`, or `["./scripts/check"]`. Put the
+executable first and each argument in a separate string. Install your
+project’s dependencies so the agent can run the command. Every shipped
+integration supports `turn_end`. For feedback while the agent edits, see
+[which file edits trigger checks](/docs/hooks#when-checks-run).
+
+You can create the file by hand or generate a starter with `latch config init`
+from the [standalone CLI](/docs/cli#install-the-cli). [Configuration examples](/docs/configuration#examples)
+
+### Use package scripts without latch.json
+
+Latch discovers these names in the project directory. If your project
+already defines one, start a session with the plugin enabled.
+
+<Tabs items={['package.json', 'pyproject.toml with uv']}>
+
+<Tab value="package.json">
+
+For example, add `hook:turnend` to the existing `scripts` object in an npm project that already has a `lint` script.
+
+```json title="package.json"
+{
+  "scripts": {
+    "hook:turnend": "npm run lint"
+  }
+}
+```
+
+Use `hook:afteredit` to run a script after a supported edit. Latch supports npm, pnpm, Yarn, and Bun. [Package manager selection](/docs/project-scripts#javascript-and-typescript)
+
+</Tab>
+
+<Tab value="pyproject.toml with uv">
+
+In a packaged uv project, add a console entry point under `[project.scripts]`. For example, the [runnable Python project](/docs/project-scripts#python-example) points to a function that runs the project’s unit tests and returns their exit status.
+
+```toml title="pyproject.toml"
+[project.scripts]
+hook-turnend = "latch_python_example.checks:turn_end"
+```
+
+Use `hook-afteredit` for checks after a supported edit. For a regular command such as `uv run pytest`, use the `latch.json` recipe above. [Python entry-point setup](/docs/project-scripts#python-with-uv)
+
+</Tab>
+
+</Tabs>
+
+### Try it in your agent
+
+1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a file and let the turn finish.
+2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples](/docs/project-scripts#try-the-examples) show exactly what to change.
+3. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` or `latch explain turn_end` to see which command Latch found.
+
+## Run the same check from a terminal
+
+Install the [standalone CLI](/docs/cli#install-the-cli), then run these from your project directory.
+
+```sh
+latch explain turn_end
+latch run turn_end
+```
+
+`explain` shows the resolved command and settings. `run` executes the check immediately, even when no files have changed. The same command works in CI.
+
+Once the first check works, add [path or file-type filters](/docs/configuration#examples) or [give the agent one automatic response to a turn-end failure](/docs/hooks#act-on-a-turn-end-failure).

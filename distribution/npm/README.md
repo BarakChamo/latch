@@ -1,15 +1,16 @@
 # Latch
 
-Install the CLI with `npm install -g @barakchamo/latch`, then run
-`latch --version`. npm installs the native binary for your platform as an
-optional dependency. Run `latch explain after_edit` or `latch explain turn_end`
-in a project to inspect its checks.
+Download this wrapper and your platform’s binary tarball from
+[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
+Install both with npm from the downloads directory. For Apple Silicon:
 
-The package also contains the Codex, Claude Code, and Copilot CLI plugins
-and their marketplace catalogs. The marketplace root is
-`$(npm root -g)/@barakchamo/latch` on shell-based installations. Add that
-directory as a local marketplace in your harness. The plugins use the same
-`latch` executable on `PATH` for hooks and the local `run_turn_end` tool.
+```sh
+npm install --global --offline ./barakchamo-latch-0.1.4.tgz ./barakchamo-latch-darwin-arm64-0.1.4.tgz
+latch --version
+```
+
+For the standalone CLI commands and plugin setup, see the
+[Latch guide on GitHub](https://github.com/BarakChamo/latch#readme).
 
 ## Configuration
 
@@ -17,3 +18,6 @@ Define `hook:afteredit` or `hook:turnend` in `package.json`, or
 `hook-afteredit` or `hook-turnend` under `[project.scripts]` in
 `pyproject.toml`. You can also define commands and defaults in
 `latch.json`.
+
+Copy the included `latch.schema.json` next to your project config and set
+`"$schema": "./latch.schema.json"` for editor completion and validation.

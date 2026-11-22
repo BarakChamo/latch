@@ -145,7 +145,13 @@ fn snapshot(root: &Path, commit: &str) -> io::Result<Snapshot> {
         .filter(|entry| !entry.is_empty())
     {
         match entry {
-            [b'?', b' ', path @ ..] => untracked.push(path),
+            [b'?', b' ', path @ ..] => {
+                // Without --directory, Git emits embedded checkouts as opaque directory
+                // entries. Their contents belong to a different worktree.
+                if !path.ends_with(b"/") {
+                    untracked.push(path);
+                }
+            }
             // Git can omit edits to paths flagged assume-unchanged or skip-worktree.
             [tag, b' ', ..] if tag.is_ascii_lowercase() || *tag == b'S' => {
                 return Err(io::Error::other("Git index can hide worktree edits"));

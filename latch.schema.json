@@ -1,0 +1,113 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Latch configuration",
+  "description": "Project checks, automatic hook conditions, and output settings.",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "$schema": { "type": ["string", "null"], "description": "Schema location for editor support." },
+    "turn_end_feedback": {
+      "enum": ["report", "continue_once"],
+      "description": "Allow a supported harness to act on a failed turn-end check in one follow-up. The default is report."
+    },
+    "defaults": {
+      "type": "object",
+      "$ref": "#/$defs/settings",
+      "unevaluatedProperties": false,
+      "description": "Defaults for explicit hooks and discovered project scripts."
+    },
+    "hooks": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "turn_end": { "$ref": "#/$defs/event", "description": "Checks after a coding agent finishes a turn." },
+        "after_edit": { "$ref": "#/$defs/event", "description": "Checks after a native edit tool completes." }
+      }
+    },
+    "commands": {
+      "description": "Legacy turn-end command list. Use hooks for new configurations.",
+      "anyOf": [{ "$ref": "#/$defs/commands" }, { "type": "null" }]
+    }
+  },
+  "not": {
+    "type": "object",
+    "required": ["commands", "hooks"],
+    "properties": {
+      "commands": { "type": "array" },
+      "hooks": { "type": "object" }
+    }
+  },
+  "$defs": {
+    "commands": {
+      "type": "array",
+      "description": "Commands in execution order. Each command starts with an executable and includes one string per argument.",
+      "items": {
+        "type": "array",
+        "minItems": 1,
+        "prefixItems": [{ "type": "string", "minLength": 1, "pattern": "^[^\\u0000]*$" }],
+        "items": { "type": "string", "pattern": "^[^\\u0000]*$" }
+      }
+    },
+    "settings": {
+      "type": "object",
+      "properties": {
+        "when": {
+          "enum": ["workspace_changed", "always", null],
+          "description": "Controls when automatic checks run. The built-in default is workspace_changed."
+        },
+        "on_success": {
+          "enum": ["silent", "output", null],
+          "description": "Controls successful output. The built-in default is silent."
+        },
+        "on_failure": {
+          "enum": ["collect", "stop", null],
+          "description": "Continue the command list or stop at the first failure. The built-in default is collect."
+        },
+        "failure_output": {
+          "enum": ["excerpt", "compact", "tail", "rtk", null],
+          "description": "How automatic hooks and tools present a failure. The built-in default is excerpt."
+        },
+        "tail_lines": {
+          "type": ["integer", "null"],
+          "minimum": 1,
+          "maximum": 100,
+          "description": "Number of lines shown per stream in tail mode. The built-in default is 20."
+        },
+        "rtk_filter": {
+          "type": ["string", "null"],
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,63}$",
+          "description": "Filter name for a separately installed RTK. The built-in default is log."
+        }
+      }
+    },
+    "event": {
+      "description": "One check definition or several in execution order. An empty list disables the event.",
+      "oneOf": [
+        { "$ref": "#/$defs/entry" },
+        { "type": "array", "items": { "$ref": "#/$defs/entry" } },
+        { "type": "null" }
+      ]
+    },
+    "entry": {
+      "type": "object",
+      "$ref": "#/$defs/settings",
+      "unevaluatedProperties": false,
+      "required": ["commands"],
+      "properties": {
+        "commands": { "$ref": "#/$defs/commands" },
+        "paths": {
+          "type": ["array", "null"],
+          "minItems": 1,
+          "description": "Git-worktree-relative globs matched against changed files.",
+          "items": { "type": "string", "minLength": 1, "pattern": "^(?!/)(?!(?:.*/)?\\.\\.(?:/|$))" }
+        },
+        "extensions": {
+          "type": ["array", "null"],
+          "minItems": 1,
+          "description": "Case-insensitive final file suffixes matched against changed files.",
+          "items": { "type": "string", "pattern": "^\\.?[A-Za-z0-9_-]+$" }
+        }
+      }
+    }
+  }
+}

@@ -4,47 +4,41 @@
     "userPromptSubmitted": [
       {
         "type": "command",
-        "bash": "latch hook copilot userPromptSubmitted",
-        "powershell": "latch hook copilot userPromptSubmitted"
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot userPromptSubmitted"
       }
     ],
     "userPromptTransformed": [
       {
         "type": "command",
-        "bash": "latch hook copilot userPromptTransformed",
-        "powershell": "latch hook copilot userPromptTransformed"
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot userPromptTransformed"
       }
     ],
     "postToolUse": [
       {
         "type": "command",
         "matcher": "create|edit|str_replace_editor|apply_patch",
-        "bash": "latch hook copilot postToolUse",
-        "powershell": "latch hook copilot postToolUse",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot postToolUse",
         "timeoutSec": 120
       }
     ],
     "agentStop": [
       {
         "type": "command",
-        "bash": "latch hook copilot agentStop",
-        "powershell": "latch hook copilot agentStop",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot agentStop",
         "timeoutSec": 120
       }
     ],
     "sessionEnd": [
       {
         "type": "command",
-        "bash": "latch hook copilot sessionEnd",
-        "powershell": "latch hook copilot sessionEnd"
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot sessionEnd"
       }
     ],
     "preToolUse": [
       {
         "type": "command",
         "matcher": "create|edit|str_replace_editor|apply_patch",
-        "bash": "latch hook copilot preToolUse || true",
-        "powershell": "latch hook copilot preToolUse; exit 0",
+        "bash": "\"${PLUGIN_ROOT}/bin/latch\" hook copilot preToolUse || true",
         "timeoutSec": 10
       }
     ]

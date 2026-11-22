@@ -1,21 +1,18 @@
 # Latch for GitHub Copilot CLI
 
-Install the CLI from the Latch checkout and make sure `latch` and `git` are
-on Copilot's `PATH`.
+Install Latch from the GitHub marketplace.
 
 ```sh
-cargo install --locked --path crates/latch
+copilot plugin marketplace add BarakChamo/latch
+copilot plugin install latch@latch-tools
 ```
 
-From the project directory, load the local plugin:
+Start a new session in your project. The plugin downloads Latch on first
+use for macOS and glibc Linux on ARM64 and x64.
 
-```sh
-copilot --plugin-dir /absolute/path/to/latch/plugins/copilot
-```
-
-Use a Copilot CLI version that supports `userPromptTransformed`. The
-[hook configuration](hooks.json) can also be installed under
-`.github/hooks/`. Use one installation method per project.
+Tested with Copilot CLI 1.0.114. Run `copilot plugin list` to verify the
+installation and `copilot mcp list` to check for the local Latch tool server.
+Use a Copilot CLI version that supports `userPromptTransformed`. Use one installation method per project.
 
 | Copilot event | Latch behavior |
 | --- | --- |
@@ -34,6 +31,8 @@ Copilot may omit a tool-call ID from command-hook payloads. Latch pairs
 those calls by tool name and arguments and runs the check if pairing is
 ambiguous.
 
-The bundled `run_turn_end` tool runs all configured turn-end checks on demand. The
-[configuration reference](../../README.md#configuration) covers shared
+The bundled `run_turn_end` tool takes the absolute `project_directory` from
+the agent and runs all configured turn-end checks there. Copilot starts the
+tool in the plugin directory. The
+[configuration reference](https://github.com/BarakChamo/latch#configure-checks) covers shared
 defaults, per-hook overrides, and output policies.

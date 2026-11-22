@@ -1,6 +1,8 @@
 {
+  "$schema": "../../latch.schema.json",
   "defaults": {
     "on_success": "silent",
-    "on_failure": "collect"
+    "on_failure": "collect",
+    "failure_output": "compact"
   }
 }

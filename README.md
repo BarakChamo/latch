@@ -1,200 +1,220 @@
-# Latch
+<h1 align="center">Latch</h1>
+<p align="center"><strong>Give your coding agent a feedback loop.</strong></p>
+<p align="center">Latch runs your project’s linters, tests, and other checks as your agent works, and brings failures back into the session.</p>
+<p align="center">
+  <a href="#install-a-plugin">Install a plugin</a> ·
+  <a href="#run-your-first-check">First check</a> ·
+  <a href="#how-it-works">How it works</a> ·
+  <a href="#compatibility">Compatibility</a> ·
+  <a href="#install-the-standalone-cli">Standalone CLI</a> ·
+  <a href="https://barakchamo.github.io/latch/">Docs</a>
+</p>
 
-Latch runs project checks after native edits or when a coding harness finishes
-a turn. Define checks in a package manifest, in `latch.json`, or in both.
+## How it works
 
-## Install
+Use Latch to catch a lint error right after an edit or see a failing test at the end of a turn. Reuse commands you already run locally or in CI, and keep them in the project so teammates can use the same checks with different agents.
 
-From this checkout, run `cargo install --locked --path crates/latch`. The
-[release guide](docs/releasing.md) covers npm and standalone archives. Once
-the CLI is on `PATH`, install the plugin for your harness.
+Plugins map their agents’ native hooks to two shared Latch events. Available events vary by agent, but your check commands stay in the project and work with any integration.
 
-Try the [TypeScript or Python example](examples/) to see package-script
-discovery with a real project.
+| Event | When checks run |
+| --- | --- |
+| `after_edit` | After a supported file-edit tool changes the worktree. Use it for fast checks such as linting. |
+| `turn_end` | When the agent finishes a turn that changed the worktree. This catches shell edits and works well for tests. |
 
-The [docs app](apps/docs/) contains the quickstart and configuration guide.
+- **Skip unchanged work.** Latch compares Git-visible files before and after the edit or turn. No-op edits and read-only turns skip checks by default, even in a dirty worktree.
+- **Keep passing checks quiet.** Success is silent by default, so failures are easier to spot in the agent session.
+- **Run checks that match the change.** Filter by path or file extension so a Markdown-only edit can run Markdown lint and skip TypeScript checks.
+- **Keep failure reports short.** Compact output surfaces useful lines such as errors and assertions. The agent can retrieve more detail from a saved log without rerunning the check.
 
-## Configuration
+## Install a plugin
 
-### Use existing package scripts
+Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
 
-Latch discovers these names in the hook or CLI working directory.
+### Codex
 
-| Manifest | After a native edit | At turn end |
-| --- | --- | --- |
-| `package.json` under `scripts` | `hook:afteredit` | `hook:turnend` |
-| `pyproject.toml` under `[project.scripts]` | `hook-afteredit` | `hook-turnend` |
+```sh
+codex plugin marketplace add BarakChamo/latch
+codex plugin add latch@latch-tools
+```
 
-Add this to `package.json` to run ESLint after edits.
+In a new Codex session in your project, review and approve the Latch hooks in `/hooks`.
+
+### Claude Code
+
+```sh
+claude plugin marketplace add https://github.com/BarakChamo/latch.git
+claude plugin install latch@latch-tools
+```
+
+### GitHub Copilot CLI
+
+```sh
+copilot plugin marketplace add BarakChamo/latch
+copilot plugin install latch@latch-tools
+```
+
+### Pi
+
+```sh
+pi install git:github.com/BarakChamo/latch
+```
+
+Use Pi 1.5.2 or later.
+
+### OpenCode
+
+```sh
+opencode plugin add 'github:BarakChamo/latch'
+```
+
+Use OpenCode 2.3.2 or later. [OpenCode v1 and project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
+
+### Grok Build
+
+```sh
+grok plugin install BarakChamo/latch --trust
+```
+
+Verified with Grok Build 1.0.92.
+
+### Kimi Code
+
+In Kimi Code, run:
+
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
+
+Choose **Trust and install**, then run `/reload` or start a new session.
+
+### OpenHands
+
+In Agent Canvas, go to **Customize → Plugins → Add plugin**. Enter
+`github:BarakChamo/latch` as the source, then click **Install**. The enabled
+plugin loads in new local conversations.
+[OpenHands SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
+
+For OpenHands CLI, run this from the Git project you want to check.
+
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh install openhands
+```
+
+Already have `latch` on your path? Run `latch install openhands` in the project.
+[Plugin settings, updates, and removal](https://barakchamo.github.io/latch/docs/plugins/)
+
+## Run your first check
+
+**Latch runs project commands in any language.** You can skip `latch.json`
+if you define `hook:turnend` in `package.json` or `hook-turnend` as a
+console script in a packaged uv project. For any other command, add it to
+`latch.json`. [Package script names and discovery](docs/usage.md#package-script-discovery)
+
+### Configure checks
+
+For example, if `make lint` already works in your project, put this in
+`latch.json` in the directory where you run it.
 
 ```json
 {
-  "scripts": {
-    "hook:afteredit": "eslint ."
-  }
-}
-```
-
-Latch runs JavaScript scripts through npm, pnpm, Yarn, or Bun. It uses the
-manager named by `packageManager`, then looks for a local lockfile, then
-defaults to npm. Set `packageManager` if lockfiles identify different
-managers. Latch invokes the selected executable from `PATH`.
-
-For a packaged Python project, add an entry point and Latch runs it with
-`uv run hook-afteredit`. The project needs a build system to install the
-entry point. See the [uv entry point documentation](https://docs.astral.sh/uv/concepts/projects/config/#command-line-interfaces).
-
-```toml
-[project.scripts]
-hook-afteredit = "my_project.checks:lint"
-```
-
-If both manifests define the same event, JavaScript runs before Python.
-The discovered commands run together after any matching explicit entries
-and inherit `defaults` from `latch.json`, including `when`, `on_success`,
-and `on_failure`. A file containing just `defaults` is valid.
-
-### Add explicit commands
-
-Create `latch.json` in the same working directory.
-
-```json
-{
-  "defaults": {
-    "on_success": "silent",
-    "on_failure": "collect"
-  },
   "hooks": {
     "turn_end": {
-      "when": "workspace_changed",
-      "on_failure": "stop",
-      "commands": [
-        ["cargo", "fmt", "--all", "--", "--check"],
-        ["cargo", "clippy", "--workspace", "--", "-D", "warnings"]
-      ]
+      "commands": [["make", "lint"]]
     }
   }
 }
 ```
 
-Add an `after_edit` entry under `hooks` to run checks after a native edit and
-send the report to the agent during the same turn:
+Replace `make lint` with your own executable and arguments. You can create the
+file by hand or use `latch config init` with the
+[standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
+scripts can be used together.
 
-```json
-"after_edit": {
-  "commands": [["cargo", "fmt", "--all", "--", "--check"]]
-}
-```
+Start the agent in the project directory and ask it to change a file. Latch
+runs the check when the turn finishes. A passing check is quiet. To check
+immediately after supported file edits, use `after_edit`. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
 
-Set `after_edit` to `[]` to disable edit checks, including discovery for that event.
-Native edit tools are `apply_patch`
-in Codex, `Edit`, `Write`, `MultiEdit`, and `NotebookEdit` in Claude Code,
-and `create`, `edit`, `str_replace_editor`, and `apply_patch` in Copilot CLI.
-Shell writes and external file changes are covered by the turn-end Git
-comparison when they affect Git-visible files.
+### Filters and failure output
 
-Each hook accepts a single object or an array of objects. Each object defines
-an ordered command list and inherits any omitted settings from project defaults.
-
-| Field | Built-in default | Values |
-| --- | --- | --- |
-| `when` | `workspace_changed` | `turn_end` compares against the start of the turn. `after_edit` compares immediately before and after the matching edit. Both run when a comparison is unavailable. `always` runs on every matching event. |
-| `on_success` | `silent` | `silent` discards successful command output. `output` includes both streams. |
-| `on_failure` | `collect` | `collect` runs the full list and reports all failures in order. `stop` skips the remaining commands in that object after the first failure. Later matching objects still run. |
-
-### Filter by changed files
-
-Add `paths`, `extensions`, or both to a hook object. Each object checks the same
-set of changed files independently. Matching objects run in array order and
-their output is combined into one report.
+This example runs your existing `npm test` script at turn end when a `.ts`
+or `.tsx` file under `src/` changes. The same file must match both filters.
 
 ```json
 {
   "hooks": {
-    "after_edit": [
-      { "commands": [["npm", "run", "lint"]] },
-      { "extensions": ["md", "mdx"], "commands": [["npm", "run", "lint:md"]] },
-      { "extensions": ["ts", "tsx"], "commands": [["npm", "run", "typecheck"]] }
-    ]
+    "turn_end": {
+      "paths": ["src/**"],
+      "extensions": ["ts", "tsx"],
+      "commands": [["npm", "test"]],
+      "failure_output": "compact"
+    }
   }
 }
 ```
 
-- `paths` matches case-sensitive, Git-worktree-relative globs. Use `/` as the
-  separator and `**` for recursive matching.
-- `extensions` matches the final filename suffix, case-insensitively and
-  with or without a leading dot. For docs-only checks, use `["md", "mdx"]`.
-- A changed file must match at least one entry in **each** configured filter.
-  The object's commands run if any changed file qualifies. An omitted filter
-  imposes no restriction. Empty filter lists are invalid.
-- Filters compare against the start of the turn or the start of the native
-  edit, depending on the hook. They apply even with `when: "always"`. Renames
-  can match either path. If a reliable comparison is unavailable, the
-  checks run.
+Here’s an excerpt from the compact report for a failing Vitest run.
 
-Filters decide whether to start automatic checks. Manual CLI and tool runs
-execute all entries for the selected hook on demand. `latch explain` shows
-each entry's resolved settings and filters under `entries` when the hook uses
-an array or combines explicit and discovered commands.
+```text
+Latch checks failed.
+latch: command 1 ("npm") failed: exit status: 1
+stdout:
+Tests  1 failed | 36 passed (37)
+[output compacted from 3175 bytes]
+stderr:
+FAIL  tests/message.test.ts > greets the caller by name
+AssertionError: expected 'Hi, Latch!' to be 'Hello, Latch!'
+Saved log: …/r-kgMl3D6EnjseUc7Nal1Wgf8Z.log
+```
 
-Each command is an executable followed by its arguments. To use shell
-syntax, invoke a shell explicitly, for example `["sh", "-c", "first | second"]`.
-A nonzero child exit, termination by signal, or failure to launch counts as
-a command failure. Unknown settings or event names fail config validation
-before any commands run. An empty array disables one event. An empty
-`hooks` object disables both events, including discovery.
-Existing files with top-level `commands` still define the `turn_end` list.
-Choose either top-level `commands` or `hooks` in a file.
+Open the saved log to read the full output without rerunning the tests. Use
+`tail` to show the last lines of each stream, or leave `failure_output` unset
+for the default excerpt.
 
-## Running checks
+[Filter examples](docs/usage.md#configuration) · [Failure output modes](docs/usage.md#commands-and-saved-logs)
 
-- **CLI.** Run `latch` or `latch run turn_end` to run turn-end checks immediately. Run `latch run after_edit` for edit checks.
-  Output goes to its original stdout or stderr stream. The CLI exits `0`
-  when all checks pass, `1` on a check or config failure, and `2` for
-  invalid CLI usage.
-- **Inspect config.** Run `latch explain` for `turn_end` or
-  `latch explain after_edit` for edit checks. It prints the config
-  path, resolved settings, filters, comparison point, and commands as JSON
-  without executing them.
-- **Tool.** The plugins expose the local MCP tool `run_turn_end`. It takes
-  no arguments, runs the turn-end checks immediately, and gives the model a tool error
-  with the report when validation fails. Installations of the plugins require
-  `latch` on the harness's `PATH`. The harness launches `latch mcp` over
-  stdio in the project directory.
-- **Turn end.** Runs once at turn completion, subject to `when`. Codex delivers
-  output as an app-server hook warning. The tested version of
-  `codex exec --json` omits that warning. Claude Code emits an informational
-  event. Copilot CLI emits a hook warning. Latch attaches a failed report once
-  to the next user prompt in the same session and working directory, without
-  an extra turn or recheck.
-- **After edit.** Runs after matching native tool calls when configured. The
-  default gate skips an edit that leaves Git-visible content unchanged, even
-  if the workspace was already dirty. Concurrent changes to the workspace
-  can also count as a change during that comparison.
-  Latch attaches the report to the existing tool-result exchange, so the
-  agent can see it before replying.
+### Give the agent a chance to act on a failure
 
-The hook and tool render a single report with the individual command results.
-Each reported command can contribute up to 2,000 bytes per output stream.
-Direct CLI runs replay the full output selected by the configured policy.
+With Latch v0.1.3 or later, set `"turn_end_feedback": "continue_once"` at the
+top level of `latch.json`. On supported agents, this delivers the failed
+turn-end report automatically and gives the agent one chance to respond
+without another message from you or an automatic recheck. Grok Build
+requires Latch v0.1.4 or later for this option.
 
-See setup for [Codex](plugins/codex/README.md),
-[Claude Code](plugins/claude-code/README.md), or
-[GitHub Copilot CLI](plugins/copilot/README.md).
+[Supported agents and how they receive failures](docs/usage.md#act-on-a-turn-end-failure)
 
-## Development
+## Install the standalone CLI
 
-Install Rust through rustup and use Node.js with npm 11 for the Turborepo tasks.
+For terminal or CI use, download and extract your platform’s archive from [GitHub Releases](https://github.com/BarakChamo/latch/releases/latest) and follow the [CLI installation guide](docs/usage.md#install-the-cli).
 
-| Command | Use |
-| --- | --- |
-| `npm ci` | Install the pinned development tooling |
-| `npm run build` | Build the CLI at `target/debug/latch` |
-| `npm run check` | Check formatting, run Clippy, and run Cargo tests |
-| `npm run fmt` | Apply Rust formatting |
-| `cargo run --locked -p latch -- --version` | Check the CLI version with Cargo |
+From your project, run `latch run after_edit` or `latch run turn_end` to execute that event’s checks immediately. This works with either package scripts or `latch.json`. Use `latch explain after_edit` to see what Latch resolved.
 
-Cargo owns Rust builds and incremental compilation. Turborepo orchestrates the
-development tasks with task caching disabled so Cargo can evaluate the local toolchain and target.
+## Compatibility
 
-See the [project guide](docs/project-guide.md) for workspace conventions.
+The local columns show when the agent gets failures by default, except where marked opt-in.
+
+| Harness | Local test | After edit | Turn end | Managed cloud |
+| --- | --- | --- | --- | --- |
+| Codex | Live | Same turn | Next prompt | Latch CLI or CI |
+| Claude Code | Live | Same turn | Next prompt | Single-repo setup |
+| GitHub Copilot CLI | Live | Same turn | Next prompt | Actions runner setup |
+| OpenCode v1 and v2 | Scripted | Same turn | Next prompt | Unverified |
+| Pi | Scripted | Same turn | Next model request | Unverified |
+| OpenHands CLI and SDK | Scripted | Next prompt | Next prompt | Workspace setup |
+| OpenHands Agent Canvas | Scripted | — | Opt-in verified | Unverified |
+| Kimi Code CLI | Scripted | — | Next prompt | Unverified |
+| Grok Build 1.0.92 | Scripted | Same turn | No model feedback | Unverified |
+
+“Scripted” means a real harness session with a scripted model. “Next prompt” means your
+next message in the same session and project. Kimi 2.7.2 supports
+`continue_once` in interactive and ACP sessions. Use `report` with `kimi -p`.
+Hosted agent feedback is unverified.
+[Hook and feedback details](docs/usage.md#hooks-and-feedback) · [Cloud setup](docs/usage.md#hosted-sessions)
+
+## Docs
+
+- [Hook lifecycle and where failures appear](docs/usage.md#hooks-and-feedback)
+- [Package script discovery](docs/usage.md#package-script-discovery) and [TypeScript and Python examples](examples/)
+- [Configuration, filters, and JSON schema](docs/usage.md#configuration)
+- [CLI commands, plugin tools, and saved logs](docs/usage.md#commands-and-saved-logs)
+- [Agent integration guides](plugins/), [cloud setup](docs/usage.md#hosted-sessions), and [troubleshooting](docs/usage.md#troubleshooting)

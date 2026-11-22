@@ -1,5 +1,5 @@
 {
-  "name": "latch-marketplace",
+  "name": "latch-tools",
   "owner": { "name": "Barak Chamo" },
   "metadata": { "description": "Run project checks after edits and at turn end." },
   "plugins": [

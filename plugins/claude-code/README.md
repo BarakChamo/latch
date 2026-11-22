@@ -1,20 +1,16 @@
 # Latch for Claude Code
 
-Install the CLI from the Latch checkout and make sure `latch` and `git` are
-on Claude Code's `PATH`.
+Install Latch from the GitHub marketplace:
 
 ```sh
-cargo install --locked --path crates/latch
+claude plugin marketplace add https://github.com/BarakChamo/latch.git
+claude plugin install latch@latch-tools
 ```
 
-From the project directory, load the plugin for the session:
+Start a new session in your project. The plugin downloads Latch on first
+use for macOS and glibc Linux on ARM64 and x64.
 
-```sh
-claude --plugin-dir /absolute/path/to/latch/plugins/claude-code
-```
-
-The [hook configuration](hooks/hooks.json) can also be merged into the
-project's `.claude/settings.json`. Use one installation method per project.
+Use one installation method per project.
 
 | Claude Code event | Latch behavior |
 | --- | --- |
@@ -25,7 +21,7 @@ project's `.claude/settings.json`. Use one installation method per project.
 | `StopFailure` / `SessionEnd` | Discard any pending baseline. |
 
 Latch compares Git-visible files across the worktree, including untracked,
-nonignored files. It resolves [checks](../../README.md#configuration) from the
+nonignored files. It resolves [checks](https://github.com/BarakChamo/latch#configure-checks) from the
 hook event's working directory. Baselines live in
 `$CLAUDE_CONFIG_DIR/latch/baselines-v1`, with `~/.claude` as the default
 config directory.
@@ -33,12 +29,16 @@ config directory.
 Latch also runs validation if the Git index can hide edits, such as when
 paths are marked assume-unchanged or skip-worktree.
 
-Successful checks are quiet by default. On failure, Latch reports the diagnostics
-and lets the turn finish. The next prompt in the same session and working
+Successful checks are quiet by default. In the default mode, Latch reports
+the diagnostics and lets the turn finish. The next prompt in the same session and working
 directory receives the saved failure once. The stop and post-tool hooks
 allow up to 120 seconds for validation.
 
+With the [opt-in follow-up](../../docs/usage.md#act-on-a-turn-end-failure),
+Claude receives a failed check as native Stop hook context. Claude can act
+before the turn settles without a separate user prompt.
+
 The bundled `run_turn_end` tool runs the same checks on demand. It takes no
 arguments and returns failure diagnostics as a tool result visible to the agent.
-See the [configuration reference](../../README.md#configuration) for defaults,
+See the [configuration reference](https://github.com/BarakChamo/latch#configure-checks) for defaults,
 per-hook overrides, and output policies.

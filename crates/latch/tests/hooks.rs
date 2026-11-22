@@ -102,6 +102,14 @@ impl Project {
             .env("CODEX_HOME", self.harness_home.path())
             .env("CLAUDE_CONFIG_DIR", self.harness_home.path())
             .env("COPILOT_HOME", self.harness_home.path())
+            .env("PI_CODING_AGENT_DIR", self.harness_home.path())
+            .env("OPENHANDS_PERSISTENCE_DIR", self.harness_home.path())
+            .env("KIMI_CODE_HOME", self.harness_home.path())
+            .env("CURSOR_CONFIG_DIR", self.harness_home.path())
+            .env("DEVIN_HOME", self.harness_home.path())
+            .env("GROK_HOME", self.harness_home.path())
+            .env("KIRO_HOME", self.harness_home.path())
+            .env("XDG_STATE_HOME", self.harness_home.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -115,6 +123,235 @@ impl Project {
     fn checked(&self) -> bool {
         self.root.path().join(Path::new("checked")).exists()
     }
+}
+
+fn linked_worktree(project: &Project, path: &Path) {
+    project.git(&[
+        "worktree",
+        "add",
+        "--detach",
+        path.to_str().unwrap(),
+        "HEAD",
+    ]);
+}
+
+fn worktree_hook(project: &Project, directory: &Path, event: &str) -> Value {
+    project.send_hook(
+        "codex",
+        Some("shared-turn"),
+        json!({
+            "hook_event_name": event,
+            "session_id": "shared-session",
+            "cwd": directory,
+            "tool_name": "apply_patch",
+            "tool_use_id": "shared-edit",
+            "stop_hook_active": false,
+        }),
+    )
+}
+
+#[test]
+fn main_checkout_skips_changes_inside_an_unignored_nested_worktree() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"hooks":{
+            "after_edit":{"commands":[["sh","-c","echo edit >> checked"]]},
+            "turn_end":{"commands":[["sh","-c","echo turn >> checked"]]}
+        }}"#,
+    );
+    project.init();
+    let root = project.root.path();
+    let nested = root.join("nested linked checkout");
+    linked_worktree(&project, &nested);
+
+    worktree_hook(&project, root, "UserPromptSubmit");
+    worktree_hook(&project, root, "PreToolUse");
+    fs::write(
+        nested.join("tracked"),
+        "changed only in the nested worktree",
+    )
+    .unwrap();
+    worktree_hook(&project, root, "PostToolUse");
+    worktree_hook(&project, root, "Stop");
+    assert!(
+        !project.checked(),
+        "nested edits triggered the main checkout"
+    );
+
+    worktree_hook(&project, root, "UserPromptSubmit");
+    worktree_hook(&project, root, "PreToolUse");
+    project.write("tracked", "changed in the main checkout");
+    worktree_hook(&project, root, "PostToolUse");
+    worktree_hook(&project, root, "Stop");
+    assert_eq!(
+        fs::read_to_string(root.join("checked")).unwrap(),
+        "edit\nturn\n"
+    );
+}
+
+#[test]
+fn linked_worktrees_use_their_own_config_and_baselines() {
+    let project = Project::new();
+    project.init();
+    let root = project.root.path();
+    let nested = root.join("nested linked checkout");
+    let adjacent = tempfile::Builder::new()
+        .prefix("latch adjacent checkout ")
+        .tempdir_in(root.parent().unwrap())
+        .unwrap();
+    for (directory, label) in [(nested.as_path(), "nested"), (adjacent.path(), "adjacent")] {
+        linked_worktree(&project, directory);
+        fs::write(
+            directory.join("latch.json"),
+            json!({
+                "defaults": {"on_success": "output"},
+                "hooks": {
+                    "after_edit": {"paths": ["tracked"], "commands": [["sh", "-c", "echo edit >> checked"]]},
+                    "turn_end": {"paths": ["tracked"], "commands": [["sh", "-c", format!("echo turn >> checked; echo {label}")]]},
+                }
+            })
+            .to_string(),
+        )
+        .unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .args(["run", "turn_end"])
+            .current_dir(directory)
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        assert_eq!(output.stdout, format!("{label}\n").as_bytes());
+        fs::remove_file(directory.join("checked")).unwrap();
+        fs::write(directory.join("tracked"), "already dirty").unwrap();
+    }
+
+    // The same session, turn, and tool call IDs must not overwrite another worktree's state.
+    let nested = nested.as_path();
+    let adjacent = adjacent.path();
+    for (changed, unchanged) in [(nested, adjacent), (adjacent, nested)] {
+        for directory in [nested, adjacent] {
+            worktree_hook(&project, directory, "UserPromptSubmit");
+            worktree_hook(&project, directory, "PreToolUse");
+        }
+        fs::write(changed.join("tracked"), "edited an already-dirty file").unwrap();
+        for directory in [nested, adjacent] {
+            worktree_hook(&project, directory, "PostToolUse");
+            worktree_hook(&project, directory, "Stop");
+        }
+        assert_eq!(
+            fs::read_to_string(changed.join("checked")).unwrap(),
+            "edit\nturn\n"
+        );
+        assert!(
+            !unchanged.join("checked").exists(),
+            "no-op triggered {}",
+            unchanged.display()
+        );
+        fs::remove_file(changed.join("checked")).unwrap();
+    }
+    assert!(
+        !project.checked(),
+        "a linked worktree ran commands in the main checkout"
+    );
+}
+
+#[test]
+fn extensions_skip_no_ops_and_surface_changed_edit_and_turn_failures() {
+    for adapter in ["opencode", "pi"] {
+        let project = Project::new();
+        project.write(
+            "latch.json",
+            r#"{"hooks":{
+                "after_edit":{"commands":[["sh","-c","echo edit >&2; exit 1"]]},
+                "turn_end":{"commands":[["sh","-c","echo turn >> checked; echo turn >&2; exit 1"]]}
+            }}"#,
+        );
+        project.init();
+        project.write("tracked", "already dirty");
+        let hook = |event: &str, turn: &str| {
+            let payload = json!({
+                "hook_event_name": event, "session_id": "session", "cwd": project.root.path(),
+                "turn_id": turn, "tool_use_id": "edit-call", "tool_name": "edit",
+                "stop_hook_active": false,
+            });
+            let result = project.invoke_hook(&[adapter], payload);
+            assert!(result.status.success(), "{result:?}");
+            String::from_utf8(result.stdout).unwrap()
+        };
+
+        assert_eq!(hook("UserPromptSubmit", "first"), "");
+        hook("PreToolUse", "first");
+        assert_eq!(hook("PostToolUse", "first"), "");
+        assert_eq!(hook("Stop", "first"), "");
+
+        hook("UserPromptSubmit", "second");
+        hook("PreToolUse", "second");
+        project.write("tracked", "dirty with a new edit");
+        assert!(hook("PostToolUse", "second").contains("Latch checks failed."));
+        assert!(hook("Stop", "second").contains("Latch checks failed."));
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("checked")).unwrap(),
+            "turn\n"
+        );
+
+        let next = hook("UserPromptSubmit", "third");
+        if adapter == "opencode" {
+            assert!(next.contains("failed checks at the end of the previous turn"));
+        } else {
+            assert!(next.is_empty()); // Pi persists the turn-end report in its own history.
+        }
+        assert!(hook("UserPromptSubmit", "fourth").is_empty());
+    }
+}
+
+#[test]
+fn rejects_invalid_hook_events_without_blocking_copilot_edits() {
+    let project = Project::new();
+    let codex = project.invoke_hook(
+        &["codex"],
+        json!({
+            "cwd": project.root.path(), "session_id": "session",
+            "hook_event_name": "UserPromptSubmit"
+        }),
+    );
+    assert_eq!(codex.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&codex.stderr).contains("turn ID for Codex"));
+    let copilot = project.copilot("preToolUse", json!({}));
+    assert!(copilot.status.success());
+    assert!(copilot.stdout.is_empty());
+    assert!(String::from_utf8_lossy(&copilot.stderr).contains("missing toolName"));
+    assert!(!project.checked());
+}
+
+#[test]
+fn compact_failure_output_preserves_late_diagnostics_and_other_failures() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"defaults":{"failure_output":"compact"},"hooks":{"turn_end":[
+            {"when":"always","commands":[
+                ["sh","-c","yes 'passing test' | head -500; printf '%s\\n' 'test parse_input ... FAILED' 'src/lib.rs:85: assertion failed' 'test result: FAILED. 1 failed'; exit 7"],
+                ["sh","-c","echo 'another failure' >&2; exit 8"]
+            ]},
+            {"when":"always","failure_output":"excerpt","commands":[
+                ["sh","-c","yes 'unrecognized log' | head -500; echo 'outside excerpt'; exit 9"]
+            ]}
+        ]}}"#,
+    );
+    let result = project.hook("Stop", "1", false);
+    let report = result["systemMessage"]
+        .as_str()
+        .expect("failed check report");
+    assert!(report.contains("test parse_input ... FAILED"), "{report}");
+    assert!(
+        report.contains("src/lib.rs:85: assertion failed"),
+        "{report}"
+    );
+    assert!(report.contains("test result: FAILED. 1 failed"), "{report}");
+    assert!(report.contains("another failure"), "{report}");
+    assert!(!report.contains("passing test"), "{report}");
+    assert!(report.contains("unrecognized log"), "{report}");
+    assert!(!report.contains("outside excerpt"), "{report}");
 }
 
 #[test]
@@ -819,4 +1056,363 @@ fn a_rename_out_of_a_filtered_directory_still_triggers_checks() {
     project.git(&["mv", "src/source.ts", "moved.ts"]);
     project.hook("Stop", "1", false);
     assert!(project.checked());
+}
+
+#[test]
+fn openhands_and_kimi_deliver_collected_failures_on_the_next_prompt() {
+    for (host, tool) in [("openhands", "file_editor"), ("kimi", "Edit")] {
+        let has_edit_hook = host == "openhands";
+        let project = Project::new();
+        project.write(
+            "latch.json",
+            r#"{"defaults":{"on_failure":"collect","failure_output":"tail","tail_lines":1},"hooks":{
+                "after_edit":{"commands":[
+                    ["sh","-c","echo edit >> ignored; printf 'full-log-marker\\nedit-first\\n'; exit 3"],
+                    ["sh","-c","echo edit-second; exit 4"]
+                ]},
+                "turn_end":{"commands":[
+                    ["sh","-c","echo stop >> ignored; printf 'full-stop-log\nstop-failed\n'; exit 5"],
+                    ["sh","-c","echo stop-second; exit 6"]
+                ]}
+            }}"#,
+        );
+        project.init();
+        project.write("tracked", "already dirty");
+        let send = |event| {
+            let fields = json!({"session_id":"session","tool_name":tool,
+                "tool_input":{"path":"tracked","command":"str_replace"}});
+            let mut payload = fields;
+            if host == "openhands" {
+                payload["event_type"] = json!(event);
+                payload["working_dir"] = json!(project.root.path());
+            } else {
+                payload["hook_event_name"] = json!(event);
+                payload["cwd"] = json!(project.root.path());
+                payload["stop_hook_active"] = json!(false);
+            }
+            let output = project.invoke_hook(&[host], payload);
+            assert!(output.status.success(), "{host}: {output:?}");
+            String::from_utf8(output.stdout).unwrap()
+        };
+
+        send("Stop"); // An internal session can stop without a foreground prompt.
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        send("PostToolUse");
+        send("Stop");
+        assert!(
+            !project.root.path().join("ignored").exists(),
+            "{host} ran checks for an unchanged turn"
+        );
+
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        project.write("tracked", "new edit to dirty file");
+        send("PostToolUse");
+        let stop = send("Stop");
+        if host == "openhands" {
+            assert_eq!(serde_json::from_str::<Value>(&stop).unwrap(), json!({}));
+        } else {
+            assert!(stop.trim().is_empty());
+        }
+
+        let next_prompt = send("UserPromptSubmit");
+        let markers = if has_edit_hook {
+            &["edit-first", "edit-second", "stop-failed", "stop-second"][..]
+        } else {
+            &["stop-failed", "stop-second"][..]
+        };
+        for &marker in markers {
+            assert!(
+                next_prompt.contains(marker),
+                "{host} lost {marker}: {next_prompt}"
+            );
+        }
+        assert!(!send("UserPromptSubmit").contains("stop-failed"));
+        let preview = next_prompt.replace("\\n", "\n");
+        let log_path = preview
+            .lines()
+            .find_map(|line| line.strip_prefix("Saved log: "))
+            .unwrap();
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.root.path())
+            .env("XDG_STATE_HOME", project.harness_home.path())
+            .args(["output", log_path, "--grep", "full-"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stdout).contains("full-"));
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+            if has_edit_hook {
+                "edit\nstop\n"
+            } else {
+                "stop\n"
+            }
+        );
+    }
+}
+
+#[test]
+fn cursor_keeps_edit_feedback_in_the_current_turn_and_allows_stop() {
+    let project = Project::new();
+    project.write("latch.json", r#"{"hooks":{
+        "after_edit":{"commands":[["sh","-c","echo edit >> ignored; echo cursor-edit-failure; exit 1"]]},
+        "turn_end":{"commands":[["sh","-c","echo stop >> ignored; echo cursor-stop-failure; exit 2"]]}
+    }}"#);
+    project.init();
+    project.write("tracked", "already dirty");
+    let send = |event, generation| {
+        let output = project.invoke_hook(
+            &["cursor"],
+            json!({
+                "hook_event_name": event,
+                "conversation_id": "cursor-session",
+                "generation_id": generation,
+                "workspace_roots": [project.root.path()],
+                "tool_name": "Write",
+                "tool_use_id": "tool-call",
+                "status": "completed"
+            }),
+        );
+        assert!(output.status.success(), "{output:?}");
+        let response: Value = serde_json::from_slice(&output.stdout).unwrap();
+        (response, String::from_utf8(output.stderr).unwrap())
+    };
+    send("beforeSubmitPrompt", "noop");
+    send("preToolUse", "noop");
+    assert_eq!(send("postToolUse", "noop").0, json!({}));
+    send("stop", "noop");
+    assert!(!project.root.path().join("ignored").exists());
+
+    send("beforeSubmitPrompt", "edit");
+    send("preToolUse", "edit");
+    project.write("tracked", "new content in dirty file");
+    assert!(
+        send("postToolUse", "edit").0["additional_context"]
+            .as_str()
+            .unwrap()
+            .contains("cursor-edit-failure")
+    );
+    let (stop, diagnostic) = send("stop", "edit");
+    assert_eq!(stop, json!({}), "Stop must not request continuation");
+    assert!(diagnostic.contains("cursor-stop-failure"));
+    send("stop", "edit");
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+        "edit\nstop\n"
+    );
+}
+
+#[test]
+fn devin_grok_and_kiro_render_edit_reports_in_their_native_protocols() {
+    for (host, tool) in [
+        ("devin", "edit"),
+        ("grok", "edit_file"),
+        ("kiro", "fs_write"),
+    ] {
+        let project = Project::new();
+        project.write("latch.json", r#"{"hooks":{
+            "after_edit":{"commands":[["sh","-c","echo edit >> ignored; echo native-edit-failure; exit 1"]]},
+            "turn_end":{"commands":[["sh","-c","echo stop >> ignored; echo native-stop-failure; exit 2"]]}
+        }}"#);
+        project.init();
+        project.write("tracked", "already dirty");
+        let send = |event| {
+            let payload = if host == "grok" {
+                json!({"hook_event_name":event,"sessionId":"session","cwd":project.root.path(),
+                    "toolName":tool, "toolUseId":"tool-call", "toolInput":{"path":"tracked"},
+                    "session_id":"session", "tool_name":tool, "tool_use_id":"tool-call",
+                    "tool_input":{"path":"tracked"}})
+            } else {
+                json!({"hook_event_name":event,"session_id":"session","cwd":project.root.path(),
+                    "tool_name":tool, "tool_use_id":"tool-call", "tool_input":{"path":"tracked"}})
+            };
+            let output = project.invoke_hook(&[host], payload);
+            assert!(output.status.success(), "{host}: {output:?}");
+            (
+                String::from_utf8(output.stdout).unwrap(),
+                String::from_utf8(output.stderr).unwrap(),
+            )
+        };
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        assert!(!send("PostToolUse").0.contains("native-edit-failure"));
+        send("Stop");
+        assert!(!project.root.path().join("ignored").exists());
+
+        send("UserPromptSubmit");
+        send("PreToolUse");
+        project.write("tracked", "new content in dirty file");
+        let (report, _) = send("PostToolUse");
+        match host {
+            "devin" | "grok" => assert!(serde_json::from_str::<Value>(&report).unwrap()["hookSpecificOutput"]["additionalContext"].as_str().unwrap().contains("native-edit-failure")),
+            _ => assert!(report.starts_with("Latch checks failed.") && report.contains("native-edit-failure")),
+        }
+        let (stop, diagnostic) = send("Stop");
+        assert!(!stop.contains("decision"));
+        assert!(!stop.contains("native-stop-failure"));
+        if host == "grok" {
+            assert!(diagnostic.contains("native-stop-failure"));
+        } else {
+            assert!(send("UserPromptSubmit").0.contains("native-stop-failure"));
+        }
+        send("Stop");
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+            "edit\nstop\n"
+        );
+    }
+}
+
+#[test]
+fn opted_in_turn_failure_reaches_the_agent_without_rechecking() {
+    for host in [
+        "codex",
+        "claude-code",
+        "copilot",
+        "opencode",
+        "openhands",
+        "kimi",
+        "grok",
+        "pi",
+    ] {
+        let project = Project::new();
+        project.write(
+            "latch.json",
+            r#"{"turn_end_feedback":"continue_once","defaults":{"when":"always"},
+                "commands":[["sh","-c","echo ran >> checked; echo important-diagnostic >&2; exit 1"]]}"#,
+        );
+        let invoke = |event, active| {
+            let mut payload = json!({
+                "hook_event_name": event, "event_type": event,
+                "session_id": "session", "sessionId": "session", "turn_id": "turn",
+                "cwd": project.root.path(), "working_dir": project.root.path(),
+            });
+            let active_field = if host == "grok" {
+                "stopHookActive"
+            } else {
+                "stop_hook_active"
+            };
+            payload[active_field] = json!(active);
+            payload["extension_can_continue"] = json!(host == "opencode");
+            if host == "copilot" {
+                let name = if event == "Stop" {
+                    "agentStop"
+                } else {
+                    "userPromptSubmitted"
+                };
+                project.invoke_hook(&[host, name], payload)
+            } else {
+                project.invoke_hook(&[host], payload)
+            }
+        };
+
+        assert!(invoke("UserPromptSubmit", false).status.success());
+        let report = invoke("Stop", false);
+        if host == "kimi" {
+            assert_eq!(report.status.code(), Some(2));
+            assert!(String::from_utf8_lossy(&report.stderr).contains("important-diagnostic"));
+        } else {
+            assert!(report.status.success(), "{host}: {report:?}");
+            let response: Value = serde_json::from_slice(&report.stdout).unwrap();
+            match host {
+                "claude-code" => {
+                    assert!(response["decision"].is_null());
+                    assert_eq!(response["hookSpecificOutput"]["hookEventName"], "Stop");
+                    assert!(
+                        response["hookSpecificOutput"]["additionalContext"]
+                            .as_str()
+                            .unwrap()
+                            .contains("important-diagnostic")
+                    );
+                }
+                "pi" | "opencode" => {
+                    assert_eq!(response["continue"], true);
+                    assert!(
+                        response["systemMessage"]
+                            .as_str()
+                            .unwrap()
+                            .contains("important-diagnostic")
+                    );
+                }
+                _ => {
+                    let decision = if host == "openhands" { "deny" } else { "block" };
+                    assert_eq!(response["decision"], decision);
+                    assert!(
+                        response["reason"]
+                            .as_str()
+                            .unwrap()
+                            .contains("important-diagnostic")
+                    );
+                }
+            }
+        }
+        let active = !matches!(host, "kimi" | "openhands");
+        assert!(invoke("Stop", active).status.success(), "{host}");
+        let next_prompt = invoke("UserPromptSubmit", false);
+        assert!(!String::from_utf8_lossy(&next_prompt.stdout).contains("important-diagnostic"));
+        assert_eq!(
+            fs::read_to_string(project.root.path().join("checked")).unwrap(),
+            "ran\n"
+        );
+    }
+}
+
+#[test]
+fn copilot_without_a_continuation_guard_keeps_a_nonblocking_warning() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","defaults":{"when":"always"},
+            "commands":[["sh","-c","exit 1"]]}"#,
+    );
+    let response = project.copilot("agentStop", json!({}));
+    assert_eq!(response.status.code(), Some(2));
+    assert!(String::from_utf8_lossy(&response.stderr).contains("Latch checks failed."));
+    assert!(response.stdout.is_empty());
+}
+
+#[test]
+fn copilot_ignores_its_own_follow_up_prompt_and_stale_stop_flag() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","defaults":{"when":"always"},
+            "commands":[["sh","-c","echo ran >> checked; exit 1"]]}"#,
+    );
+    let prompt = |text| project.copilot("userPromptSubmitted", json!({ "prompt": text }));
+    assert!(prompt("Run the task.").status.success());
+    let first = project.copilot("agentStop", json!({ "stop_hook_active": false }));
+    assert!(first.status.success());
+    let response: Value = serde_json::from_slice(&first.stdout).unwrap();
+    assert_eq!(response["decision"], "block");
+    assert!(
+        prompt(response["reason"].as_str().unwrap())
+            .status
+            .success()
+    );
+    for payload in [json!({}), json!({ "stop_hook_active": false })] {
+        let repeated = project.copilot("agentStop", payload);
+        assert!(repeated.status.success());
+        assert_eq!(
+            serde_json::from_slice::<Value>(&repeated.stdout).unwrap(),
+            json!({})
+        );
+    }
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("checked")).unwrap(),
+        "ran\n"
+    );
+    assert!(prompt("Run another task.").status.success());
+    let next = project.copilot("agentStop", json!({ "stop_hook_active": false }));
+    assert!(next.status.success());
+    assert_eq!(
+        serde_json::from_slice::<Value>(&next.stdout).unwrap()["decision"],
+        "block"
+    );
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("checked")).unwrap(),
+        "ran\nran\n"
+    );
 }

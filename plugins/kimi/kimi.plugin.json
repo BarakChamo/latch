@@ -1,0 +1,15 @@
+{
+  "name": "latch",
+  "version": "0.1.4",
+  "description": "Run project validation at the end of Kimi Code turns.",
+  "hooks": [
+    { "event": "UserPromptSubmit", "command": "./bin/latch hook kimi", "timeout": 120 },
+    { "event": "Stop", "command": "./bin/latch hook kimi", "timeout": 120 }
+  ],
+  "mcpServers": {
+    "latch": {
+      "command": "./bin/latch",
+      "args": ["mcp", "--require-project-directory"]
+    }
+  }
+}

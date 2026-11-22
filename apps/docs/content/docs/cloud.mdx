@@ -1,0 +1,109 @@
+---
+title: Cloud sessions
+description: Install Latch in a hosted coding environment and connect the available lifecycle hooks.
+---
+
+Use the same `latch.json` in your cloud checkout. Install Latch and your
+project’s check dependencies when the environment starts. The harness
+also needs to load the corresponding hook definitions before the first
+prompt for automatic checks to run.
+
+The [compatibility matrix](/docs#compatibility) distinguishes verified local
+feedback from provider-documented cloud hooks. The Claude and OpenHands
+setup paths below have no hosted Latch verification. The Copilot setup
+passed a Linux fixture, and the hosted task attempt returned 403.
+[Hosted Copilot test record](https://github.com/BarakChamo/latch/pull/1)
+
+## Install in the environment
+
+Use a versioned Linux archive for the runner architecture. Stage the
+archive and its matching `.sha256` file from your release assets or
+internal mirror. Run this in the setup phase from the directory with
+both files. Change the base name for Linux ARM64 or a different version.
+
+```sh
+set -eu
+bundle=latch-0.1.4-x86_64-unknown-linux-gnu
+sha256sum --check "$bundle.tar.gz.sha256"
+tar -xzf "$bundle.tar.gz"
+install -Dm755 "$bundle/bin/latch" "$HOME/.local/bin/latch"
+"$HOME/.local/bin/latch" --version
+```
+
+Keep downloaded files in a setup scratch directory outside the checkout
+so they stay out of the Git change scan. Install Git and your project’s
+check dependencies in the same setup phase.
+
+## Claude Code
+
+For a single-repository cloud session outside a Claude Project, add the
+install step to the cloud environment setup script. Merge the archive's
+`plugins/claude-code/hooks/hooks.json` into the repository's
+`.claude/settings.json`. In each copied command, use
+`"$HOME/.local/bin/latch" hook claude-code` so it can find Latch even when
+the setup shell’s `PATH` differs from the session’s. Commit the settings.
+
+If you also want the explicit tool, add the archive's Claude Code
+`.mcp.json` to your repository MCP configuration. Use
+`${HOME}/.local/bin/latch` as its command and enable the project MCP
+server in the cloud session. Claude Projects and multi-repository sessions
+have different settings rules. [Claude Code cloud environment guide](https://code.claude.com/docs/en/cloud-environments#whats-available-in-cloud-sessions) · [Cloud settings precedence](https://code.claude.com/docs/en/settings#settings-in-cloud-sessions)
+
+## GitHub Copilot
+
+For Copilot sessions on GitHub Actions, install Latch in the
+`copilot-setup-steps` job in `.github/workflows/copilot-setup-steps.yml`.
+Copy the archive's `plugins/copilot/hooks.json` to
+`.github/hooks/latch.json` and update its Bash commands to use
+`"$HOME/.local/bin/latch"`. Keep the `|| true` guard on `preToolUse` so a
+setup problem does not deny the edit. GitHub loads the hook file from
+the default branch. On the standard Cloud sandbox, the Actions setup
+job is unavailable. Use Actions for this recipe. [GitHub environment setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/customize-the-agent-environment) · [GitHub hook setup](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/use-hooks)
+
+The cloud agent supports same-turn context after tool use. A delegated
+job may have only its initial prompt, so plan to see after-edit feedback
+and use CI to enforce checks before merge. GitHub documents stop-hook
+continuation for hosted agents. Latch’s opt-in follow-up has local
+verification. To enable the explicit tool
+in the hosted GitHub agent, configure a local stdio server in the
+repository’s Copilot MCP settings. Use `bash` as the command with
+`["-c", "exec \"$HOME/.local/bin/latch\" mcp --require-project-directory"]`
+as its arguments and allow `run_turn_end` and `search_output`. [GitHub hook events](https://docs.github.com/en/copilot/reference/hooks-reference) · [GitHub repository MCP settings](https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/configure-mcp-servers)
+
+## Codex
+
+Install Latch as part of the environment setup and use
+`"$HOME/.local/bin/latch" run turn_end` from the checkout as a project
+check. This command can also run in CI. Managed cloud orchestration
+supports administrator-configured Global MCP hooks on eligible
+workspaces. The Latch plugin uses local command hooks, so its automatic
+feedback requires a Codex runtime where the command hooks can load and
+be trusted. If you run Codex CLI directly inside a cloud VM or container,
+follow the [plugin setup](/docs/plugins) inside that machine.
+[Codex cloud environments](https://learn.chatgpt.com/docs/environments/cloud-environments) · [Cloud orchestration hooks](https://learn.chatgpt.com/docs/hooks#hooks-with-cloud-orchestration)
+
+## OpenHands
+
+For [local Agent Canvas](/docs/plugins#agent-canvas), Latch installs through
+the built-in plugin manager. For hosted workspaces, OpenHands documents
+repository hooks for Cloud, Canvas, and Enterprise.
+Provision Latch inside the workspace and commit the hook definitions in
+`.openhands/hooks.json`. Use the installed binary’s absolute path for the
+hook commands and verify model feedback in a hosted session.
+[OpenHands repository hooks](https://docs.openhands.dev/openhands/usage/customization/hooks)
+
+## Other integrations
+
+Use the [local setup](/docs/plugins) on a VM you control if both the
+agent process and checkout run there. Managed-service feedback for
+OpenCode, Pi, Kimi Code, and Grok Build remains unverified. Kimi’s
+remote-tool hooks run beside the CLI and see its local files.
+[Kimi hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks)
+
+## Verify a new environment
+
+Start a fresh session with a known failing check. Confirm a read-only
+turn skips the check, an edit runs it once, and the failure is visible
+in the intended surface. Try a passing check and confirm it stays quiet
+with the default settings. A manual run verifies the binary and
+dependencies. The edit verifies the hosted hook wiring separately.

@@ -1,0 +1,232 @@
+---
+title: Harness plugins
+description: Install and manage Latch in your harness, and run checks from chat.
+---
+
+## Install from GitHub
+
+Use the [quickstart](/docs/quickstart#install-a-plugin) for the exact
+install steps for each harness. Start a new session in your project.
+The plugin downloads and verifies the Latch binary from GitHub on first
+use and reuses it from the user cache.
+
+For a restricted network, see [offline setup](#offline-setup) or
+[hosted workspaces](/docs/cloud).
+
+### Pi
+
+Use Pi 1.5.2 or later.
+
+```sh
+pi install git:github.com/BarakChamo/latch
+```
+
+To share the install with your project, add `--local` from the project
+directory and commit `.pi/settings.json`. Pi loads project packages after you
+trust the workspace. [Pi package docs](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md)
+
+### OpenCode
+
+Use OpenCode 2.3.2 or later for the global install.
+
+```sh
+opencode plugin add 'github:BarakChamo/latch'
+```
+
+For a project, add the Git package to the existing `plugins` array in
+`opencode.json`.
+
+```json title="opencode.json"
+{
+  "plugins": ["github:BarakChamo/latch"]
+}
+```
+
+To use OpenCode’s directory discovery, run this from the project root instead.
+
+```sh
+mkdir -p .opencode/plugins
+git clone --depth 1 https://github.com/BarakChamo/latch.git .opencode/plugins/latch
+```
+
+For OpenCode v1, install through its local plugin directory.
+
+```sh
+opencode_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+mkdir -p "$opencode_dir/plugins"
+git clone --depth 1 https://github.com/BarakChamo/latch.git "$opencode_dir/latch"
+ln -s ../latch/plugins/opencode/index.js "$opencode_dir/plugins/latch.js"
+```
+
+Restart OpenCode after installation. [OpenCode plugin discovery](https://opencode.ai/docs/plugins/#discover)
+
+### Offline setup
+
+The [standalone archive](/docs/cli#install-the-cli) includes the CLI and plugin
+sources. Extract it and keep the folder in place. For Pi, pass its
+`plugins/pi` directory to `pi install`. For OpenCode, run the installer
+from inside the extracted archive with `./install opencode`.
+
+### Find or remove a plugin
+
+| Harness | Find the plugin | Uninstall Latch |
+| --- | --- | --- |
+| Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
+| Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-tools` |
+| GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-tools` |
+| OpenCode v2 | Look for `github:BarakChamo/latch` in the `plugins` array of the `opencode.json` shown by the installer. | `opencode plugin remove 'github:BarakChamo/latch'` for the global package. Remove a project entry or checkout from its project. |
+| OpenCode v1 | Check the OpenCode config directory's `plugins/latch.js` link. | Remove that link. |
+| Pi | `pi list` | `pi remove git:github.com/BarakChamo/latch`. Add `--local` for a project install. |
+| Grok Build | `grok plugin list` | `grok plugin uninstall latch` |
+| Kimi Code | `/plugins list` | `/plugins remove latch`, then `/reload`. |
+| OpenHands Agent Canvas | **Customize → Plugins** | Uninstall Latch from its plugin details. |
+| OpenHands CLI | Check the project's `.openhands/hooks.json`. | See [OpenHands CLI cleanup](#openhands-cli). |
+
+Use one installation method per project to avoid duplicate hooks. If
+you added an older Latch marketplace or a branch-specific Pi or OpenCode
+package, remove that entry before switching to the quickstart commands.
+
+## Grok, Kimi, and OpenHands
+
+### Grok Build
+
+```sh
+grok plugin install BarakChamo/latch --trust
+```
+
+This installs and trusts the plugin’s hooks and MCP server. Start a new
+session. Run `grok plugin list` to see it and `grok mcp doctor latch` to check
+the tool server. Automatic turn-end checks and MCP passed on Grok Build
+1.0.92. Upgrade if you use 1.0.34, where the native plugin’s MCP server
+loaded but its hooks did not run. On 1.0.92, the edit failure reached the
+model in the same turn. With the default `report` mode, the model saw no turn-end failure in either
+the current turn or the next prompt. With Latch v0.1.4 or later,
+[`continue_once`](/docs/hooks#act-on-a-turn-end-failure) gives Grok one response
+to a turn-end failure.
+[Grok Build plugin docs](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md)
+
+### Kimi Code
+
+In Kimi Code, run:
+
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
+
+Choose **Trust and install**, then run `/reload` or open a new session.
+Changed turns run checks. Failures reach the next prompt by default.
+Kimi Code 2.7.2 supports `continue_once` in the interactive CLI and in ACP sessions.
+Use `report` with `kimi -p`.
+[Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)
+
+### OpenHands
+
+#### Agent Canvas
+
+Open **Customize → Plugins → Add plugin**, enter `github:BarakChamo/latch`
+as the source, and click **Install**. Enabled plugins load automatically in
+new conversations. Open a local Git workspace and configure your checks there.
+
+Verified in the Canvas web app (1.43.0) against a local workspace. With
+[`continue_once`](/docs/hooks#act-on-a-turn-end-failure), Canvas delivered the
+turn-end failure to the agent once and Latch ran the check once.
+
+#### OpenHands SDK
+
+Load the native GitHub plugin when you create an SDK conversation:
+
+```python
+from pathlib import Path
+
+from openhands.sdk import Conversation
+from openhands.sdk.plugin import PluginSource
+
+conversation = Conversation(
+    agent=agent,
+    workspace=Path.cwd(),
+    plugins=[PluginSource(source="github:BarakChamo/latch")],
+)
+```
+
+Here `agent` is your configured OpenHands agent. The plugin includes hooks
+and MCP. The SDK path was tested with 1.63.1. [OpenHands plugin docs](https://docs.openhands.dev/overview/plugins)
+
+#### OpenHands CLI
+
+Run the [OpenHands installer command](/docs/quickstart#install-a-plugin)
+from the Git project you want to check. If `latch` is already on your path,
+run `latch install openhands` in the project instead. It installs project hooks
+and registers the tools for the current user. Start a new session in the
+same project. Native edits and changed turns run checks. Failures reach the
+next prompt by default. [OpenHands hook docs](https://docs.openhands.dev/openhands/usage/customization/hooks)
+
+To uninstall, remove the hook entries whose command ends in
+`# latch-installed` from `.openhands/hooks.json` or the user hook file if the installer updated
+that file. Remove the `latch` MCP
+entry from your OpenHands user configuration once no project uses it.
+
+### Preview integrations
+
+From your project, use the installed `latch` command to register workspace hooks.
+
+| Harness | Setup | Feedback |
+| --- | --- | --- |
+| Cursor CLI (preview) | Run `latch install cursor --preview`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
+| Devin CLI (preview) | Run `latch install devin --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
+| Kiro CLI V3 (preview) | Run `latch install kiro --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
+
+The preview adapters have automated hook protocol tests. Treat their
+feedback as provisional until verified in a session. Workspace installers write absolute local paths into harness
+configuration. Keep those entries local. To uninstall them, remove the
+hook entries whose command ends in `# latch-installed` and remove the
+`latch` MCP server entry.
+
+## Run checks from chat
+
+Ask your agent to call the Latch tool.
+
+> Use Latch’s `run_turn_end` tool in this project and tell me which checks failed.
+
+`run_turn_end` runs the configured `turn_end`
+commands immediately in the project's working directory, even when the
+worktree is unchanged. It uses the same command order and output settings
+as `latch run turn_end`. Failed checks return a tool error with diagnostics.
+A successful call is quiet unless `on_success` is set to `"output"`. Your
+harness may ask for approval because configured commands can modify files.
+
+In Codex, Copilot and the additional integrations above, the agent passes the absolute
+project directory to the tool. Other harnesses use the session working directory. Pi exposes
+it as `mcp__latch__run_turn_end`.
+
+For a manual `after_edit` run or a preview of the resolved configuration,
+use the [CLI commands](/docs/cli) in your terminal.
+
+## Look up details from a failure
+
+When a report includes a `Saved log` path, the agent can pass it and a
+literal query such as a test name to `search_output`. Copilot also passes
+the absolute project directory. With filesystem access to the cache, the
+agent can search the same file directly using its normal file tools.
+Both paths use the existing log without rerunning the check.
+Use [the CLI](/docs/cli#retrieve-saved-output) to replay both original streams.
+
+## Integration commands
+
+The plugin runs these commands for you. Each hook command reads the harness's
+event JSON from standard input. `latch mcp` speaks MCP over standard input and
+output.
+
+| Command | Used by |
+| --- | --- |
+| `latch hook codex` | Codex lifecycle hooks |
+| `latch hook claude-code` | Claude Code lifecycle hooks |
+| `latch hook copilot <event>` | Copilot CLI lifecycle hooks, such as `postToolUse` and `agentStop` |
+| `latch hook opencode` | The OpenCode plugin forwards prompt, edit, and idle events |
+| `latch hook pi` | The Pi extension forwards prompt, edit, and settlement events |
+| `latch mcp` | Claude Code, OpenCode, and Pi expose both Latch tools |
+| `latch install <openhands\|cursor\|devin\|grok\|kiro> [--preview]` | Writes local hook and MCP configuration for the selected harness |
+| `latch hook <openhands\|kimi\|cursor\|devin\|grok\|kiro>` | Receives native lifecycle events for the selected harness |
+| `latch mcp --require-project-directory` | Codex, Copilot, and the additional integrations expose both tools with an explicit project directory |
+
+See [Hooks and feedback](/docs/hooks) for what triggers automatically and where
+results appear.

@@ -3,32 +3,32 @@ title: Package scripts
 description: Run existing JavaScript or Python checks without writing a Latch config.
 ---
 
-import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
+Latch can discover named hooks in `package.json` and packaged uv projects.
+If discovery finds the checks you need, you can skip `latch.json`. For any
+other project command, [configure it directly](/docs/quickstart#run-any-project-command).
+Latch looks in the harness or CLI working directory.
 
-Name a package script for the event you want. Latch reads the manifest in the
-harness or CLI working directory.
-
-<Tabs items={['JavaScript and TypeScript', 'Python with uv']}>
-
-<Tab value="JavaScript and TypeScript">
+## JavaScript and TypeScript
 
 ```json title="package.json"
 {
   "scripts": {
     "hook:afteredit": "prettier --check src",
-    "hook:turnend": "tsc --noEmit"
+    "hook:turnend": "tsc --noEmit && vitest run --no-color"
   }
 }
 ```
 
-Install the project's dependencies first. Latch uses `packageManager` to select
+Install the project's dependencies first. This example uses Prettier,
+TypeScript, and Vitest. Latch uses `packageManager` to select
 npm, pnpm, Yarn, or Bun. Without that field, it uses the local lockfile or
 defaults to npm. If lockfiles point to different managers, set `packageManager`
 explicitly.
 
-</Tab>
+To reuse existing scripts in an npm project, set
+`"hook:afteredit": "npm run lint"` for lint or `"hook:turnend": "npm test"` for tests.
 
-<Tab value="Python with uv">
+## Python with uv
 
 ```toml title="pyproject.toml"
 [project.scripts]
@@ -36,24 +36,28 @@ hook-afteredit = "latch_python_example.checks:after_edit"
 hook-turnend = "latch_python_example.checks:turn_end"
 ```
 
-Use a packaged Python project with a build system. Add entry points under
-`[project.scripts]` and install `uv` on the harness's `PATH`. Latch invokes
-them using `uv run`.
+Use a packaged Python project with a build system. Replace
+`latch_python_example.checks:after_edit` and `:turn_end` with the Python
+functions that run your project’s checks and return their exit status.
+Install `uv` on the harness’s `PATH`. Latch invokes the entry points with
+`uv run hook-afteredit` and `uv run hook-turnend`.
 
-</Tab>
-
-</Tabs>
+If you already run commands such as `uv run ruff check .` or
+`python -m unittest`, you can [configure those commands directly](/docs/configuration)
+without packaging Python entry points.
 
 When both manifests define the same event, JavaScript runs before Python.
 The scripts inherit any [defaults in `latch.json`](/docs/configuration#ordering-and-overrides).
 
 ## Try the examples
 
-From a Latch checkout, choose an example and run its checks.
+From a Latch checkout, choose an example below. Use the
+[standalone CLI](/docs/cli#install-the-cli) to try the passing and failing
+checks from a terminal. To try automatic runs, follow the
+[plugin quickstart](/docs/quickstart#install-a-plugin), start the agent in the
+example directory, and ask it to make the described change with its edit tool.
 
-<Tabs items={['TypeScript', 'Python']}>
-
-<Tab value="TypeScript">
+### TypeScript example
 
 ```sh
 cd examples/typescript
@@ -62,11 +66,11 @@ latch run after_edit
 latch run turn_end
 ```
 
-Change the greeting to return a number to see the type checker report an error.
+Use Node.js 22.12 or newer. Change `Hello` to `Hi` in `src/message.ts`,
+then rerun `latch run turn_end` to see the Vitest assertion. Restore `Hello`
+to pass again. [TypeScript source and setup](https://github.com/BarakChamo/latch/tree/main/examples/typescript)
 
-</Tab>
-
-<Tab value="Python">
+### Python example
 
 ```sh
 cd examples/python
@@ -75,9 +79,8 @@ latch run after_edit
 latch run turn_end
 ```
 
-Add an unused import to see Ruff's output. Change the greeting to see a unit
-test fail.
-
-</Tab>
-
-</Tabs>
+Add an unused import to `src/latch_python_example/__init__.py` and rerun
+`latch run after_edit` to see Ruff's diagnostic. Remove the import and change
+`Hello` to `Hi` in the same file to see a unit test fail with
+`latch run turn_end`. Restore `Hello` to pass again.
+[Python source and setup](https://github.com/BarakChamo/latch/tree/main/examples/python)

@@ -3,8 +3,9 @@ title: Hooks and feedback
 description: Understand what triggers a check and where each harness shows its result.
 ---
 
-Follow the [quickstart](/docs#2-enable-your-harness-plugin) to install the plugin
-for your harness.
+Plugins map their agents’ native hooks to the same Latch events. Commands
+come from the project’s [package scripts](/docs/project-scripts), optional
+[`latch.json`](/docs/configuration), or both.
 
 ## When checks run
 
@@ -15,24 +16,92 @@ for your harness.
 
 A pre-existing dirty file triggers a check only if it changes again during
 the comparison window. Latch checks Git-visible files and runs the commands
-when a reliable comparison is unavailable.
+without change-based filters when a reliable comparison is unavailable.
+Use [path or extension filters](/docs/configuration#examples) to run just
+the checks that match the files changed during the event.
+
+Linked worktrees have their own change baselines, whether they sit inside
+the main checkout or beside it. Start Latch or your harness from the
+directory where you want to read config and run commands. Path filters are
+relative to that Git worktree’s root. Edits inside an untracked nested
+checkout do not trigger checks in the parent checkout.
+
+These tables cover shipped integrations in local sessions. For hosted
+environments, see [Cloud sessions](/docs/cloud).
 
 | Harness | Native edit tools |
 | --- | --- |
 | Codex | `apply_patch` |
 | Claude Code | `Edit`, `Write`, `MultiEdit`, `NotebookEdit` |
 | GitHub Copilot CLI | `create`, `edit`, `str_replace_editor`, `apply_patch` |
+| OpenCode v1 | `edit`, `write`, `apply_patch` |
+| OpenCode v2 | `edit`, `write`, `patch` |
+| Pi | `edit`, `write` |
+| OpenHands CLI | `file_editor` write operations |
+| Kimi Code CLI | Use `turn_end` for automatic checks. |
+| Grok Build | `write`, `search_replace`, and patch tools |
 
 ## Where reports appear
 
-Edit reports are attached to the tool result in the same turn. Turn-end reports
-use the harness's hook feedback. Failed turn-end reports also appear once at
-the next prompt in the same session and working directory.
+Passing checks are silent by default. “Next prompt” means your next
+message in the same session and project.
 
-| Harness | Turn-end feedback |
+| Harness | Edit failure reaches model | Turn-end failure reaches model |
+| --- | --- | --- |
+| Codex | Same turn | Next prompt |
+| Claude Code | Same turn | Next prompt |
+| GitHub Copilot CLI | Same turn | Next prompt |
+| OpenCode v1 and v2 | Same turn | Next prompt |
+| Pi | Same turn | Next model request |
+| OpenHands CLI and SDK | Next prompt | Next prompt |
+| Kimi Code 2.7.2 | — | Next prompt |
+| Grok Build 1.0.92 | Same turn | No model feedback |
+
+Turn-end reports can also appear in the harness UI or logs. The tested
+`codex exec --json` output omitted the app-server warning. For OpenCode v2,
+`opencode --standalone --print-logs run "..."` shows the report on stderr.
+Grok Build writes the failure to hook stderr. The tested headless session
+showed no turn-end report in its terminal output.
+
+Use [compact failure output](/docs/configuration#compact-failure-output)
+to keep useful lines such as errors and assertions. When a report includes
+a saved log path, the agent can read the original output directly or use
+[the plugin tool](/docs/plugins#look-up-details-from-a-failure).
+
+## Act on a turn-end failure
+
+With [Latch v0.1.3 or later](https://github.com/BarakChamo/latch/releases/tag/v0.1.3),
+add this top-level option to `latch.json`.
+
+```json
+{
+  "turn_end_feedback": "continue_once"
+}
+```
+
+Keep your existing check definitions or package scripts. A supported agent
+automatically receives the failure and gets one chance to act on it,
+without another message from you or an automatic recheck. The default
+`report` mode lets the turn finish as usual.
+
+| Harness | How the model sees the failure |
 | --- | --- |
-| Codex | App-server hook warning. The tested `codex exec --json` output omits it. |
-| Claude Code | Informational hook event. |
-| GitHub Copilot CLI | Hook warning. |
+| Claude Code | Native Stop hook context keeps the current turn open without a separate user prompt. Claude makes another model request to act on the report. |
+| OpenCode v2 and Pi | The extension adds its report to session context and resumes the current execution. |
+| Codex and Copilot CLI | The host creates a continuation prompt from the stop-hook response. |
+| Grok Build | With Latch v0.1.4 or later, the Stop hook supplies the failure and Grok continues once in the same turn. |
+| Kimi Code CLI | In 2.7.2, the interactive CLI and persistent ACP sessions delivered the failure and continued once. `kimi -p` finished without continuing. Use `report` for next-prompt feedback in that mode. |
+| OpenHands CLI and local Agent Canvas | The Stop hook denies completion once and supplies the failure as feedback. |
 
-A failed check finishes with the current turn. Latch never starts a repair pass.
+Verified in live Codex, Claude Code, and Copilot CLI sessions, and in real
+OpenCode v2, Pi, OpenHands CLI, local Agent Canvas, Grok Build, and Kimi
+Code CLI sessions with scripted models.
+
+A model needs another request to act on a report produced after its final
+response. Use `after_edit` to attach feedback to an existing tool result
+while the agent is still working. OpenCode v1 uses its default delivery. For sessions without automatic continuation, the agent
+can call `run_turn_end` before responding.
+
+[Claude Code Stop hooks](https://code.claude.com/docs/en/hooks#stop-decision-control) ·
+[Codex Stop hooks](https://learn.chatgpt.com/docs/hooks#stop) ·
+[Copilot stop hooks](https://docs.github.com/en/copilot/reference/hooks-reference#agentstop--subagentstop-decision-control)

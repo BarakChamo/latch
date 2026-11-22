@@ -1,5 +1,5 @@
 {
-  "name": "latch-local",
+  "name": "latch-tools",
   "interface": { "displayName": "Latch" },
   "plugins": [
     {

@@ -6,8 +6,30 @@ description: Define checks, filter by changed files, and choose how failures are
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
 
+Use `latch.json` to run your own commands in any language or customize how
+checks run. You can skip the file if [package script discovery](/docs/project-scripts)
+finds the checks you want. Create the file by hand or generate a starter
+with the [standalone CLI](/docs/cli#install-the-cli) from your project directory.
+
+```sh
+latch config init
+```
+
+The starter keeps package script discovery enabled. If `latch.json` already
+exists, the command leaves it in place.
+
 Put `latch.json` in the directory where your checks should run. Use it for
 explicit commands, file filters, or defaults for [discovered scripts](/docs/project-scripts).
+
+## Editor completion and validation
+
+The starter points to the hosted schema. For offline editor completion,
+copy [`latch.schema.json`](https://github.com/BarakChamo/latch/blob/v0.1.4/latch.schema.json)
+from the Latch repository, standalone archive, or npm wrapper into your
+project next to `latch.json`. Add `"$schema": "./latch.schema.json"` as
+a top-level property. Editors that support JSON Schema can then suggest
+fields and flag invalid values. Latch validates configuration and compiles
+path globs at runtime.
 
 ## Examples
 
@@ -49,6 +71,7 @@ Run a Rust formatting check at turn end when the worktree changes.
 
 A Markdown edit runs lint and Markdown lint. A TypeScript edit in `src/`
 runs lint and type checking. An edit that changes both runs all three in order.
+A JSON-only edit runs the general linter.
 
 </Tab>
 
@@ -73,7 +96,8 @@ its first failure.
 ## File structure
 
 <TypeTable type={{
-  defaults: { type: 'object', description: 'Default values for when, on_success, and on_failure.' },
+  turn_end_feedback: { type: '"report" | "continue_once"', description: 'Since v0.1.3. Automatically give compatible agents one follow-up on failure, with no new user message or automatic recheck. Defaults to report.' },
+  defaults: { type: 'object', description: 'Default values for when, on_success, on_failure, failure_output, tail_lines, and rtk_filter.' },
   hooks: { type: 'object', description: 'Accepts after_edit and turn_end. Each event takes a hook object or an array of hook objects.' },
   commands: { type: 'string[][]', description: 'Legacy shorthand for turn-end commands. Use it as an alternative to hooks.' },
 }} />
@@ -85,6 +109,9 @@ its first failure.
   when: { type: '"workspace_changed" | "always"', default: 'workspace_changed', description: 'The default compares against a Git baseline and runs when a comparison is unavailable. Always skips the change gate unless a file filter is set.' },
   on_success: { type: '"silent" | "output"', default: 'silent', description: 'Output includes stdout and stderr from successful commands.' },
   on_failure: { type: '"collect" | "stop"', default: 'collect', description: 'Collect finishes the command list and reports every failure. Stop ends the current list after its first failure. Later matching hook objects still run.' },
+  failure_output: { type: '"excerpt" | "compact" | "tail" | "rtk"', default: 'excerpt', description: 'Controls failed command output in hooks and the plugin tool. Compact selects diagnostics, tail shows the last lines, and rtk uses an external filter.' },
+  tail_lines: { type: 'integer', default: '20', description: 'The maximum number of lines to show per stream in tail mode. Valid values range from 1 to 100.' },
+  rtk_filter: { type: 'string', default: 'log', description: 'The RTK stdin filter to use in rtk mode, such as vitest, cargo-test, or tsc.' },
   paths: { type: 'string[]', description: 'Case-sensitive globs relative to the Git worktree. Use / as the separator and ** to match across directories.' },
   extensions: { type: 'string[]', description: 'Case-insensitive final filename suffixes, with an optional leading dot.' },
 }} />
@@ -104,3 +131,65 @@ Set an event to `[]` to disable it, including discovery. Set `hooks` to
 
 Use `latch explain after_edit` or `latch explain turn_end` to see which
 commands and settings Latch resolved.
+
+## Compact failure output
+
+When any mode shortens failed command output, the report shows the path
+to a readable log. You can search that file directly or pass its path
+to `search_output` or `latch output`.
+This includes a truncated `excerpt`.
+
+```json title="latch.json"
+{
+  "defaults": { "failure_output": "compact" }
+}
+```
+
+Compact mode keeps streams up to 1,200 bytes as-is. For each longer stream, it selects
+diagnostics such as failure names and assertions, drops repeats, and
+keeps a few lines from the end. Command failures and exit statuses
+still appear in order. When a failed command is compacted, Latch saves
+both original streams in one local log and includes its path in the
+preview. [Output retrieval](/docs/cli#retrieve-saved-output)
+
+The renderer runs locally without a model call. Direct `latch run` calls
+continue to print the original streams.
+
+## Tail failure output
+
+```json title="latch.json"
+{
+  "defaults": { "failure_output": "tail", "tail_lines": 12 }
+}
+```
+
+Tail mode shows up to the last 12 lines each from stdout and stderr in this
+example. Latch shortens unusually long lines from the left. When the preview
+omits output, the report includes the saved log path. Override the mode or
+line count on an individual hook.
+
+## RTK failure output
+
+Install [RTK](https://github.com/rtk-ai/rtk/blob/develop/INSTALL.md) separately
+and make sure `rtk` is on your harness's `PATH`. For a Vitest project:
+
+```json title="latch.json"
+{
+  "hooks": {
+    "turn_end": {
+      "failure_output": "rtk",
+      "rtk_filter": "vitest",
+      "commands": [["npm", "test"]]
+    }
+  }
+}
+```
+
+Latch runs the check once and passes its captured output to
+`rtk pipe --filter vitest`. The report uses the check's original exit
+status and includes a path to the original stdout and stderr.
+Latch adds a compact stderr preview when it detects a diagnostic the
+filter omitted. If RTK
+is missing, rejects the filter, returns an empty preview, or takes more
+than two seconds, Latch shows the built-in compact preview instead.
+The standalone CLI and plugin bundle use the same external lookup.

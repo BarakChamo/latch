@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "latch": {
+      "command": "/bin/sh",
+      "args": [
+        "${GROK_PLUGIN_ROOT}/plugins/extension-launch.sh",
+        "mcp",
+        "--require-project-directory"
+      ]
+    }
+  }
+}

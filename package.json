@@ -1,18 +1,35 @@
 {
   "name": "latch-workspace",
+  "version": "0.1.4",
   "private": true,
   "packageManager": "npm@11.19.1",
+  "exports": {
+    ".": "./plugins/opencode/index.js",
+    "./server": "./plugins/opencode/index.js"
+  },
+  "pi": {
+    "extensions": [
+      "./plugins/pi/index.ts"
+    ]
+  },
+  "files": [
+    "plugins/extension-hook.mjs",
+    "plugins/extension-launch.sh",
+    "plugins/opencode",
+    "plugins/pi"
+  ],
   "scripts": {
-    "build": "turbo run build:rust",
-    "check": "turbo run format:check lint:rust test:rust",
+    "check": "cargo fmt --all -- --check && cargo clippy --locked --workspace --all-targets -- -D warnings && cargo test --locked --workspace && npm run test:schema",
     "fmt": "cargo fmt --all",
     "package:release": "node distribution/package-release.mjs",
-    "test:release": "node distribution/smoke-release.mjs"
+    "test:plugin-installer": "node --test distribution/smoke-plugin-installer.mjs",
+    "test:release": "node distribution/smoke-release.mjs",
+    "test:live": "node distribution/smoke-harnesses.mjs",
+    "test:schema": "node --test distribution/check-schema.mjs",
+    "test:extensions": "node distribution/smoke-extensions.mjs",
+    "build:rust": "cargo build --locked --workspace"
   },
   "devDependencies": {
-    "turbo": "2.11.13"
-  },
-  "workspaces": [
-    "crates/latch"
-  ]
+    "ajv": "8.20.0"
+  }
 }

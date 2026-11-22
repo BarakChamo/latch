@@ -19,7 +19,91 @@ fn run_with_args(config: Option<&str>, args: &[&str]) -> Output {
         .expect("run latch")
 }
 
+#[test]
+fn help_succeeds_without_loading_project_configuration() {
+    for flag in ["--help", "-h"] {
+        let output = run_with_args(Some("invalid json"), &[flag]);
+        assert!(output.status.success(), "{output:?}");
+        assert!(String::from_utf8_lossy(&output.stdout).contains("Usage: latch"));
+        assert!(output.stderr.is_empty(), "{output:?}");
+    }
+}
+
+#[test]
+fn config_init_preserves_script_discovery_and_refuses_to_overwrite() {
+    let project = tempfile::tempdir().expect("create temporary project");
+    let config_path = project.path().join("latch.json");
+    fs::write(
+        project.path().join("package.json"),
+        r#"{"scripts":{"hook:afteredit":"echo lint"}}"#,
+    )
+    .expect("write package.json");
+    let run = |args: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.path())
+            .args(args)
+            .output()
+            .expect("run latch")
+    };
+
+    let created = run(&["config", "init"]);
+    assert!(created.status.success(), "{created:?}");
+    let starter: serde_json::Value =
+        serde_json::from_slice(&fs::read(&config_path).expect("read starter configuration"))
+            .expect("parse starter configuration");
+    assert_eq!(starter["defaults"]["on_failure"], "collect");
+    let explanation = run(&["explain", "after_edit"]);
+    assert!(explanation.status.success(), "{explanation:?}");
+    let resolved: serde_json::Value =
+        serde_json::from_slice(&explanation.stdout).expect("parse explanation");
+    assert_eq!(
+        resolved["commands"],
+        serde_json::json!([["npm", "run", "hook:afteredit"]])
+    );
+
+    let existing = br#"{"defaults":{"on_success":"output"}}"#;
+    fs::write(&config_path, existing).expect("customize starter configuration");
+    let repeated = run(&["config", "init"]);
+    assert_eq!(repeated.status.code(), Some(1));
+    assert!(String::from_utf8_lossy(&repeated.stderr).contains("latch.json already exists"));
+    assert_eq!(
+        fs::read(config_path).expect("read existing configuration"),
+        existing
+    );
+}
+
+#[test]
+fn schema_reference_is_editor_metadata() {
+    let config = r#"{"$schema":"./missing.schema.json","commands":[["check"]]}"#;
+    let output = run_with_args(Some(config), &["explain"]);
+    assert!(
+        output.status.success(),
+        "{}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let explanation = String::from_utf8(output.stdout).unwrap();
+    assert!(explanation.contains("\"check\""));
+    assert!(!explanation.contains("missing.schema.json"));
+}
+
 #[cfg(unix)]
+#[test]
+fn compact_failure_output_keeps_direct_cli_output_on_its_original_streams() {
+    let output = run_latch(Some(
+        r#"{"defaults":{"failure_output":"compact"},"commands":[
+            ["sh","-c","yes 'verbose setup line' | head -500; echo 'error: cannot build' >&2; exit 7"]
+        ]}"#,
+    ));
+    assert_eq!(output.status.code(), Some(1));
+    assert_eq!(
+        String::from_utf8_lossy(&output.stdout)
+            .matches("verbose setup line")
+            .count(),
+        500
+    );
+    assert!(String::from_utf8_lossy(&output.stderr).contains("error: cannot build"));
+}
+
 #[test]
 fn runs_commands_in_order_and_discards_success_output() {
     // Given a second command that needs the first command's work.
@@ -91,8 +175,11 @@ fn discovers_javascript_scripts_using_the_declared_manager_or_lockfile() {
         assert!(output.status.success(), "{output:?}");
         serde_json::from_slice::<serde_json::Value>(&output.stdout).unwrap()
     };
+    let discovered = explain("after_edit");
+    assert_eq!(discovered.get("config"), Some(&serde_json::Value::Null));
+    assert_eq!(discovered["configured"], true);
     assert_eq!(
-        explain("after_edit")["commands"],
+        discovered["commands"],
         serde_json::json!([["bun", "run", "hook:afteredit"]])
     );
     assert_eq!(explain("turn_end")["configured"], false);
@@ -106,6 +193,19 @@ fn discovers_javascript_scripts_using_the_declared_manager_or_lockfile() {
         explain("turn_end")["commands"],
         serde_json::json!([["pnpm", "run", "hook:turnend"]])
     );
+
+    fs::write(
+        root.join("latch.json"),
+        r#"{"defaults":{"on_success":"output"}}"#,
+    )
+    .unwrap();
+    let with_defaults = explain("turn_end");
+    let config = with_defaults["config"].as_str().unwrap();
+    assert_eq!(
+        std::path::Path::new(config).canonicalize().unwrap(),
+        root.join("latch.json").canonicalize().unwrap()
+    );
+    assert_eq!(with_defaults["on_success"], "output");
 }
 
 #[test]
@@ -336,5 +436,67 @@ fn invalid_path_filters_are_rejected_before_running_any_commands() {
             "{diagnostic}"
         );
         assert!(!diagnostic.contains("must-not-run"));
+    }
+}
+
+#[cfg(unix)]
+#[test]
+fn openhands_setup_preserves_existing_hooks_and_is_idempotent() {
+    let project = tempfile::tempdir().unwrap();
+    let home = tempfile::tempdir().unwrap();
+    let hooks = project.path().join(".openhands/hooks.json");
+    fs::create_dir(hooks.parent().unwrap()).unwrap();
+    fs::write(
+        &hooks,
+        r#"{"stop":[{"hooks":[{"command":"existing-check"}]}]}"#,
+    )
+    .unwrap();
+    for _ in 0..2 {
+        let output = Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.path())
+            .env("OPENHANDS_PERSISTENCE_DIR", home.path())
+            .args(["install", "openhands"])
+            .output()
+            .unwrap();
+        assert!(output.status.success(), "{output:?}");
+    }
+    let config: serde_json::Value = serde_json::from_slice(&fs::read(hooks).unwrap()).unwrap();
+    assert_eq!(config["stop"][0]["hooks"][0]["command"], "existing-check");
+    assert_eq!(config["stop"].as_array().unwrap().len(), 2);
+    assert_eq!(config["pre_tool_use"][0]["matcher"], "file_editor");
+    let mcp: serde_json::Value =
+        serde_json::from_slice(&fs::read(home.path().join("mcp.json")).unwrap()).unwrap();
+    assert_eq!(
+        mcp["mcpServers"]["latch"]["args"],
+        serde_json::json!(["mcp", "--require-project-directory"])
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn cursor_devin_and_kiro_install_only_when_preview_is_selected() {
+    let project = tempfile::tempdir().unwrap();
+    for (host, path) in [
+        ("cursor", ".cursor/hooks.json"),
+        ("devin", ".devin/hooks.v1.json"),
+        ("kiro", ".kiro/hooks/latch.json"),
+    ] {
+        let run = |options: &[&str]| {
+            Command::new(env!("CARGO_BIN_EXE_latch"))
+                .current_dir(project.path())
+                .args(["install", host])
+                .args(options)
+                .output()
+                .unwrap()
+        };
+        let hooks = project.path().join(path);
+        assert_eq!(run(&[]).status.code(), Some(2));
+        assert!(!hooks.exists());
+        assert!(run(&["--preview"]).status.success());
+        assert!(
+            fs::read_to_string(hooks)
+                .unwrap()
+                .contains(&format!("hook {host}"))
+        );
     }
 }

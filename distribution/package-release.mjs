@@ -6,6 +6,7 @@ import { chmodSync, cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeF
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { pluginLauncher } from "./plugin-launcher.mjs";
 
 const root = fileURLToPath(new URL("..", import.meta.url));
 const targets = {
@@ -16,11 +17,18 @@ const targets = {
   "x86_64-pc-windows-msvc": ["win32", "x64"],
 };
 const pluginManifests = [
+  "package.json",
+  "plugins/package.json",
+  "plugin.json",
+  "kimi.plugin.json",
   "plugins/codex/.codex-plugin/plugin.json",
   "plugins/claude-code/.claude-plugin/plugin.json",
   "plugins/copilot/plugin.json",
+  "plugins/opencode/package.json",
+  "plugins/pi/package.json",
+  "plugins/kimi/kimi.plugin.json",
 ];
-const pluginFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin"];
+const sharedFiles = ["plugins", ".agents/plugins", ".claude-plugin", ".github/plugin", "latch.schema.json"];
 const [target, destination = "dist"] = process.argv.slice(2);
 const output = resolve(destination);
 const packageManifest = readJson(join(root, "distribution/npm/package.json"));
@@ -44,12 +52,16 @@ try {
   if (target === "npm") {
     const packageRoot = join(staging, "wrapper");
     cpSync(join(root, "distribution/npm"), packageRoot, { recursive: true });
-    copyPlugins(packageRoot);
+    copySharedFiles(packageRoot);
     const optionalDependencies = Object.fromEntries(
       Object.values(targets).map(([os, cpu]) => [platformName(os, cpu), version]),
     );
     writeJson(join(packageRoot, "package.json"), { ...packageManifest, private: false, optionalDependencies });
     npmPack(packageRoot);
+    const marketplace = join(staging, "marketplace");
+    execFileSync(process.execPath, [join(root, "distribution/package-marketplace.mjs"), marketplace]);
+    npmPack(marketplace);
+    writeFileSync(join(output, "install-latch-plugin.sh"), pluginLauncher(version), { mode: 0o755 });
   } else {
     packPlatform(target);
   }
@@ -70,13 +82,21 @@ function packPlatform(target) {
     ...(os === "linux" ? { libc: ["glibc"] } : {}),
   });
   npmPack(packageRoot);
+  const tarball = `${platformName(os, cpu).replace(/^@/, "").replace("/", "-")}-${version}.tgz`;
+  writeChecksum(tarball);
 
   const directory = `latch-${version}-${target}`;
   const bundle = join(staging, directory);
   const bin = join(bundle, "bin");
   mkdirSync(bin, { recursive: true });
   cpSync(join(packageRoot, executable), join(bin, executable));
-  copyPlugins(bundle);
+  copySharedFiles(bundle);
+  if (os !== "win32") {
+    bundlePluginExecutables(bundle, join(bin, executable));
+    const installer = join(bundle, "install");
+    cpSync(join(root, "distribution/native/install.sh"), installer);
+    chmodSync(installer, 0o755);
+  }
   cpSync(join(root, "distribution/native/README.md"), join(bundle, "README.md"));
   const filename = `${directory}.tar.gz`;
   const archiveOptions = process.platform === "darwin" ? ["--no-xattrs"] : [];
@@ -84,13 +104,30 @@ function packPlatform(target) {
     env: { ...process.env, COPYFILE_DISABLE: "1" },
     stdio: "inherit",
   });
+  writeChecksum(filename);
+}
+
+function writeChecksum(filename) {
   const digest = createHash("sha256").update(readFileSync(join(output, filename))).digest("hex");
   writeFileSync(join(output, `${filename}.sha256`), `${digest}  ${filename}\n`);
 }
 
-function copyPlugins(directory) {
-  for (const path of pluginFiles) {
+function copySharedFiles(directory) {
+  for (const path of sharedFiles) {
     cpSync(join(root, path), join(directory, path), { recursive: true });
+  }
+}
+
+function bundlePluginExecutables(bundle, binary) {
+  for (const harness of ["opencode", "pi", "kimi"]) {
+    const bin = join(bundle, "plugins", harness, "bin");
+    mkdirSync(bin);
+    cpSync(binary, join(bin, "latch"));
+  }
+
+  for (const harness of ["codex", "claude-code", "copilot"]) {
+    const plugin = join(bundle, "plugins", harness);
+    cpSync(binary, join(plugin, "bin", "latch"));
   }
 }
 

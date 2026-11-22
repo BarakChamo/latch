@@ -4,15 +4,51 @@ use crate::discovery::{self, DiscoveryError};
 use globset::{GlobBuilder, GlobSet, GlobSetBuilder};
 use serde::de::{DeserializeSeed, MapAccess, SeqAccess, Visitor, value::MapAccessDeserializer};
 use serde::{Deserialize, Serialize};
-use std::{fmt, fs, io, path::Path};
+use std::{
+    fmt, fs, io,
+    io::Write,
+    path::{Path, PathBuf},
+};
+
+const CONFIG_FILENAME: &str = "latch.json";
+const STARTER: &str = r#"{
+  "$schema": "https://raw.githubusercontent.com/BarakChamo/latch/main/latch.schema.json",
+  "defaults": {
+    "on_success": "silent",
+    "on_failure": "collect"
+  }
+}
+"#;
+
+/// Creates a starter without replacing an existing configuration or disabling discovery.
+pub(crate) fn initialize(directory: &Path) -> io::Result<()> {
+    let mut starter = tempfile::NamedTempFile::new_in(directory)?;
+    starter.write_all(STARTER.as_bytes())?;
+    starter
+        .persist_noclobber(directory.join(CONFIG_FILENAME))
+        .map_err(|error| error.error)?;
+    Ok(())
+}
 
 #[derive(Default, Deserialize)]
 #[serde(deny_unknown_fields)]
 struct Config {
+    #[serde(rename = "$schema")]
+    _schema: Option<String>,
     commands: Option<Vec<Vec<String>>>,
     hooks: Option<Hooks>,
     #[serde(default)]
+    turn_end_feedback: TurnEndFeedback,
+    #[serde(default)]
     defaults: Settings,
+}
+
+#[derive(Clone, Copy, Default, Deserialize, Serialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum TurnEndFeedback {
+    #[default]
+    Report,
+    ContinueOnce,
 }
 
 #[derive(Default, Deserialize)]
@@ -130,6 +166,9 @@ struct EntryConfig {
     when: Option<When>,
     on_success: Option<OnSuccess>,
     on_failure: Option<OnFailure>,
+    failure_output: Option<FailureOutput>,
+    tail_lines: Option<TailLines>,
+    rtk_filter: Option<RtkFilter>,
 }
 
 #[derive(Default, Deserialize)]
@@ -138,6 +177,9 @@ struct Settings {
     when: Option<When>,
     on_success: Option<OnSuccess>,
     on_failure: Option<OnFailure>,
+    failure_output: Option<FailureOutput>,
+    tail_lines: Option<TailLines>,
+    rtk_filter: Option<RtkFilter>,
 }
 
 #[derive(Clone, Copy, Deserialize, Serialize, PartialEq, Eq)]
@@ -163,10 +205,85 @@ pub(crate) enum OnFailure {
     Stop,
 }
 
+#[derive(Clone, Copy, Default, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub(crate) enum FailureOutput {
+    #[default]
+    Excerpt,
+    Compact,
+    Tail,
+    Rtk,
+}
+
+#[derive(Clone, Deserialize, Serialize)]
+#[serde(try_from = "String")]
+pub(crate) struct RtkFilter(String);
+
+impl Default for RtkFilter {
+    fn default() -> Self {
+        Self("log".into())
+    }
+}
+
+impl TryFrom<String> for RtkFilter {
+    type Error = &'static str;
+
+    fn try_from(value: String) -> Result<Self, Self::Error> {
+        if !value.is_empty()
+            && value.len() <= 64
+            && value.as_bytes()[0].is_ascii_alphanumeric()
+            && value
+                .bytes()
+                .all(|byte| byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'_'))
+        {
+            Ok(Self(value))
+        } else {
+            Err("rtk_filter must be a filter name such as vitest or cargo-test")
+        }
+    }
+}
+
+impl RtkFilter {
+    pub(crate) fn as_str(&self) -> &str {
+        &self.0
+    }
+}
+
+#[derive(Clone, Copy, Deserialize, Serialize)]
+#[serde(try_from = "usize")]
+pub(crate) struct TailLines(usize);
+
+impl Default for TailLines {
+    fn default() -> Self {
+        Self(20)
+    }
+}
+
+impl TryFrom<usize> for TailLines {
+    type Error = &'static str;
+
+    fn try_from(value: usize) -> Result<Self, Self::Error> {
+        if (1..=100).contains(&value) {
+            Ok(Self(value))
+        } else {
+            Err("tail_lines must be between 1 and 100")
+        }
+    }
+}
+
+impl TailLines {
+    pub(crate) fn get(self) -> usize {
+        self.0
+    }
+}
+
 pub(crate) struct HookEntry {
     pub(crate) when: When,
     pub(crate) on_success: OnSuccess,
     pub(crate) on_failure: OnFailure,
+    pub(crate) failure_output: FailureOutput,
+    pub(crate) tail_lines: TailLines,
+    pub(crate) rtk_filter: RtkFilter,
     pub(crate) filters: PathFilters,
     pub(crate) commands: Vec<Vec<String>>,
 }
@@ -258,11 +375,41 @@ pub(crate) fn load(
     directory: &Path,
     selected: HookName,
 ) -> Result<Option<HookEntries<HookEntry>>, ConfigError> {
-    let config: Config = match fs::read(directory.join("latch.json")) {
-        Ok(bytes) => serde_json::from_slice(&bytes).map_err(ConfigError::Parse)?,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Config::default(),
+    load_with_source(directory, selected).map(|loaded| loaded.entries)
+}
+
+pub(crate) struct LoadedHook {
+    pub(crate) config_path: Option<PathBuf>,
+    pub(crate) turn_end_feedback: TurnEndFeedback,
+    pub(crate) entries: Option<HookEntries<HookEntry>>,
+}
+
+/// Resolves the hook and reports the config file that was successfully read.
+pub(crate) fn load_with_source(
+    directory: &Path,
+    selected: HookName,
+) -> Result<LoadedHook, ConfigError> {
+    let path = directory.join(CONFIG_FILENAME);
+    let (config_path, config) = match fs::read(&path) {
+        Ok(bytes) => (
+            Some(path),
+            serde_json::from_slice(&bytes).map_err(ConfigError::Parse)?,
+        ),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => (None, Config::default()),
         Err(error) => return Err(ConfigError::Read(error)),
     };
+    Ok(LoadedHook {
+        config_path,
+        turn_end_feedback: config.turn_end_feedback,
+        entries: resolve_hook(directory, selected, config)?,
+    })
+}
+
+fn resolve_hook(
+    directory: &Path,
+    selected: HookName,
+    config: Config,
+) -> Result<Option<HookEntries<HookEntry>>, ConfigError> {
     let hooks = match (config.commands, config.hooks) {
         (Some(_), Some(_)) => return Err(ConfigError::ConflictingLists),
         (None, None) => Hooks::default(),
@@ -344,6 +491,15 @@ fn resolve(
             .unwrap_or(When::WorkspaceChanged),
         on_success: hook.on_success.or(defaults.on_success).unwrap_or_default(),
         on_failure: hook.on_failure.or(defaults.on_failure).unwrap_or_default(),
+        failure_output: hook
+            .failure_output
+            .or(defaults.failure_output)
+            .unwrap_or_default(),
+        tail_lines: hook.tail_lines.or(defaults.tail_lines).unwrap_or_default(),
+        rtk_filter: hook
+            .rtk_filter
+            .or_else(|| defaults.rtk_filter.clone())
+            .unwrap_or_default(),
         filters,
         commands: hook.commands,
     })
@@ -415,4 +571,72 @@ fn validate_commands(name: HookName, commands: &[Vec<String>]) -> Result<(), Con
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hook_settings_override_defaults_independently() {
+        let defaults = Settings {
+            when: Some(When::Always),
+            on_failure: Some(OnFailure::Stop),
+            ..Settings::default()
+        };
+        let hook = EntryConfig {
+            on_success: Some(OnSuccess::Output),
+            commands: vec![vec!["verify".into(), "--quiet".into()]],
+            ..EntryConfig::default()
+        };
+        let resolved = resolve(HookName::TurnEnd, hook, &defaults).unwrap();
+        assert!(resolved.when == When::Always);
+        assert!(resolved.on_failure == OnFailure::Stop);
+        assert!(resolved.on_success == OnSuccess::Output);
+        assert_eq!(resolved.commands, [["verify", "--quiet"]]);
+        assert!(!resolved.needs_comparison());
+
+        let fallback = resolve(
+            HookName::TurnEnd,
+            EntryConfig::default(),
+            &Settings::default(),
+        )
+        .unwrap();
+        assert!(fallback.when == When::WorkspaceChanged);
+        assert!(fallback.on_failure == OnFailure::Collect);
+        assert!(fallback.on_success == OnSuccess::Silent);
+        assert!(fallback.needs_comparison());
+    }
+
+    #[test]
+    fn filters_combine_recursive_paths_and_normalized_final_extensions() {
+        let filters = compile_filters(
+            HookName::AfterEdit,
+            Some(vec!["src/**".into()]),
+            Some(vec![".TS".into(), "tsx".into()]),
+        )
+        .unwrap();
+        for (path, matches) in [
+            ("src/main.Ts", true),
+            ("src/deep/view.tsx", true),
+            ("Src/main.ts", false),
+            ("docs/example.ts", false),
+            ("src/file.ts.bak", false),
+            ("src/types", false),
+        ] {
+            assert_eq!(filters.matches(Path::new(path)), matches, "{path}");
+        }
+    }
+
+    #[test]
+    fn rejects_parent_globs_and_compound_extensions() {
+        assert!(matches!(
+            compile_filters(HookName::AfterEdit, Some(vec!["src/../**".into()]), None),
+            Err(ConfigError::InvalidPath(HookName::AfterEdit, path)) if path == "src/../**"
+        ));
+        assert!(matches!(
+            compile_filters(HookName::TurnEnd, None, Some(vec![".tar.gz".into()])),
+            Err(ConfigError::InvalidExtension(HookName::TurnEnd, suffix)) if suffix == ".tar.gz"
+        ));
+    }
 }

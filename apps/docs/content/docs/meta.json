@@ -1,11 +1,13 @@
 {
   "pages": [
-    "---Start here---",
     "index",
-    "project-scripts",
-    "---Reference---",
-    "configuration",
+    "quickstart",
     "hooks",
+    "project-scripts",
+    "configuration",
+    "plugins",
+    "cli",
+    "cloud",
     "troubleshooting"
   ]
 }
