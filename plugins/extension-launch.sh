@@ -44,7 +44,8 @@ ensure_binary() (
   trap 'exit 1' HUP INT TERM
   asset="barakchamo-latch-$platform-$version.tgz"
   for name in "$asset.sha256" "$asset"; do
-    curl -q -fsSL --proto '=https' --proto-redir '=https' --connect-timeout 5 --max-time 45 \
+    curl -q -fsSL --proto '=https' --proto-redir '=https' --connect-timeout 10 --max-time 30 \
+      --retry 2 --retry-max-time 24 \
       -o "$staging/$name" "$release/$name" ||
       fail "could not download $name from release v$version. Run the plugin installer in a terminal with GitHub access."
   done
