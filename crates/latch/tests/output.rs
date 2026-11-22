@@ -375,7 +375,7 @@ fn short_reports_skip_storage_and_truncated_excerpts_can_be_retrieved() {
         json!([["sh", "-c", "echo short; exit 1"]]),
     );
     assert!(!short.contains("Saved log:"));
-    assert!(!state.exists());
+    assert!(!state.join("latch/output-v1").exists());
     let verbose = json!([[
         "sh",
         "-c",

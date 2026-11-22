@@ -104,6 +104,9 @@ install_opencode() {
         --fetch-retries=1 --fetch-timeout=15000 "@opencode-ai/plugin@$host"
       if [ ! -e "$checkout" ]; then
         git clone --depth 1 https://github.com/BarakChamo/latch.git "$checkout"
+      elif [ -d "$checkout/.git" ] &&
+        [ "$(git -C "$checkout" config --get remote.origin.url)" = https://github.com/BarakChamo/latch.git ]; then
+        git -C "$checkout" pull --ff-only
       fi
       [ -f "$checkout/plugins/opencode/index.js" ] || fail "expected a Latch checkout at $checkout."
       if [ ! -L "$link" ]; then ln -s -- "$target" "$link"; fi

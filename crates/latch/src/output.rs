@@ -32,7 +32,7 @@ pub(crate) fn save(project: &Path, stdout: &[u8], stderr: &[u8]) -> io::Result<P
     save_in(&project_cache(project)?, stdout, stderr)
 }
 
-fn cache_root() -> io::Result<PathBuf> {
+pub(crate) fn state_root() -> io::Result<PathBuf> {
     let base = env::var_os("XDG_STATE_HOME")
         .filter(|path| Path::new(path).is_absolute())
         .map(PathBuf::from)
@@ -46,13 +46,23 @@ fn cache_root() -> io::Result<PathBuf> {
             env::home_dir().map(|home| home.join(".local").join("state"))
         })
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no user state directory"))?;
-    Ok(base.join("latch").join("output-v1"))
+    Ok(base.join("latch"))
 }
 
-pub(crate) fn project_cache(project: &Path) -> io::Result<PathBuf> {
+fn cache_root() -> io::Result<PathBuf> {
+    Ok(state_root()?.join("output-v1"))
+}
+
+pub(crate) fn project_key(project: &Path) -> io::Result<String> {
     let project = project.canonicalize()?;
-    let key = Sha256::digest(project.as_os_str().as_encoded_bytes());
-    Ok(cache_root()?.join(format!("{key:x}")))
+    Ok(format!(
+        "{:x}",
+        Sha256::digest(project.as_os_str().as_encoded_bytes())
+    ))
+}
+
+fn project_cache(project: &Path) -> io::Result<PathBuf> {
+    Ok(cache_root()?.join(project_key(project)?))
 }
 
 fn save_in(directory: &Path, stdout: &[u8], stderr: &[u8]) -> io::Result<PathBuf> {

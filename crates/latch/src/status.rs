@@ -33,7 +33,7 @@ pub(crate) fn record(project: &Path, hook: HookName, outcome: Outcome) {
 }
 
 pub(crate) fn snapshot(project: &Path) -> Value {
-    let cache = output::project_cache(project);
+    let cache = directory(project);
     let read = |name: &str| read(cache.as_deref().ok()?, name);
     let checks = [HookName::AfterEdit, HookName::TurnEnd].map(|name| {
         let config = match explanation(project, name) {
@@ -60,13 +60,19 @@ fn timestamp() -> u64 {
 fn write(project: &Path, name: &str, value: &impl Serialize) {
     // Status is diagnostic. Failure to save it must not change hook behavior.
     let _ = (|| -> io::Result<()> {
-        let directory = output::project_cache(project)?;
+        let directory = directory(project)?;
         fs::create_dir_all(&directory)?;
         let mut file = tempfile::NamedTempFile::new_in(&directory)?;
         serde_json::to_writer(&mut file, value)?;
         file.persist(directory.join(format!("status-{name}.json")))?;
         Ok(())
     })();
+}
+
+fn directory(project: &Path) -> io::Result<std::path::PathBuf> {
+    Ok(output::state_root()?
+        .join("status-v1")
+        .join(output::project_key(project)?))
 }
 
 fn read(directory: &Path, name: &str) -> Option<Value> {
