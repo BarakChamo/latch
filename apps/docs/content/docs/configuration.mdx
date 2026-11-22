@@ -6,8 +6,10 @@ description: Define checks, filter by changed files, and choose how failures are
 import { Tab, Tabs } from 'fumadocs-ui/components/tabs';
 import { TypeTable } from 'fumadocs-ui/components/type-table';
 
-`latch.json` is optional. To create a starter, run this from your project root
-with the [standalone CLI](/docs/cli#install-the-cli).
+Use `latch.json` to run your own commands in any language or customize how
+checks run. You can skip the file if [package script discovery](/docs/project-scripts)
+finds the checks you want. Create the file by hand or generate a starter
+with the [standalone CLI](/docs/cli#install-the-cli) from your project directory.
 
 ```sh
 latch config init

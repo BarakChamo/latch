@@ -123,7 +123,9 @@ does not validate a remote checkout from your local hooks.
 
 ## Package script discovery
 
-`latch.json` is optional. Latch reads package scripts from the session or command working directory.
+You can skip `latch.json` when Latch discovers the checks you want under the
+names below. Latch looks in the session or command working directory.
+For a command in any language, add it to [`latch.json`](#configuration).
 
 | Event | JavaScript and TypeScript in `package.json` | Python in `pyproject.toml` |
 | --- | --- | --- |

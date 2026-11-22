@@ -62,45 +62,34 @@ For OpenCode, Pi, and other agents, see the [integration guides](plugins/).
 
 ## Run your first check
 
-**`latch.json` is optional.** Latch can discover checks from `package.json` or `pyproject.toml`. Start the agent in the project directory after installing its dependencies.
-
-If your npm project already has a `lint` script, add this entry to the existing `scripts` object in `package.json`.
-
-```json
-{
-  "scripts": {
-    "hook:afteredit": "npm run lint"
-  }
-}
-```
-
-Ask the agent to make a real change to a source file using its edit tool. Latch runs lint after a supported edit. A passing check is quiet. To see a failure, ask for an edit that breaks a lint rule your project enforces, then restore the file. Use `hook:turnend` for a check at the end of the turn.
-
-Try the runnable [TypeScript project](examples/typescript/) for formatting, type checking, and Vitest, or the [Python project](examples/python/) for Ruff and unit tests with uv. Each example includes an edit that produces a failure.
+**Latch runs project commands in any language.** You can skip `latch.json`
+if you define `hook:afteredit` in `package.json` or `hook-afteredit` as a
+console script in a packaged uv project. For any other command, add it to
+`latch.json`. [Discovery and turn-end script names](docs/usage.md#package-script-discovery)
 
 ### Configure checks
 
-To start with a `latch.json`, install the [standalone CLI](#install-the-standalone-cli)
-(v0.1.2 or later), then run this from your project root.
-
-```sh
-latch config init
-```
-
-This optional command creates a starter config and keeps package script discovery enabled.
-You can then add your own checks. Here’s an example for Ruff in a uv project.
+For example, if `make lint` already works in your project, put this in
+`latch.json` in the directory where you run it.
 
 ```json
 {
   "hooks": {
     "after_edit": {
-      "commands": [["uv", "run", "ruff", "check", "."]]
+      "commands": [["make", "lint"]]
     }
   }
 }
 ```
 
-Explicit commands and discovered scripts can be used together. See the [configuration reference](docs/usage.md#configuration) for ordering, defaults, and filters.
+Replace `make lint` with your own executable and arguments. You can create the
+file by hand or use `latch config init` with the
+[standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
+scripts can be used together.
+
+Start the agent in the project directory and ask it to change a file with
+its edit tool. A passing check is quiet. Choose `turn_end` to run after a
+changed turn instead. [Quickstart](https://barakchamo.github.io/latch/docs/quickstart/#run-your-first-check) · [TypeScript and Python examples](examples/)
 
 ### Filters and failure output
 

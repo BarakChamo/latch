@@ -48,13 +48,41 @@ The plugin downloads the Latch binary from GitHub on first use and caches it. [O
 
 ## Run your first check
 
-Install your project’s dependencies and choose a command that already works locally.
+Pick a command that already works in your project. **Use `latch.json` to run commands in any language.** You can skip the file if Latch can discover a named script in your `package.json` or a console entry point in your packaged uv project.
 
-<Tabs items={['JavaScript or TypeScript', 'Python or other commands']}>
+### Run any project command
 
-<Tab value="JavaScript or TypeScript">
+Create `latch.json` in the directory where you run your checks. If you already use `make lint`, configure it like this.
 
-If your npm project has a `lint` script, add this entry to the existing `scripts` object. Latch discovers it automatically.
+```json title="latch.json"
+{
+  "hooks": {
+    "after_edit": {
+      "commands": [["make", "lint"]]
+    }
+  }
+}
+```
+
+Replace the example with your own command, such as `["go", "test", "./..."]`,
+`["uv", "run", "ruff", "check", "."]`, or `["./scripts/check"]`. Put the
+executable first and each argument in a separate string. Install your
+project’s dependencies so the agent can run the command. Use `turn_end`
+for checks you want to run once per changed turn.
+
+You can create the file by hand or generate a starter with `latch config init`
+from the [standalone CLI](/docs/cli#install-the-cli). [Configuration examples](/docs/configuration#examples)
+
+### Use package scripts without latch.json
+
+Latch discovers these names in the project directory. If your project
+already defines one, start a session with the plugin enabled.
+
+<Tabs items={['package.json', 'pyproject.toml with uv']}>
+
+<Tab value="package.json">
+
+For example, add `hook:afteredit` to the existing `scripts` object in an npm project that already has a `lint` script.
 
 ```json title="package.json"
 {
@@ -64,35 +92,30 @@ If your npm project has a `lint` script, add this entry to the existing `scripts
 }
 ```
 
-For pnpm, Yarn, or Bun, call your lint script with that runner. Use `hook:turnend` for a script such as `npm test` that should run once per changed turn. [How Latch selects a package manager](/docs/project-scripts#javascript-and-typescript)
+Use `hook:turnend` to run a script at the end of a changed turn. Latch supports npm, pnpm, Yarn, and Bun. [Package manager selection](/docs/project-scripts#javascript-and-typescript)
 
 </Tab>
 
-<Tab value="Python or other commands">
+<Tab value="pyproject.toml with uv">
 
-If your project already uses Ruff through uv, add `latch.json` in the directory where you run it. For other tools, put the executable first and each argument in its own string.
+In a packaged uv project, add a console entry point under `[project.scripts]`. For example, the [runnable Python project](/docs/project-scripts#python-example) points to a function that runs Ruff and returns its exit status.
 
-```json title="latch.json"
-{
-  "hooks": {
-    "after_edit": {
-      "commands": [["uv", "run", "ruff", "check", "."]]
-    }
-  }
-}
+```toml title="pyproject.toml"
+[project.scripts]
+hook-afteredit = "latch_python_example.checks:after_edit"
 ```
 
-You can also use `latch config init` to create a starter file if you have the [standalone CLI](/docs/cli#install-the-cli). A packaged uv project can define a [Python entry point](/docs/project-scripts#python-with-uv) to use discovery.
+Use `hook-turnend` for a turn-end check. For a regular command such as `uv run pytest`, use the `latch.json` recipe above. [Python entry-point setup](/docs/project-scripts#python-with-uv)
 
 </Tab>
 
 </Tabs>
 
-1. Start a fresh agent session in the project directory. Ask the agent to make a real change to a source file using its native edit tool.
-2. Passing checks are silent. To see the feedback, ask the agent to introduce a violation of a lint rule your project enforces. For Ruff projects that enforce `F401`, add an unused `import os`. Restore the file after trying it.
-3. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` to see the command Latch found.
+### Try it in your agent
 
-For a ready-to-run project with known passing and failing cases, try the [TypeScript or Python example](/docs/project-scripts#try-the-examples).
+1. Start a fresh agent session in the project directory. For `after_edit`, ask the agent to make a real change using its native edit tool. For `turn_end`, let it finish a turn that changes a file.
+2. Passing checks are silent. To see a report, try a change that makes your check fail, then restore the file. The [runnable examples](/docs/project-scripts#try-the-examples) show exactly what to change.
+3. If no report appears, check [where your agent delivers it](/docs/hooks#where-reports-appear). With the standalone CLI, run `latch explain after_edit` or `latch explain turn_end` to see which command Latch found.
 
 ## Run the same check from a terminal
 

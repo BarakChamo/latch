@@ -22,7 +22,7 @@ Start with one command you already run locally or in CI. [Install a plugin and r
 
 Latch compares Git-visible changes across the event. Read-only turns and no-op edits skip checks by default, even in an already-dirty worktree. Path and extension filters narrow which checks run. Passing checks are quiet. Long failure output can be shortened and linked to the original log. [Hook lifecycle](/docs/hooks) · [Filters and output settings](/docs/configuration)
 
-Name a script in `package.json` or an entry point in `pyproject.toml` to get started. Add `latch.json` when you want explicit commands, filters, or shared settings. [Package script discovery](/docs/project-scripts) · [Configuration and JSON schema](/docs/configuration)
+Use `latch.json` to run commands in any language. You can skip it when Latch discovers the checks you want in `package.json` or in a packaged uv project. [Quickstart](/docs/quickstart#run-your-first-check) · [Configuration and JSON schema](/docs/configuration)
 
 ## Examples
 

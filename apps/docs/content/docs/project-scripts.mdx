@@ -3,8 +3,10 @@ title: Package scripts
 description: Run existing JavaScript or Python checks without writing a Latch config.
 ---
 
-`latch.json` is optional. Name a package script for the event you want. Latch reads the manifest in the
-harness or CLI working directory.
+Latch can discover named hooks in `package.json` and packaged uv projects.
+If discovery finds the checks you need, you can skip `latch.json`. For any
+other project command, [configure it directly](/docs/quickstart#run-any-project-command).
+Latch looks in the harness or CLI working directory.
 
 ## JavaScript and TypeScript
 
