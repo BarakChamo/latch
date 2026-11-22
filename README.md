@@ -64,10 +64,35 @@ Use Pi 1.5.2 or later with MCP enabled.
 ### OpenCode
 
 ```sh
-opencode plugin add 'github:BarakChamo/latch#main::path:plugins'
+opencode plugin add 'github:BarakChamo/latch'
 ```
 
 Use OpenCode 2.3.2 or later. [OpenCode v1 and project-local setup](https://barakchamo.github.io/latch/docs/plugins/#opencode)
+
+### Grok Build
+
+```sh
+grok plugin install BarakChamo/latch --trust
+```
+
+### Kimi Code
+
+In Kimi Code, run:
+
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
+
+Confirm installation and start a new session.
+
+### OpenHands CLI
+
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh),
+then run it from your project directory.
+
+```sh
+sh /path/to/install-latch-plugin.sh install openhands
+```
 
 Start a new session in your project. On first use, the plugin downloads the
 matching Latch binary from GitHub and caches it for future sessions.

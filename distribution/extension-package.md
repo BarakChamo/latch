@@ -4,7 +4,7 @@ Latch runs your project’s checks as your coding agent works and brings failure
 
 ```sh
 pi install git:github.com/BarakChamo/latch
-opencode plugin add 'github:BarakChamo/latch#main::path:plugins'
+opencode plugin add 'github:BarakChamo/latch'
 ```
 
 Use the command for your agent. The OpenCode command targets v2. On first

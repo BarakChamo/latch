@@ -40,7 +40,7 @@ trust the workspace. [Pi package docs](https://github.com/earendil-works/pi/blob
 Use OpenCode 2.3.2 or later for the global install.
 
 ```sh
-opencode plugin add 'github:BarakChamo/latch#main::path:plugins'
+opencode plugin add 'github:BarakChamo/latch'
 ```
 
 For a project, add the Git package to the existing `plugins` array in
@@ -48,7 +48,7 @@ For a project, add the Git package to the existing `plugins` array in
 
 ```json title="opencode.json"
 {
-  "plugins": ["github:BarakChamo/latch#main::path:plugins"]
+  "plugins": ["github:BarakChamo/latch"]
 }
 ```
 
@@ -84,7 +84,7 @@ from inside the extracted archive with `./install opencode`.
 | Codex | `codex plugin list` | `codex plugin remove latch@latch-tools` |
 | Claude Code | `claude plugin list` | `claude plugin uninstall latch@latch-tools` |
 | GitHub Copilot CLI | `copilot plugin list` | `copilot plugin uninstall latch@latch-tools` |
-| OpenCode v2 | `opencode plugin list --standalone` | `opencode plugin remove 'github:BarakChamo/latch#main::path:plugins'` for the global package. Remove a project entry or checkout from its project. |
+| OpenCode v2 | `opencode plugin list --standalone` | `opencode plugin remove 'github:BarakChamo/latch'` for the global package. Remove a project entry or checkout from its project. |
 | OpenCode v1 | Check the OpenCode config directory's `plugins/latch.js` link. | Remove that link. |
 | Pi | `pi list` | `pi remove git:github.com/BarakChamo/latch`. Add `--local` for a project install. |
 
@@ -94,20 +94,57 @@ that entry before switching to the commands above.
 
 ## Additional local integrations
 
-From your project, use the installed `latch` command to register workspace hooks. Kimi Code uses the plugin directory from the standalone archive.
+### Grok Build
+
+```sh
+grok plugin install BarakChamo/latch --trust
+```
+
+This installs and trusts the plugin’s hooks and MCP server. Start a new
+session. Run `grok plugin list` to see it and `grok mcp doctor latch` to check
+the tool server. Latch returns edit context to the hook and reports
+turn-end failures on hook stderr. Agent receipt of edit feedback is unverified.
+[Grok Build plugin docs](https://github.com/xai-org/grok-build/blob/main/crates/codegen/xai-grok-pager/docs/user-guide/09-plugins.md)
+
+### Kimi Code
+
+In Kimi Code, run:
+
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
+
+Confirm installation, then run `/reload` or open a new session. Changed turns
+run checks. Failures reach the next prompt by default.
+[Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)
+
+### OpenHands CLI
+
+Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh).
+From the Git project you want to check, run:
+
+```sh
+sh /path/to/install-latch-plugin.sh install openhands
+```
+
+The installer verifies the CLI binary and registers hooks and tools for
+the OpenHands CLI. If `latch` is already on your path, run
+`latch install openhands` from the project instead. Start a new session.
+Native edits and changed turns run checks. Failures reach the next prompt by
+default. [OpenHands hook docs](https://docs.openhands.dev/openhands/usage/customization/hooks)
+
+### Preview integrations
+
+From your project, use the installed `latch` command to register workspace hooks.
 
 | Harness | Setup | Feedback |
 | --- | --- | --- |
-| OpenHands CLI | Run `latch install openhands`. | Native file edits and changed turns run checks. The next prompt receives reports. |
-| Kimi Code CLI | In Kimi Code, run `/plugins install /absolute/path/to/extracted-latch/plugins/kimi` and approve installation. | Changed turns run checks. The next prompt receives reports. |
 | Cursor CLI (preview) | Run `latch install cursor --preview`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
 | Devin CLI (preview) | Run `latch install devin --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
-| Grok Build | Run `latch install grok`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
 | Kiro CLI V3 (preview) | Run `latch install kiro --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
 
 The preview adapters have automated hook protocol tests. Treat their
-feedback as provisional until verified in a session. For Grok Build, review
-the workspace hooks and trust the folder with `/hooks-trust`. Workspace installers write absolute local paths into harness
+feedback as provisional until verified in a session. Workspace installers write absolute local paths into harness
 configuration. Keep those entries local. To uninstall them, remove the
 hook entries whose command ends in `# latch-installed` and remove the
 `latch` MCP server entry. In OpenHands, the MCP entry lives in the user

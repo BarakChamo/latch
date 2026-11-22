@@ -14,6 +14,22 @@ import { latchExecutable } from "../plugins/extension-hook.mjs";
 const version = JSON.parse(readFileSync(new URL("./npm/package.json", import.meta.url))).version;
 const packager = fileURLToPath(new URL("./package-marketplace.mjs", import.meta.url));
 
+test("Kimi plugin adapts numeric Stop identifiers for the released CLI", () => {
+  const fixture = createFixture();
+  try {
+    fixture.packageAsset("darwin-arm64");
+    const hook = fileURLToPath(new URL("../plugins/kimi/dispatch.sh", import.meta.url));
+    const input = { hook_event_name: "Stop", turn_id: 0, session_id: "fixture" };
+    const result = spawnSync(hook, { env: fixture.env, input: JSON.stringify(input), encoding: "utf8" });
+    assert.equal(result.status, 0, result.stderr);
+    const [command, payload] = result.stdout.split("\n");
+    assert.equal(command, "hook kimi");
+    assert.deepEqual(JSON.parse(payload), { ...input, turn_id: "0" });
+  } finally {
+    rmSync(fixture.root, { recursive: true });
+  }
+});
+
 test("default-branch extensions find the release launcher and use the pinned CLI", () => {
   const fixture = createFixture();
   try {

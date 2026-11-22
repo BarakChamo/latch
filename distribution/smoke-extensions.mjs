@@ -236,7 +236,7 @@ async function install(host, isOpenCodeV2, bundle, cwd, env) {
     const { PI_OFFLINE, ...onlineEnv } = env;
     await exec("pi", ["install", "git:github.com/BarakChamo/latch"], { ...options, env: onlineEnv });
   } else if (isOpenCodeV2) {
-    await exec("opencode", ["plugin", "add", "github:BarakChamo/latch#main::path:plugins"], options);
+    await exec("opencode", ["plugin", "add", "github:BarakChamo/latch"], options);
   } else {
     const config = join(env.XDG_CONFIG_HOME, "opencode");
     mkdirSync(join(config, "plugins"), { recursive: true });

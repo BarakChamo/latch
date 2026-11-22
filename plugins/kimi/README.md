@@ -1,18 +1,16 @@
-# Kimi Code CLI
+# Kimi Code
 
-Download and extract the standalone archive from
-[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
-In Kimi Code, enter `/plugins install /absolute/path/to/extracted-latch/plugins/kimi`.
-Approve the installation and start a new session. Kimi copies the
-bundled Latch executable to its managed plugin directory.
+Run this inside Kimi Code:
 
-The plugin runs `turn_end` on changed turns and sends output to the next
-user prompt in the same conversation. Its MCP tools take an absolute
-project directory. Use `/plugins remove latch` to remove it.
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
 
-Kimi starts post-tool hooks in the background and the CLI can exit while
-they are still running. Use `turn_end` for automatic checks. Run Kimi in
-the checkout you want to validate. Kimi’s remote-tool mode runs hooks
-beside the local CLI.
+Choose **Trust and install**, then run `/reload` or start a new session.
+The plugin downloads and verifies the Latch binary on first use.
 
-[Kimi plugin management](https://moonshotai.github.io/kimi-code/en/customization/plugins)
+Latch runs checks after a changed turn. The model gets a failed report on
+your next prompt by default. Opt in to `continue_once` to give the model one
+chance to respond without a new user message or an automatic recheck.
+The plugin exposes `run_turn_end` and `search_output` through MCP.
+[Quickstart](https://barakchamo.github.io/latch/docs/quickstart/) · [Kimi Code plugin docs](https://github.com/MoonshotAI/kimi-code/blob/main/docs/en/customization/plugins.md)

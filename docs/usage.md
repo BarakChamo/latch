@@ -25,6 +25,10 @@ runs to fill that cache in advance. Once the binary is cached, its hooks and
 tools can run offline. In Codex, open `/hooks` and approve the hooks
 after installation.
 
+For OpenHands CLI, run `sh /path/to/install-latch-plugin.sh install openhands`
+from your Git project. The script downloads the CLI and registers the
+workspace hooks and tools.
+
 ## Hooks and feedback
 
 The plugin translates its agent’s native lifecycle events into Latch events. Latch uses the same project commands and settings regardless of which plugin calls it.
