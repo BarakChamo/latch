@@ -1289,8 +1289,12 @@ fn opted_in_turn_failure_reaches_the_agent_without_rechecking() {
                 "session_id": "session", "sessionId": "session", "turn_id": "turn",
                 "cwd": project.root.path(), "working_dir": project.root.path(),
             });
-            payload["stop_hook_active"] = json!(active);
-            payload["stopHookActive"] = json!(active);
+            let active_field = if host == "grok" {
+                "stopHookActive"
+            } else {
+                "stop_hook_active"
+            };
+            payload[active_field] = json!(active);
             payload["extension_can_continue"] = json!(host == "opencode");
             if host == "copilot" {
                 let name = if event == "Stop" {
