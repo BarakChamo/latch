@@ -1,15 +1,13 @@
 # OpenHands
 
-Use `PluginSource(source="github:BarakChamo/latch")` in your OpenHands SDK
-conversation to load the native plugin with its hooks and tools.
-[SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
+In Agent Canvas, open **Customize → Plugins → Add plugin** and install
+`github:BarakChamo/latch`. In the SDK, pass the same source as a
+`PluginSource` when creating a conversation.
+[OpenHands SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
 
 ## OpenHands CLI
 
-From the Git project you want to validate, run
-`sh /path/to/install-latch-plugin.sh install openhands` with the downloaded
-[release installer](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh).
-If you already have the CLI on your path, run `latch install openhands`.
+From the Git project you want to check, run the [OpenHands CLI install command](../../README.md#openhands). If you already have Latch on your path, run `latch install openhands`.
 
 This adds workspace hooks to `.openhands/hooks.json` and registers Latch in
 the OpenHands user MCP configuration. It preserves other hook and server

@@ -125,37 +125,9 @@ function bundlePluginExecutables(bundle, binary) {
     cpSync(binary, join(bin, "latch"));
   }
 
-  for (const [harness, variable] of [
-    ["codex", "PLUGIN_ROOT"],
-    ["claude-code", "CLAUDE_PLUGIN_ROOT"],
-    ["copilot", "PLUGIN_ROOT"],
-  ]) {
+  for (const harness of ["codex", "claude-code", "copilot"]) {
     const plugin = join(bundle, "plugins", harness);
-    const executable = "$" + "{" + variable + "}/bin/latch";
-    mkdirSync(join(plugin, "bin"));
     cpSync(binary, join(plugin, "bin", "latch"));
-
-    const copilot = harness === "copilot";
-    const hooksPath = join(plugin, copilot ? "hooks.json" : "hooks/hooks.json");
-    const hooks = readJson(hooksPath);
-    for (const event of Object.values(hooks.hooks)) {
-      const handlers = copilot ? event : event.flatMap((matcher) => matcher.hooks);
-      for (const handler of handlers) {
-        const field = copilot ? "bash" : "command";
-        if (!handler[field]?.startsWith("latch ")) {
-          throw new Error(`Expected a Latch command in ${hooksPath}.`);
-        }
-        handler[field] = handler[field].replace("latch ", `"${executable}" `);
-        if (copilot) delete handler.powershell;
-      }
-    }
-    writeJson(hooksPath, hooks);
-
-    if (harness !== "claude-code") continue; // The installer records the absolute MCP executable path.
-    const mcpPath = join(plugin, ".mcp.json");
-    const mcp = readJson(mcpPath);
-    mcp.mcpServers.latch.command = executable;
-    writeJson(mcpPath, mcp);
   }
 }
 

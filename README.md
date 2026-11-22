@@ -28,12 +28,12 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 
 ## Install a plugin
 
-Choose your agent. The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
+Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
 
 ### Codex
 
 ```sh
-codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin marketplace add BarakChamo/latch
 codex plugin add latch@latch-tools
 ```
 
@@ -42,14 +42,14 @@ In a new Codex session in your project, review and approve the Latch hooks in `/
 ### Claude Code
 
 ```sh
-claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
+claude plugin marketplace add https://github.com/BarakChamo/latch.git
 claude plugin install latch@latch-tools
 ```
 
 ### GitHub Copilot CLI
 
 ```sh
-copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+copilot plugin marketplace add BarakChamo/latch
 copilot plugin install latch@latch-tools
 ```
 
@@ -85,7 +85,7 @@ In Kimi Code, run:
 /plugins install https://github.com/BarakChamo/latch/tree/main
 ```
 
-Confirm installation and start a new session.
+Choose **Trust and install**, then run `/reload` or start a new session.
 
 ### OpenHands
 
@@ -94,20 +94,15 @@ In Agent Canvas, go to **Customize → Plugins → Add plugin**. Enter
 plugin loads in new local conversations.
 [OpenHands SDK and Canvas setup](https://barakchamo.github.io/latch/docs/plugins/#openhands)
 
-For OpenHands CLI, download
-[`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh),
-then run it from your project directory.
+For OpenHands CLI, run this from the Git project you want to check.
 
 ```sh
-sh /path/to/install-latch-plugin.sh install openhands
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh install openhands
 ```
 
-Start a new session in your project. On first use, the plugin downloads the
-matching Latch binary from GitHub and caches it for future sessions.
-Codex, Claude Code, and Copilot CLI users can pre-download it with the
-[terminal installer](docs/usage.md#install-the-plugin-from-a-terminal).
-
-For other agents, see the [integration guides](plugins/).
+Already have `latch` on your path? Run `latch install openhands` in the project.
+[Plugin settings, updates, and removal](https://barakchamo.github.io/latch/docs/plugins/)
 
 ## Run your first check
 

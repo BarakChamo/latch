@@ -10,27 +10,13 @@ turn end when several edits should be checked together. Start with the
 
 ## Install the plugin from a terminal
 
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.4/install-latch-plugin.sh), then run it in your terminal.
+Use the [README install commands](../README.md#install-a-plugin) for local
+harnesses. The plugin fetches and verifies the matching Latch binary when it
+first runs. If your agent cannot access GitHub, see [offline setup](https://barakchamo.github.io/latch/docs/plugins/#offline-setup).
 
-```sh
-sh install-latch-plugin.sh --install-plugin codex
-```
-
-Use `claude` or `copilot` for the corresponding CLI. The installer registers
-Latch through the harness’s marketplace commands. It downloads the matching
-release binary, checks its SHA-256, and keeps it in your user cache. The
-marketplace plugin downloads the binary on first use if the cache is empty.
-Run the terminal installer as the same user on the machine where the agent
-runs to fill that cache in advance. Once the binary is cached, its hooks and
-tools can run offline. In Codex, open `/hooks` and approve the hooks
-after installation.
-
-In local Agent Canvas, open **Customize → Plugins → Add plugin** and install
-from `github:BarakChamo/latch`. Start a new conversation in your Git workspace.
-
-For OpenHands CLI, run `sh /path/to/install-latch-plugin.sh install openhands`
-from your Git project. The script downloads the CLI and registers the
-workspace hooks and tools.
+For OpenHands CLI, the README installer command registers workspace hooks
+and tools from inside your Git project. If you already installed the
+standalone CLI, run `latch install openhands` in the project.
 
 ## Hooks and feedback
 

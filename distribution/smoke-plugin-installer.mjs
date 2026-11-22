@@ -58,6 +58,10 @@ test("marketplace contains only a launcher and maps each supported platform to o
       const directory = join(catalog, "plugins", host, "bin");
       assert.deepEqual(readdirSync(directory), ["latch"]);
       assert.equal(readFileSync(join(directory, "latch"), "utf8"), pluginLauncher(version));
+      if (["codex", "claude-code", "copilot"].includes(host)) {
+        const gitLauncher = new URL(`../plugins/${host}/bin/latch`, import.meta.url);
+        assert.equal(readFileSync(gitLauncher, "utf8"), pluginLauncher(version));
+      }
     }
     const manifest = JSON.parse(readFileSync(join(catalog, "package.json"), "utf8"));
     assert.equal(manifest.version, version);
@@ -114,11 +118,11 @@ test("the install command uses native plugin commands and caches a verified bina
     }
     assert.equal(fixture.downloads().length, 4);
     assert.deepEqual(readFileSync(fixture.invocations, "utf8").trim().split("\n"), [
-      "codex plugin marketplace add BarakChamo/latch --ref codex/marketplace",
+      "codex plugin marketplace add BarakChamo/latch",
       "codex plugin add latch@latch-tools",
-      "claude plugin marketplace add BarakChamo/latch#codex/marketplace",
+      "claude plugin marketplace add https://github.com/BarakChamo/latch.git",
       "claude plugin install latch@latch-tools",
-      "copilot plugin marketplace add https://github.com/BarakChamo/latch.git#codex/marketplace",
+      "copilot plugin marketplace add BarakChamo/latch",
       "copilot plugin install latch@latch-tools",
     ]);
   } finally {

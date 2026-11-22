@@ -3,7 +3,7 @@
 Install from the project’s GitHub marketplace:
 
 ```sh
-codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin marketplace add BarakChamo/latch
 codex plugin add latch@latch-tools
 ```
 
@@ -11,10 +11,8 @@ The plugin downloads Latch on first use for macOS and glibc Linux on ARM64 and x
 
 Start Codex from the directory containing your project's
 [Latch configuration or package scripts](https://github.com/BarakChamo/latch#configure-checks).
-Review and trust the plugin hooks in Codex using `/hooks`. The
-[hook configuration](hooks/hooks.json) can also be installed directly as a
-project's `.codex/hooks.json`. Merge the event entries if that file already
-exists, and use one installation method per project.
+Review and trust the plugin hooks in Codex using `/hooks`. Use one installation
+method per project.
 
 After updating Latch, refresh the installed plugin and review the new hook
 definitions in `/hooks`.

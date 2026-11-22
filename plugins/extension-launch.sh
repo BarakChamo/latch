@@ -70,15 +70,15 @@ install_plugin() {
   ensure_binary
   case "$1" in
     codex)
-      codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+      codex plugin marketplace add BarakChamo/latch
       codex plugin add latch@latch-tools
       ;;
     claude)
-      claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
+      claude plugin marketplace add https://github.com/BarakChamo/latch.git
       claude plugin install latch@latch-tools
       ;;
     copilot)
-      copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+      copilot plugin marketplace add BarakChamo/latch
       copilot plugin install latch@latch-tools
       ;;
   esac

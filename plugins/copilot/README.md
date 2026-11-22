@@ -1,9 +1,9 @@
 # Latch for GitHub Copilot CLI
 
-Install Latch from the GitHub marketplace:
+Install Latch from the GitHub marketplace.
 
 ```sh
-copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+copilot plugin marketplace add BarakChamo/latch
 copilot plugin install latch@latch-tools
 ```
 
@@ -12,9 +12,7 @@ use for macOS and glibc Linux on ARM64 and x64.
 
 Tested with Copilot CLI 1.0.114. Run `copilot plugin list` to verify the
 installation and `copilot mcp list` to check for the local Latch tool server.
-Use a Copilot CLI version that supports `userPromptTransformed`. The
-[hook configuration](hooks.json) can also be installed under
-`.github/hooks/`. Use one installation method per project.
+Use a Copilot CLI version that supports `userPromptTransformed`. Use one installation method per project.
 
 | Copilot event | Latch behavior |
 | --- | --- |

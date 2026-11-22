@@ -2,8 +2,9 @@
   "mcpServers": {
     "latch": {
       "type": "stdio",
-      "command": "latch",
+      "command": "/bin/sh",
       "args": [
+        "${PLUGIN_ROOT}/bin/latch",
         "mcp",
         "--require-project-directory"
       ]

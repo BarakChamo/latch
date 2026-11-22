@@ -15,7 +15,8 @@ The guides below cover the source plugins and their hook mappings.
 - [GitHub Copilot CLI](copilot/README.md)
 - [OpenCode](opencode/README.md)
 - [Pi](pi/README.md)
-- [OpenHands CLI](openhands/README.md)
+- [Grok Build](../README.md#grok-build)
+- [OpenHands](openhands/README.md)
 - [Kimi Code CLI](kimi/README.md)
 
 ## Local hook adapters
@@ -24,7 +25,6 @@ Run the command from the project with [the CLI installed](../docs/usage.md#insta
 
 | Agent | Setup |
 | --- | --- |
-| Grok Build | `latch install grok`, then review and trust the hooks with `/hooks-trust`. |
 | Cursor CLI (preview) | `latch install cursor --preview` |
 | Devin CLI (preview) | `latch install devin --preview` |
 | Kiro CLI V3 (preview) | `latch install kiro --preview` |

@@ -46,21 +46,22 @@ visibility.
 
 ## Publish the plugin marketplace
 
-Publish the matching GitHub release before updating the marketplace. The
-marketplace includes the launcher but no native binaries. The launcher
-downloads the versioned platform npm tarball and verifies its SHA-256
-before caching the binary. Run `npm run test:plugin-installer` to exercise
-platform selection, installation, and offline reuse.
+The default branch contains the GitHub marketplace catalogs and the
+self-contained launchers for Codex, Claude Code, and Copilot CLI. After
+bumping the version in the manifests, regenerate the launchers with:
 
 ```sh
-node distribution/package-marketplace.mjs /tmp/latch-plugin-marketplace
+node distribution/package-marketplace.mjs --refresh-launchers
+npm run test:plugin-installer
 ```
 
-Use a new output directory. Commit the generated catalogs, plugins, root
-`package.json`, and README on the dedicated `codex/marketplace` branch. For
-updates, preserve that branch’s history and use the matching plugin version.
-Install from GitHub in clean profiles and check feedback and MCP startup
-with no Latch on `PATH`.
+Publish the matching GitHub release before pushing a version update to
+`main`. The launchers download and verify the corresponding binary. Keep the
+existing `codex/marketplace` branch available for older installs. If you need
+to refresh that branch, run `node distribution/package-marketplace.mjs
+/tmp/latch-plugin-marketplace` and commit the output there, preserving its
+history. Verify the default-branch commands in clean profiles with no Latch
+on `PATH`.
 
 ```sh
 npm run test:live -- dist/latch-0.1.4-aarch64-apple-darwin.tar.gz --marketplace
@@ -144,9 +145,9 @@ The source, npm, and Windows options require the CLI on the harness's
 
 | Harness | Marketplace file | Installation |
 | --- | --- | --- |
-| Codex | `.agents/plugins/marketplace.json` | Add the Git repository or extracted root with `codex plugin marketplace add`, run `codex plugin add latch@latch-local`, then review hooks in `/hooks`. |
-| Claude Code | `.claude-plugin/marketplace.json` | Add the repository or extracted root with `claude plugin marketplace add`, then run `claude plugin install latch@latch-marketplace`. |
-| GitHub Copilot CLI | `.github/plugin/marketplace.json` | Add the repository or extracted root with `copilot plugin marketplace add`, then run `copilot plugin install latch@latch-marketplace`. |
+| Codex | `.agents/plugins/marketplace.json` | Add the Git repository with `codex plugin marketplace add`, run `codex plugin add latch@latch-tools`, then review hooks in `/hooks`. |
+| Claude Code | `.claude-plugin/marketplace.json` | Add the repository with `claude plugin marketplace add`, then run `claude plugin install latch@latch-tools`. |
+| GitHub Copilot CLI | `.github/plugin/marketplace.json` | Add the repository with `copilot plugin marketplace add`, then run `copilot plugin install latch@latch-tools`. |
 
 The hook-enabled Codex plugin uses repo or manual distribution. OpenAI's
 public plugin directory requires lifecycle hooks to be removed before

@@ -9,14 +9,14 @@ Start in a Git project with a check you already run, such as a linter. The plugi
 
 ## Install a plugin
 
-Choose your agent. The marketplace plugins support macOS and glibc Linux on ARM64 and x64.
+Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
 
-<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'Pi', 'OpenCode']}>
+<Tabs items={['Codex', 'Claude Code', 'GitHub Copilot CLI', 'Pi', 'OpenCode', 'Grok Build', 'Kimi Code', 'OpenHands']}>
 
 <Tab value="Codex">
 
 ```sh
-codex plugin marketplace add BarakChamo/latch --ref codex/marketplace
+codex plugin marketplace add BarakChamo/latch
 codex plugin add latch@latch-tools
 ```
 
@@ -27,7 +27,7 @@ Open a new Codex session in your project, then review and approve the Latch hook
 <Tab value="Claude Code">
 
 ```sh
-claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
+claude plugin marketplace add https://github.com/BarakChamo/latch.git
 claude plugin install latch@latch-tools
 ```
 
@@ -36,7 +36,7 @@ claude plugin install latch@latch-tools
 <Tab value="GitHub Copilot CLI">
 
 ```sh
-copilot plugin marketplace add 'https://github.com/BarakChamo/latch.git#codex/marketplace'
+copilot plugin marketplace add BarakChamo/latch
 copilot plugin install latch@latch-tools
 ```
 
@@ -64,10 +64,45 @@ opencode plugin add 'github:BarakChamo/latch'
 
 </Tab>
 
+<Tab value="Grok Build">
+
+```sh
+grok plugin install BarakChamo/latch --trust
+```
+
+Verified with Grok Build 1.0.92.
+
+</Tab>
+
+<Tab value="Kimi Code">
+
+In Kimi Code, run the command below. Choose **Trust and install**, then run `/reload`.
+
+```text
+/plugins install https://github.com/BarakChamo/latch/tree/main
+```
+
+</Tab>
+
+<Tab value="OpenHands">
+
+In Agent Canvas, open **Customize → Plugins → Add plugin**. Enter
+`github:BarakChamo/latch` as the source and select **Install**.
+
+For OpenHands CLI, run this from your Git project.
+
+```sh
+curl -fsSLO https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh &&
+  sh install-latch-plugin.sh install openhands
+```
+
+[OpenHands SDK setup](/docs/plugins#openhands-sdk)
+
+</Tab>
+
 </Tabs>
 
-The plugin downloads the Latch binary from GitHub on first use and caches it.
-[Grok Build, Kimi Code, and OpenHands setup](/docs/plugins#additional-local-integrations)
+[Plugin settings, updates, and removal](/docs/plugins)
 
 ## Run your first check
 

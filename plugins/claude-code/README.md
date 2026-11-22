@@ -3,15 +3,14 @@
 Install Latch from the GitHub marketplace:
 
 ```sh
-claude plugin marketplace add 'BarakChamo/latch#codex/marketplace'
+claude plugin marketplace add https://github.com/BarakChamo/latch.git
 claude plugin install latch@latch-tools
 ```
 
 Start a new session in your project. The plugin downloads Latch on first
 use for macOS and glibc Linux on ARM64 and x64.
 
-The [hook configuration](hooks/hooks.json) can also be merged into the
-project's `.claude/settings.json`. Use one installation method per project.
+Use one installation method per project.
 
 | Claude Code event | Latch behavior |
 | --- | --- |

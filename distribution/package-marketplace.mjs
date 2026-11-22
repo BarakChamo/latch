@@ -8,14 +8,14 @@ import { pluginLauncher } from "./plugin-launcher.mjs";
 const root = fileURLToPath(new URL("..", import.meta.url));
 const [destination, extra] = process.argv.slice(2);
 if (!destination || extra) {
-  throw new Error("Usage: node distribution/package-marketplace.mjs <new-destination>");
+  throw new Error("Usage: node distribution/package-marketplace.mjs <new-destination|--refresh-launchers>");
 }
 
 const output = resolve(destination);
 const plugins = [
-  { host: "codex", catalog: ".agents/plugins", manifest: ".codex-plugin/plugin.json", rootVariable: "PLUGIN_ROOT" },
-  { host: "claude-code", catalog: ".claude-plugin", manifest: ".claude-plugin/plugin.json", rootVariable: "CLAUDE_PLUGIN_ROOT" },
-  { host: "copilot", catalog: ".github/plugin", manifest: "plugin.json", rootVariable: "PLUGIN_ROOT", hooksFile: "hooks.json" },
+  { host: "codex", catalog: ".agents/plugins", manifest: ".codex-plugin/plugin.json" },
+  { host: "claude-code", catalog: ".claude-plugin", manifest: ".claude-plugin/plugin.json" },
+  { host: "copilot", catalog: ".github/plugin", manifest: "plugin.json" },
 ].map((plugin) => ({
   ...plugin,
   descriptor: readJson(join(root, "plugins", plugin.host, plugin.manifest)),
@@ -28,6 +28,12 @@ if (plugins.some(({ descriptor }) => descriptor.version !== version)
   throw new Error("Marketplace plugin versions must match.");
 }
 const launcher = pluginLauncher(version);
+if (destination === "--refresh-launchers") {
+  for (const { host } of plugins) {
+    writeExecutable(join(root, "plugins", host, "bin/latch"), launcher);
+  }
+  process.exit(0);
+}
 mkdirSync(output);
 
 for (const plugin of plugins) writePlugin(plugin);
@@ -61,36 +67,15 @@ function writeExtensions() {
   cpSync(join(root, "distribution/extension-package.md"), join(output, "README.md"));
 }
 
-function writePlugin({ host, catalog, descriptor, manifest, rootVariable, hooksFile = "hooks/hooks.json" }) {
+function writePlugin({ host, catalog, manifest }) {
   const source = join(root, "plugins", host);
   const target = join(output, "plugins", host);
-  const marketplace = readJson(join(root, catalog, "marketplace.json"));
-  writeJson(join(output, catalog, "marketplace.json"), { ...marketplace, name: "latch-tools" });
-  writeJson(join(target, manifest), descriptor);
-
-  const executable = "${" + rootVariable + "}/bin/latch";
-  const hooks = readJson(join(source, hooksFile));
-  for (const matchers of Object.values(hooks.hooks)) {
-    const handlers = host === "copilot" ? matchers : matchers.flatMap(({ hooks: entries }) => entries);
-    for (const handler of handlers) {
-      const field = host === "copilot" ? "bash" : "command";
-      if (!handler[field]?.startsWith("latch hook ")) {
-        throw new Error(`Unexpected ${host} hook command`);
-      }
-      handler[field] = handler[field].replace("latch ", `"${executable}" `);
-      if (host === "copilot") delete handler.powershell;
-    }
+  for (const path of [manifest, host === "copilot" ? "hooks.json" : "hooks/hooks.json", ".mcp.json", "bin/latch"]) {
+    const destination = join(target, path);
+    mkdirSync(dirname(destination), { recursive: true });
+    cpSync(join(source, path), destination);
   }
-  writeJson(join(target, hooksFile), hooks);
-  writeJson(join(target, ".mcp.json"), { mcpServers: { latch: mcpServer(host, executable) } });
-  writeExecutable(join(target, "bin/latch"), launcher);
-}
-
-function mcpServer(host, executable) {
-  if (host === "claude-code") return { type: "stdio", command: executable, args: ["mcp"] };
-  const args = ["mcp", "--require-project-directory"];
-  if (host === "codex") return { type: "stdio", command: "/bin/sh", cwd: ".", args: ["./bin/latch", ...args] };
-  return { type: "stdio", command: "/bin/sh", args: [executable, ...args] };
+  cpSync(join(root, catalog, "marketplace.json"), join(output, catalog, "marketplace.json"));
 }
 
 function writeExecutable(path, contents) {

@@ -24,17 +24,17 @@ case "${1:-}" in
     command -v codex >/dev/null
     configure_mcp codex '["mcp"]'
     codex plugin marketplace add "$root"
-    codex plugin add latch@latch-local
+    codex plugin add latch@latch-tools
     ;;
   claude)
     claude plugin marketplace add "$root"
-    claude plugin install latch@latch-marketplace
+    claude plugin install latch@latch-tools
     ;;
   copilot)
     command -v copilot >/dev/null
     configure_mcp copilot '["mcp","--require-project-directory"]'
     copilot plugin marketplace add "$root"
-    copilot plugin install latch@latch-marketplace
+    copilot plugin install latch@latch-tools
     ;;
   opencode)
     command -v opencode >/dev/null

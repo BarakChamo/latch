@@ -5,23 +5,13 @@ description: Install and manage Latch in your harness, and run checks from chat.
 
 ## Install from GitHub
 
-The [quickstart](/docs/quickstart#install-a-plugin) has
-the install commands for Codex, Claude Code, GitHub Copilot CLI, Pi, and OpenCode.
-Start a new agent session after installing. On first use, the plugin
-downloads the binary from GitHub if its cache is empty.
+Use the [quickstart](/docs/quickstart#install-a-plugin) for the exact
+install steps for each harness. Start a new session in your project.
+The plugin downloads and verifies the Latch binary from GitHub on first
+use and reuses it from the user cache.
 
-### Install from a terminal
-
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/download/v0.1.4/install-latch-plugin.sh), then run it in your terminal.
-
-```sh
-sh install-latch-plugin.sh --install-plugin codex
-```
-
-Use `claude` or `copilot` for the corresponding CLI. The script installs the
-plugin, downloads the binary for your system, and verifies its SHA-256 before
-caching it. Run the installer as the same user on the machine where the
-agent runs to make the binary available before opening a session.
+For a restricted network, see [offline setup](#offline-setup) or
+[hosted workspaces](/docs/cloud).
 
 ### Pi
 
@@ -87,12 +77,16 @@ from inside the extracted archive with `./install opencode`.
 | OpenCode v2 | `opencode plugin list --standalone` | `opencode plugin remove 'github:BarakChamo/latch'` for the global package. Remove a project entry or checkout from its project. |
 | OpenCode v1 | Check the OpenCode config directory's `plugins/latch.js` link. | Remove that link. |
 | Pi | `pi list` | `pi remove git:github.com/BarakChamo/latch`. Add `--local` for a project install. |
+| Grok Build | `grok plugin list` | `grok plugin uninstall latch` |
+| Kimi Code | `/plugins list` | `/plugins remove latch`, then `/reload`. |
+| OpenHands Agent Canvas | **Customize → Plugins** | Uninstall Latch from its plugin details. |
+| OpenHands CLI | Check the project's `.openhands/hooks.json`. | See [OpenHands CLI cleanup](#openhands-cli). |
 
 Use one installation method per project to avoid duplicate hooks. If
-you installed a branch-specific Pi or OpenCode package before, remove
-that entry before switching to the commands above.
+you added an older Latch marketplace or a branch-specific Pi or OpenCode
+package, remove that entry before switching to the quickstart commands.
 
-## Additional local integrations
+## Grok, Kimi, and OpenHands
 
 ### Grok Build
 
@@ -159,18 +153,16 @@ and MCP. The SDK path was tested with 1.63.1. [OpenHands plugin docs](https://do
 
 #### OpenHands CLI
 
-Download [`install-latch-plugin.sh`](https://github.com/BarakChamo/latch/releases/latest/download/install-latch-plugin.sh).
-From the Git project you want to check, run:
+Run the [OpenHands installer command](/docs/quickstart#install-a-plugin)
+from the Git project you want to check. If `latch` is already on your path,
+run `latch install openhands` in the project instead. It installs project hooks
+and registers the tools for the current user. Start a new session in the
+same project. Native edits and changed turns run checks. Failures reach the
+next prompt by default. [OpenHands hook docs](https://docs.openhands.dev/openhands/usage/customization/hooks)
 
-```sh
-sh /path/to/install-latch-plugin.sh install openhands
-```
-
-The installer verifies the CLI binary and registers hooks and tools for
-the OpenHands CLI. If `latch` is already on your path, run
-`latch install openhands` from the project instead. Start a new session.
-Native edits and changed turns run checks. Failures reach the next prompt by
-default. [OpenHands hook docs](https://docs.openhands.dev/openhands/usage/customization/hooks)
+To uninstall, remove the hook entries whose command ends in
+`# latch-installed` from `.openhands/hooks.json`. Remove the `latch` MCP
+entry from your OpenHands user configuration once no project uses it.
 
 ### Preview integrations
 
@@ -186,8 +178,7 @@ The preview adapters have automated hook protocol tests. Treat their
 feedback as provisional until verified in a session. Workspace installers write absolute local paths into harness
 configuration. Keep those entries local. To uninstall them, remove the
 hook entries whose command ends in `# latch-installed` and remove the
-`latch` MCP server entry. In OpenHands, the MCP entry lives in the user
-configuration. In Kimi Code, use `/plugins remove latch`.
+`latch` MCP server entry.
 
 ## Run checks from chat
 

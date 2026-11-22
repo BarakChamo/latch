@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "latch hook codex"
+            "command": "\"${PLUGIN_ROOT}/bin/latch\" hook codex"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "latch hook codex",
+            "command": "\"${PLUGIN_ROOT}/bin/latch\" hook codex",
             "timeout": 120
           }
         ]
@@ -26,7 +26,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "latch hook codex"
+            "command": "\"${PLUGIN_ROOT}/bin/latch\" hook codex"
           }
         ]
       }
@@ -37,7 +37,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "latch hook codex",
+            "command": "\"${PLUGIN_ROOT}/bin/latch\" hook codex",
             "timeout": 120
           }
         ]
@@ -49,7 +49,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "latch hook codex",
+            "command": "\"${PLUGIN_ROOT}/bin/latch\" hook codex",
             "timeout": 10
           }
         ]

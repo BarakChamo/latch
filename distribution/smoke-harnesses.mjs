@@ -40,7 +40,6 @@ const toolOutput = "LATCH_LIVE_TOOL_RAN";
 const omittedOutput = "LATCH_LIVE_RETRIEVAL_MARKER";
 const scratch = mkdtempSync(join(tmpdir(), "latch live smoke "));
 const environment = { ...process.env };
-const marketplaceName = marketplace ? "latch-tools" : "latch-local";
 
 try {
   execFileSync("tar", ["-xzf", resolve(archive), "-C", scratch]);
@@ -143,7 +142,14 @@ function prepareFixture(name, bundle) {
   ]) {
     execFileSync("git", args, { cwd: project, timeout: 15_000 });
   }
-  return { name, bundle, project, profile, env: { ...environment } };
+  const catalog = {
+    codex: ".agents/plugins/marketplace.json",
+    claude: ".claude-plugin/marketplace.json",
+    copilot: ".github/plugin/marketplace.json",
+  };
+  const marketplaceName = marketplace ? "latch-tools"
+    : JSON.parse(readFileSync(join(bundle, catalog[name]), "utf8")).name;
+  return { name, bundle, project, profile, marketplaceName, env: { ...environment } };
 }
 
 async function install(fixture, env) {
@@ -155,9 +161,9 @@ async function install(fixture, env) {
 
   const host = fixture.name;
   const marketplaceSource = {
-    codex: ["BarakChamo/latch", "--ref", "codex/marketplace"],
-    claude: ["BarakChamo/latch#codex/marketplace"],
-    copilot: ["https://github.com/BarakChamo/latch.git#codex/marketplace"],
+    codex: ["BarakChamo/latch"],
+    claude: ["https://github.com/BarakChamo/latch.git"],
+    copilot: ["BarakChamo/latch"],
   };
   await exec(host, ["plugin", "marketplace", "add", ...marketplaceSource[host]], options);
   await exec(host, ["plugin", host === "codex" ? "add" : "install", "latch@latch-tools"], options);
@@ -174,7 +180,7 @@ async function runClaude(fixture) {
     }
   }
   await install(fixture, env);
-  const cache = join(fixture.profile, "plugins", "cache", marketplace ? "latch-tools" : "latch-marketplace", "latch");
+  const cache = join(fixture.profile, "plugins", "cache", fixture.marketplaceName, "latch");
   const versions = readdirSync(cache);
   assert.equal(versions.length, 1, "Expected one Claude Code plugin version");
   const activation = marketplace ? [] : ["--plugin-dir", join(cache, versions[0])];
@@ -222,7 +228,7 @@ async function runCodex(fixture) {
     readFileSync(config, "utf8"),
     `[projects.${JSON.stringify(project)}]\ntrust_level = "trusted"`,
     ...trusted,
-    `[plugins."latch@${marketplaceName}".mcp_servers.latch]\ndefault_tools_approval_mode = "approve"`,
+    `[plugins."latch@${fixture.marketplaceName}".mcp_servers.latch]\ndefault_tools_approval_mode = "approve"`,
   ].join("\n\n"));
   return withCodex(fixture, env, async ({ call, receive, send }) => {
     const { thread } = await call("thread/start", {
