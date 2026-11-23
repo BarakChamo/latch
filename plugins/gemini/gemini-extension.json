@@ -1,0 +1,14 @@
+{
+  "name": "latch",
+  "version": "0.1.10",
+  "description": "Run project checks automatically after edits and when an agent finishes a turn.",
+  "mcpServers": {
+    "latch": {
+      "command": "${extensionPath}/bin/latch",
+      "args": [
+        "mcp",
+        "--require-project-directory"
+      ]
+    }
+  }
+}

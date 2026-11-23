@@ -202,3 +202,152 @@ impl From<OpenHandsInput> for Event {
         }
     }
 }
+
+pub(super) fn read_gemini(input: impl io::Read) -> io::Result<Event> {
+    let payload: GeminiInput = serde_json::from_reader(input)?;
+    let (kind, tool_args) = match payload.event {
+        GeminiEvent::BeforeAgent { prompt } => {
+            let kind = if prompt.starts_with(FOLLOW_UP_INTRO) {
+                EventKind::ContinuationPrompt
+            } else {
+                EventKind::UserPromptSubmit
+            };
+            (kind, None)
+        }
+        GeminiEvent::BeforeTool {
+            tool_name,
+            tool_input,
+        } => (EventKind::PreToolUse { tool_name }, Some(tool_input)),
+        GeminiEvent::AfterTool {
+            tool_name,
+            tool_input,
+        } => (EventKind::PostToolUse { tool_name }, Some(tool_input)),
+        GeminiEvent::AfterAgent { stop_hook_active } => (
+            EventKind::Stop {
+                stop_hook_active,
+                extension_can_continue: false,
+            },
+            None,
+        ),
+        GeminiEvent::SessionEnd => (EventKind::SessionEnd, None),
+    };
+    Ok(Event {
+        session_id: payload.session_id,
+        cwd: payload.cwd,
+        turn_id: None,
+        agent_id: None,
+        tool_use_id: None,
+        tool_args,
+        kind,
+    })
+}
+
+#[derive(Deserialize)]
+struct GeminiInput {
+    session_id: String,
+    cwd: PathBuf,
+    #[serde(flatten)]
+    event: GeminiEvent,
+}
+
+#[derive(Deserialize)]
+#[serde(tag = "hook_event_name")]
+enum GeminiEvent {
+    BeforeAgent {
+        prompt: String,
+    },
+    BeforeTool {
+        tool_name: String,
+        tool_input: Value,
+    },
+    AfterTool {
+        tool_name: String,
+        tool_input: Value,
+    },
+    AfterAgent {
+        stop_hook_active: Option<bool>,
+    },
+    SessionEnd,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct AntigravityInput {
+    conversation_id: String,
+    cwd: Option<PathBuf>,
+    #[serde(default)]
+    workspace_paths: Vec<PathBuf>,
+    tool_call: Option<AntigravityTool>,
+    fully_idle: Option<bool>,
+    invocation_num: Option<u64>,
+    #[serde(alias = "continuation_active")]
+    continuation_active: Option<bool>,
+}
+
+#[derive(Deserialize)]
+struct AntigravityTool {
+    id: Option<String>,
+    name: String,
+    args: Option<Value>,
+}
+
+pub(super) fn read_antigravity(
+    event: super::AntigravityEvent,
+    input: impl io::Read,
+) -> io::Result<Event> {
+    use super::AntigravityEvent;
+
+    let payload: AntigravityInput = serde_json::from_reader(input)?;
+    let cwd = match (payload.cwd, payload.workspace_paths.as_slice()) {
+        (Some(cwd), _) if cwd.is_absolute() => cwd,
+        (_, [root]) => root.clone(),
+        _ => {
+            return Err(io::Error::other(
+                "Antigravity hook requires cwd or one workspace",
+            ));
+        }
+    };
+    let (kind, tool_use_id, tool_args) = match event {
+        AntigravityEvent::PreInvocation => (
+            EventKind::ModelInvocation {
+                first: payload.invocation_num == Some(0),
+            },
+            None,
+            None,
+        ),
+        AntigravityEvent::PreToolUse | AntigravityEvent::PostToolUse => {
+            let tool = payload
+                .tool_call
+                .ok_or_else(|| io::Error::other("missing toolCall"))?;
+            let kind = match event {
+                AntigravityEvent::PreToolUse => EventKind::PreToolUse {
+                    tool_name: tool.name,
+                },
+                _ => EventKind::PostToolUse {
+                    tool_name: tool.name,
+                },
+            };
+            (kind, tool.id, tool.args)
+        }
+        AntigravityEvent::Stop => {
+            let kind = match (payload.fully_idle, payload.continuation_active) {
+                (Some(false), _) => EventKind::Ignore,
+                (_, Some(true)) => EventKind::Interrupt,
+                _ => EventKind::Stop {
+                    stop_hook_active: payload.continuation_active,
+                    extension_can_continue: false,
+                },
+            };
+            (kind, None, None)
+        }
+    };
+    Ok(Event {
+        session_id: payload.conversation_id,
+        cwd,
+        turn_id: None,
+        agent_id: None,
+        tool_use_id,
+        tool_args,
+        kind,
+    })
+}

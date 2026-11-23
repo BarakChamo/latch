@@ -207,6 +207,12 @@ fn tool_returns_collected_failures_as_an_error_and_keeps_success_quiet() {
     writeln!(
         input,
         "{}",
+        json!({"jsonrpc":"2.0","method":"notifications/roots/list_changed"})
+    )
+    .unwrap();
+    writeln!(
+        input,
+        "{}",
         json!({"jsonrpc":"2.0","method":"notifications/initialized"})
     )
     .unwrap();

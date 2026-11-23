@@ -19,7 +19,7 @@ use std::process::ExitCode;
 use config::{HookEntries, HookEntry, HookName};
 use serde_json::{Map, Value, json};
 
-const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch status | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch install cloud <claude|copilot|openhands> | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro> | latch hook copilot <event> | latch mcp [--require-project-directory]";
+const USAGE: &str = "Usage: latch [--help|--version] | latch run <turn_end|after_edit> | latch explain [turn_end|after_edit] | latch status | latch config init | latch output <log-or-id> [--grep <text>] | latch output --prune | latch install <openhands|cursor|devin|grok|kiro> [--preview] | latch install cloud <claude|copilot|openhands> | latch hook <codex|claude-code|opencode|pi|openhands|kimi|cursor|devin|grok|kiro|gemini> | latch hook <copilot|antigravity> <event> | latch mcp [--require-project-directory]";
 
 fn main() -> ExitCode {
     let mut args = env::args_os().skip(1).peekable();

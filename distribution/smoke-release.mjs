@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { execFileSync, spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -87,6 +87,7 @@ try {
   assert.equal(execFileSync(binary, ["--version"], { encoding: "utf8" }).trim(), `latch ${version}`);
   verifySharedFiles(extracted);
   if (!windows) verifyBundledPlugins(extracted, project);
+  verifyGeminiExtension();
   console.log(`Verified the release packages for ${target}.`);
 } finally {
   rmSync(scratch, { recursive: true });
@@ -105,13 +106,31 @@ function verifySharedFiles(directory) {
   for (const catalog of [".agents/plugins", ".claude-plugin", ".github/plugin"]) {
     assert(existsSync(join(directory, catalog, "marketplace.json")), `Missing marketplace ${catalog}`);
   }
-  for (const entry of ["extension-hook.mjs", "opencode/index.js", "opencode/v2.js", "pi/index.ts", "kimi/kimi.plugin.json"]) {
+  for (const entry of ["extension-hook.mjs", "opencode/index.js", "opencode/v2.js", "pi/index.ts", "kimi/kimi.plugin.json", "gemini/gemini-extension.json", "antigravity/plugin.json"]) {
     assert(existsSync(join(directory, "plugins", entry)), `Missing plugin file ${entry}`);
   }
 }
 
+function verifyGeminiExtension() {
+  const prefix = `${process.platform}.${process.arch}.`;
+  const filename = `${prefix}gemini-extension.tar.gz`;
+  assert.deepEqual(readdirSync(archives).filter((name) => name.startsWith(prefix)), [filename]);
+  const extension = join(scratch, "gemini-extension");
+  mkdirSync(extension);
+  execFileSync("tar", ["-xzf", join(archives, filename), "-C", extension], { stdio: "inherit" });
+  const executable = windows ? "latch.exe" : "latch";
+  const manifest = readJson(join(extension, "gemini-extension.json"));
+  assert.equal(manifest.version, version);
+  assert.equal(manifest.mcpServers.latch.command, `\${extensionPath}/bin/${executable}`);
+  const hooks = readJson(join(extension, "hooks", "hooks.json")).hooks;
+  assert.equal(hooks.AfterAgent[0].hooks[0].command, `"\${extensionPath}/bin/${executable}" hook gemini`);
+  assert.equal(execFileSync(join(extension, "bin", executable), ["--version"], {
+    encoding: "utf8",
+  }).trim(), `latch ${version}`);
+}
+
 function verifyBundledPlugins(extracted, project) {
-  for (const host of ["opencode", "pi", "kimi"]) {
+  for (const host of ["opencode", "pi", "kimi", "gemini", "antigravity"]) {
     assert(existsSync(join(extracted, "plugins", host, "bin", "latch")), `Missing ${host} bundled executable`);
   }
   const fixtureBin = join(scratch, "harness tools");

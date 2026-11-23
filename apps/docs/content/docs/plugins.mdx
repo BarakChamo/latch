@@ -13,7 +13,7 @@ new session in your project.
 | Run turn-end checks immediately | [`run_turn_end`](#run-checks-from-chat) |
 | Search an existing log for a missing detail | [`search_output`](#look-up-details-from-a-failure) |
 
-[Project and offline setup](#install-from-github) · [Find or remove a plugin](#find-or-remove-a-plugin) · [Preview integrations](#preview-integrations)
+[Project and offline setup](#install-from-github) · [Find or remove a plugin](#find-or-remove-a-plugin) · [Gemini CLI and Antigravity](#gemini-cli-and-antigravity) · [Preview integrations](#preview-integrations)
 
 ## Install from GitHub
 
@@ -189,6 +189,33 @@ To uninstall, remove the hook entries whose command ends in
 `# latch-installed` from `.openhands/hooks.json` or the user hook file if the installer updated
 that file. Remove the `latch` MCP
 entry from your OpenHands user configuration once no project uses it.
+
+
+### Gemini CLI and Antigravity
+
+Both native integrations are available in Latch v0.1.10 and later.
+
+| Harness | Native install |
+| --- | --- |
+| Gemini CLI | `gemini extensions install https://github.com/BarakChamo/latch` |
+| Antigravity CLI | `agy plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity` |
+
+Gemini CLI selects the extension for your platform and installs its bundled
+binary. The Antigravity CLI plugin downloads and verifies the matching
+binary on first use on macOS and glibc Linux.
+
+Open a new session in your project and ask the agent to run `latch_status`.
+Approve the tool if your harness prompts you. Both plugins also expose `run_turn_end` and `search_output`. For edit checks,
+the diagnostics reach the model in the same turn. At turn end, the default
+gives the report to the next prompt. Use
+[`continue_once`](/docs/hooks#act-on-a-turn-end-failure) to give the agent one
+automatic chance to respond, without rerunning the turn-end check.
+
+Local verification covers Gemini CLI 0.70.0 and Antigravity CLI 1.5.14 with
+a scripted model endpoint. Antigravity App and IDE sessions are unverified.
+Google directs individual Gemini CLI users to Antigravity.
+[Google’s Gemini CLI transition notice](https://github.com/google-gemini/gemini-cli/discussions/28017)
+[Gemini extensions](https://github.com/google-gemini/gemini-cli/blob/main/docs/extensions/reference.md) · [Antigravity plugin install](https://antigravity.google/docs/marketplace/#install-from-your-shell-agy-plugin)
 
 ### Preview integrations
 

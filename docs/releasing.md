@@ -38,7 +38,8 @@ unavailable, use native or emulated runners locally and list the tested
 platforms in the release notes.
 
 Create a GitHub release on the matching `v<version>` tag. Attach the tested
-archives, npm tarballs, and platform checksums. Keep the release as a
+archives, npm tarballs, platform checksums, and the
+`<os>.<arch>.gemini-extension.tar.gz` files. Keep the release as a
 draft until the assets are in place. The quickstart links
 to the latest release. Access to a release follows the repository’s
 visibility.
@@ -59,8 +60,8 @@ Publish the matching GitHub release before pushing a version update to
 the default-branch commands in clean profiles with no Latch on `PATH`.
 
 ```sh
-npm run test:live -- dist/latch-0.1.9-aarch64-apple-darwin.tar.gz --marketplace
-npm run test:extensions -- dist/latch-0.1.9-aarch64-apple-darwin.tar.gz --marketplace
+npm run test:live -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz --marketplace
+npm run test:extensions -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz --marketplace
 ```
 
 ## Verify a real harness session
@@ -70,8 +71,8 @@ the live test. Omit `--harness` to test Codex, Claude Code, and GitHub
 Copilot CLI together, or repeat the option to select multiple harnesses.
 
 ```sh
-npm run test:live -- dist/latch-0.1.9-aarch64-apple-darwin.tar.gz
-npm run test:live -- dist/latch-0.1.9-aarch64-apple-darwin.tar.gz --harness copilot
+npm run test:live -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz
+npm run test:live -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz --harness copilot
 ```
 
 The test installs the plugin in temporary directories, sends a
@@ -93,7 +94,7 @@ when available. The test removes its temporary files on exit.
 Install OpenCode and Pi 1.5.2 on your `PATH`, then run:
 
 ```sh
-npm run test:extensions -- dist/latch-0.1.9-aarch64-apple-darwin.tar.gz
+npm run test:extensions -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz
 ```
 
 The test runs both real CLIs against a scripted localhost model with
@@ -113,7 +114,7 @@ the checksums and includes all five binaries in one npm package.
 
 ```sh
 npm run package:npm-cli -- dist
-npm publish dist/latch-hooks-0.1.9.tgz
+npm publish dist/latch-hooks-0.1.10.tgz
 ```
 
 Verify the published package with `npm install -g latch-hooks` and
@@ -121,7 +122,7 @@ Verify the published package with `npm install -g latch-hooks` and
 registry serves the version and its tarball through the install command.
 The scoped platform artifacts are used by GitHub Releases and plugin launchers.
 
-The npm build also emits `barakchamo-latch-agent-plugins-0.1.9.tgz`, a
+The npm build also emits `barakchamo-latch-agent-plugins-0.1.10.tgz`, a
 separate Pi and OpenCode package. Publishing it to npm with public access
 makes its `pi-package` keyword discoverable in the
 [Pi package gallery](https://pi.dev/packages). Publish the corresponding
@@ -142,6 +143,8 @@ The source, npm, and Windows options require the CLI on the harness's
 | Codex | `.agents/plugins/marketplace.json` | Add the Git repository with `codex plugin marketplace add`, run `codex plugin add latch@latch-tools`, then review hooks in `/hooks`. |
 | Claude Code | `.claude-plugin/marketplace.json` | Add the repository with `claude plugin marketplace add`, then run `claude plugin install latch@latch-tools`. |
 | GitHub Copilot CLI | `.github/plugin/marketplace.json` | Add the repository with `copilot plugin marketplace add`, then run `copilot plugin install latch@latch-tools`. |
+| Gemini CLI | Platform extension archive on GitHub Releases | Run `gemini extensions install https://github.com/BarakChamo/latch`. Keep a single asset with each `<os>.<arch>.` prefix so Gemini selects the extension. |
+| Google Antigravity CLI | `plugins/antigravity/plugin.json` | Run `agy plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity`. |
 | Cursor | `.cursor-plugin/marketplace.json` | Add the repository with `agent plugin marketplace add`, then install Latch from `/plugin`. For the public marketplace, submit the repository to Cursor for review. |
 
 The hook-enabled Codex plugin uses repo or manual distribution. OpenAI's

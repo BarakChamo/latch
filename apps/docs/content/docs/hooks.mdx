@@ -66,6 +66,13 @@ prompt” means your next message in the same session and project. See
 | Kimi Code 2.7.2 | — | Next prompt |
 | Grok Build 1.0.92 | Same turn | No model feedback |
 
+### Gemini CLI and Antigravity
+
+Both [native integrations](/docs/plugins#gemini-cli-and-antigravity) check
+edits before the next model request in the same turn. Turn-end failures
+reach the next prompt with `report`. Opt in to `continue_once` to pass
+the failure to the agent immediately through the harness’s continuation hook.
+
 ### Headless output
 
 - **Codex.** The tested `codex exec --json` output omitted the app-server warning.

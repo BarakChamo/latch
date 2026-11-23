@@ -22,15 +22,20 @@ const plugins = [
   descriptor: readJson(join(root, "plugins", plugin.host, plugin.manifest)),
 }));
 const extensions = ["pi", "opencode"];
+const standalone = [
+  ["gemini", "gemini-extension.json"],
+  ["antigravity", "plugin.json"],
+];
 const cli = readJson(join(root, "distribution/npm/package.json"));
 const { version } = cli;
 if (plugins.some(({ descriptor }) => descriptor.version !== version)
+  || standalone.some(([host, manifest]) => readJson(join(root, "plugins", host, manifest)).version !== version)
   || extensions.some((host) => readJson(join(root, "plugins", host, "package.json")).version !== version)) {
   throw new Error("Marketplace plugin versions must match.");
 }
 const launcher = pluginLauncher(version);
 if (destination === "--refresh-launchers") {
-  for (const { host } of plugins) {
+  for (const host of [...plugins.map(({ host }) => host), ...standalone.map(([host]) => host)]) {
     writeExecutable(join(root, "plugins", host, "bin/latch"), launcher);
   }
   process.exit(0);

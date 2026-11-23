@@ -136,6 +136,8 @@ impl Project {
             .env("DEVIN_HOME", self.harness_home.path())
             .env("GROK_HOME", self.harness_home.path())
             .env("KIRO_HOME", self.harness_home.path())
+            .env("GEMINI_CLI_HOME", self.harness_home.path())
+            .env("ANTIGRAVITY_LATCH_HOME", self.harness_home.path())
             .env("XDG_STATE_HOME", self.harness_home.path())
             .env("PATH", path)
             .stdin(Stdio::piped())
@@ -1543,5 +1545,190 @@ fn copilot_ignores_its_own_follow_up_prompt_and_stale_stop_flag() {
     assert_eq!(
         fs::read_to_string(project.root.path().join("checked")).unwrap(),
         "ran\nran\n"
+    );
+}
+
+#[test]
+fn gemini_delivers_edit_failures_and_bounds_turn_end_feedback() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"hooks":{
+            "after_edit":{"commands":[["sh","-c","echo edit >> ignored; echo gemini-edit-failure; exit 1"]]},
+            "turn_end":{"commands":[["sh","-c","echo stop >> ignored; echo gemini-stop-failure; exit 1"]]}
+        }}"#,
+    );
+    project.init();
+    project.write("tracked", "already dirty");
+    let send = |event, mut fields: Value| {
+        fields["hook_event_name"] = json!(event);
+        fields["session_id"] = json!("gemini-session");
+        fields["cwd"] = json!(project.root.path());
+        project.send_hook("gemini", None, fields)
+    };
+    let tool = json!({"tool_name": "write_file", "tool_input": {"file_path": "tracked"}});
+    send("BeforeAgent", json!({"prompt": "Edit this file"}));
+    send("BeforeTool", tool.clone());
+    assert_eq!(send("AfterTool", tool.clone()), json!({}));
+    assert_eq!(
+        send("AfterAgent", json!({"stop_hook_active":false})),
+        json!({})
+    );
+
+    send("BeforeAgent", json!({"prompt": "Change the file"}));
+    send("BeforeTool", tool.clone());
+    project.write("tracked", "new edit");
+    let edit = send("AfterTool", tool);
+    assert!(
+        edit["hookSpecificOutput"]["additionalContext"]
+            .as_str()
+            .unwrap()
+            .contains("gemini-edit-failure")
+    );
+    let stop = send("AfterAgent", json!({"stop_hook_active":false}));
+    assert!(
+        stop["systemMessage"]
+            .as_str()
+            .unwrap()
+            .contains("gemini-stop-failure")
+    );
+    assert!(stop["decision"].is_null(), "{stop}");
+    let next = send("BeforeAgent", json!({"prompt":"What failed?"}));
+    assert!(
+        next["hookSpecificOutput"]["additionalContext"]
+            .as_str()
+            .unwrap()
+            .contains("gemini-stop-failure")
+    );
+    assert_eq!(
+        send("BeforeAgent", json!({"prompt":"Anything else?"})),
+        json!({})
+    );
+
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","hooks":{"turn_end":{
+            "commands":[["sh","-c","echo stop >> ignored; echo gemini-stop-failure; exit 1"]]
+        }}}"#,
+    );
+    send("BeforeAgent", json!({"prompt": "Change the file again"}));
+    project.write("tracked", "other edit");
+    let stop = send("AfterAgent", json!({"stop_hook_active":false}));
+    assert_eq!(stop["decision"], "deny");
+    let reason = stop["reason"].as_str().unwrap();
+    assert!(reason.contains("gemini-stop-failure"));
+    send("BeforeAgent", json!({"prompt": reason}));
+    project.write("tracked", "follow-up edit");
+    assert_eq!(
+        send("AfterAgent", json!({"stop_hook_active":true})),
+        json!({})
+    );
+    assert_eq!(
+        send("AfterAgent", json!({"stop_hook_active":false})),
+        json!({})
+    );
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+        "edit\nstop\nstop\n"
+    );
+}
+
+#[test]
+fn antigravity_queues_edit_reports_and_preserves_the_turn_baseline() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"hooks":{
+            "after_edit":{"commands":[["sh","-c","echo edit >> ignored; echo antigravity-edit-failure; exit 1"]]},
+            "turn_end":{"commands":[["sh","-c","echo stop >> ignored; echo antigravity-stop-failure; exit 1"]]}
+        }}"#,
+    );
+    project.init();
+    project.write("tracked", "already dirty");
+    let send = |event, mut fields: Value| {
+        fields["conversationId"] = json!("antigravity-session");
+        fields["workspacePaths"] = json!([project.root.path()]);
+        let result = project.invoke_hook(&["antigravity", event], fields);
+        assert!(result.status.success(), "{result:?}");
+        let response: Value = serde_json::from_slice(&result.stdout).unwrap();
+        let stderr = String::from_utf8(result.stderr).unwrap();
+        (response, stderr)
+    };
+    let tool = json!({"toolCall":{"id":"edit-1", "name":"replace_file_content", "args":{"TargetFile":"tracked"}}});
+    let idle = json!({"fullyIdle":true, "continuationActive":false});
+    send("PreInvocation", json!({"invocationNum":0}));
+    assert_eq!(
+        send("PreToolUse", tool.clone()).0,
+        json!({"decision":"allow"})
+    );
+    assert_eq!(send("PostToolUse", tool.clone()).0, json!({}));
+    send("Stop", idle.clone());
+    assert!(!project.root.path().join("ignored").exists());
+
+    send("PreInvocation", json!({"invocationNum":0}));
+    send("PreToolUse", tool.clone());
+    project.write("tracked", "new edit");
+    assert_eq!(send("PostToolUse", tool).0, json!({}));
+    let next = send("PreInvocation", json!({"invocationNum":1})).0;
+    assert!(
+        next["injectSteps"][0]["ephemeralMessage"]
+            .as_str()
+            .unwrap()
+            .contains("antigravity-edit-failure")
+    );
+    assert_eq!(
+        send("PreInvocation", json!({"invocationNum":2})).0,
+        json!({})
+    );
+    assert_eq!(
+        send("Stop", json!({"fullyIdle":false})),
+        (json!({}), String::new())
+    );
+    let (stop, diagnostic) = send("Stop", idle.clone());
+    assert_eq!(stop, json!({}));
+    assert!(
+        diagnostic.contains("antigravity-stop-failure"),
+        "{diagnostic}"
+    );
+    assert_eq!(send("Stop", idle.clone()), (json!({}), String::new()));
+    let next = send("PreInvocation", json!({"invocationNum":0})).0;
+    assert!(
+        next["injectSteps"][0]["ephemeralMessage"]
+            .as_str()
+            .unwrap()
+            .contains("antigravity-stop-failure")
+    );
+    send("Stop", idle.clone());
+
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","hooks":{"turn_end":{
+            "commands":[["sh","-c","echo stop >> ignored; echo antigravity-stop-failure; exit 1"]]
+        }}}"#,
+    );
+    send("PreInvocation", json!({"invocationNum":0}));
+    project.write("tracked", "other edit");
+    let (stop, _) = send("Stop", idle.clone());
+    assert_eq!(stop["decision"], "continue");
+    assert!(
+        stop["reason"]
+            .as_str()
+            .unwrap()
+            .contains("antigravity-stop-failure")
+    );
+    send("PreInvocation", json!({"invocationNum":2}));
+    project.write("tracked", "follow-up edit");
+    assert_eq!(
+        send(
+            "Stop",
+            json!({"fullyIdle":true, "continuationActive":false, "executionNum":1})
+        )
+        .0,
+        json!({})
+    );
+    assert_eq!(send("Stop", idle).0, json!({}));
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+        "edit\nstop\nstop\n"
     );
 }

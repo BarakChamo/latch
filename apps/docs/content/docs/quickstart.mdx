@@ -15,7 +15,7 @@ For terminal or CI use, [start with the standalone CLI](#run-the-same-check-from
 
 Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
 
-[Codex](#codex) · [Claude Code](#claude-code) · [Copilot](#github-copilot-cli) · [Pi](#pi) · [OpenCode](#opencode) · [Grok](#grok-build) · [Kimi](#kimi-code) · [OpenHands](#openhands) · [Cursor](/docs/plugins#cursor)
+[Codex](#codex) · [Claude Code](#claude-code) · [Copilot](#github-copilot-cli) · [Pi](#pi) · [OpenCode](#opencode) · [Grok](#grok-build) · [Kimi](#kimi-code) · [OpenHands](#openhands) · [Cursor](/docs/plugins#cursor) · [Gemini CLI](#gemini-cli) · [Antigravity](#google-antigravity)
 
 ### Codex
 
@@ -89,7 +89,19 @@ In Agent Canvas, open **Customize → Plugins → Add plugin**. Enter
 For OpenHands CLI, [install the standalone Latch binary](/docs/cli#install-the-cli) and run
 `latch install openhands` in your Git project.
 
-[Manage plugins](/docs/plugins)
+### Gemini CLI
+
+```sh
+gemini extensions install https://github.com/BarakChamo/latch
+```
+
+### Google Antigravity
+
+```sh
+agy plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity
+```
+
+Open a new session after installing either plugin. [Google harness setup and feedback](/docs/plugins#gemini-cli-and-antigravity) · [Manage plugins](/docs/plugins)
 
 ## Run your first check
 

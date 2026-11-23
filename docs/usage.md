@@ -6,7 +6,21 @@ turn end when several edits should be checked together. Start with the
 [README quickstart](../README.md#install-a-plugin) or try the runnable
 [TypeScript and Python examples](../examples/).
 
-[Hooks and feedback](#hooks-and-feedback) · [Hosted sessions](#hosted-sessions) · [Package scripts](#package-script-discovery) · [Configuration](#configuration) · [CLI and saved logs](#commands-and-saved-logs) · [Troubleshooting](#troubleshooting)
+[Hooks and feedback](#hooks-and-feedback) · [Hosted sessions](#hosted-sessions) · [Package scripts](#package-script-discovery) · [Configuration](#configuration) · [CLI and saved logs](#commands-and-saved-logs) · [Troubleshooting](#troubleshooting) · [Gemini CLI and Antigravity](#gemini-cli-and-google-antigravity)
+
+## Gemini CLI and Google Antigravity
+
+The native Gemini CLI and Antigravity CLI integrations are available in
+Latch v0.1.10 and later. They share the same project configuration, run checks
+on changes, and expose `latch_status`, `run_turn_end`, and `search_output`.
+Both CLIs deliver edit failures in the same turn. Turn-end failures reach
+the agent on your next prompt by default. Set `turn_end_feedback` to
+`"continue_once"` to let the agent respond automatically once, without an
+automatic turn-end recheck.
+
+See the [Google harness setup guide](https://barakchamo.github.io/latch/docs/plugins/#gemini-cli-and-antigravity).
+Antigravity managed Remote Agents do not load locally installed plugins.
+[Google Remote Agents documentation](https://antigravity.google/docs/remote-agents/#features-not-available-in-remote-agent-sessions)
 
 ## Install the plugin from a terminal
 

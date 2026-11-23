@@ -1,0 +1,56 @@
+{
+  "hooks": {
+    "BeforeAgent": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${extensionPath}/bin/latch\" hook gemini"
+          }
+        ]
+      }
+    ],
+    "BeforeTool": [
+      {
+        "matcher": "^(write_file|replace)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${extensionPath}/bin/latch\" hook gemini"
+          }
+        ]
+      }
+    ],
+    "AfterTool": [
+      {
+        "matcher": "^(write_file|replace)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${extensionPath}/bin/latch\" hook gemini"
+          }
+        ]
+      }
+    ],
+    "AfterAgent": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${extensionPath}/bin/latch\" hook gemini"
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"${extensionPath}/bin/latch\" hook gemini"
+          }
+        ]
+      }
+    ]
+  }
+}

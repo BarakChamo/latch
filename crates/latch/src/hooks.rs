@@ -30,15 +30,18 @@ pub(crate) enum Harness {
     Devin,
     Grok,
     Kiro,
+    Gemini,
+    Antigravity(AntigravityEvent),
 }
 
 impl Harness {
     pub(crate) fn parse(name: &std::ffi::OsStr, event: Option<&std::ffi::OsStr>) -> Option<Self> {
         if let Some(event) = event {
-            return (name == "copilot")
-                .then(|| CopilotEvent::parse(event))
-                .flatten()
-                .map(Self::Copilot);
+            return match name.to_str()? {
+                "copilot" => CopilotEvent::parse(event).map(Self::Copilot),
+                "antigravity" => AntigravityEvent::parse(event).map(Self::Antigravity),
+                _ => None,
+            };
         }
         match name.to_str()? {
             "codex" => Some(Self::Codex),
@@ -51,6 +54,7 @@ impl Harness {
             "devin" => Some(Self::Devin),
             "grok" => Some(Self::Grok),
             "kiro" => Some(Self::Kiro),
+            "gemini" => Some(Self::Gemini),
             _ => None,
         }
     }
@@ -62,6 +66,8 @@ impl Harness {
             Self::Cursor => native::read_cursor(input),
             Self::OpenHands => native::read_openhands(input),
             Self::Kimi => native::read_kimi(input),
+            Self::Gemini => native::read_gemini(input),
+            Self::Antigravity(event) => native::read_antigravity(*event, input),
             _ => serde_json::from_reader::<_, Event>(input).map_err(io::Error::from),
         }
         .map_err(|error| io::Error::new(error.kind(), format!("invalid hook input: {error}")))?;
@@ -91,6 +97,14 @@ impl Harness {
             Self::Devin => ("DEVIN_HOME", ".devin"),
             Self::Grok => ("GROK_HOME", ".grok"),
             Self::Kiro => ("KIRO_HOME", ".kiro"),
+            Self::Gemini => {
+                let home = env::var_os("GEMINI_CLI_HOME")
+                    .filter(|path| !path.is_empty())
+                    .map(PathBuf::from)
+                    .or_else(env::home_dir)?;
+                return Some(home.join(".gemini"));
+            }
+            Self::Antigravity(_) => ("ANTIGRAVITY_LATCH_HOME", ".gemini/antigravity"),
             Self::OpenCode => {
                 let state = env::var_os("XDG_STATE_HOME")
                     .map(PathBuf::from)
@@ -140,6 +154,17 @@ impl Harness {
                     | "search_replace"
             ),
             Self::Kiro => matches!(name, "fs_write" | "write" | "edit_file" | "apply_patch"),
+            Self::Gemini => matches!(name, "write_file" | "replace"),
+            Self::Antigravity(_) => matches!(
+                name,
+                "write_to_file"
+                    | "replace_file_content"
+                    | "multi_replace_file_content"
+                    | "write_file"
+                    | "edit_file"
+                    | "sed_file"
+                    | "apply_patch"
+            ),
         }
     }
 
@@ -151,7 +176,11 @@ impl Harness {
     }
 
     fn requires_prompt_for_stop(&self) -> bool {
-        self.defers_turn_reports() || matches!(self, Self::Cursor | Self::Grok)
+        self.defers_turn_reports()
+            || matches!(
+                self,
+                Self::Cursor | Self::Grok | Self::Gemini | Self::Antigravity(_)
+            )
     }
 
     fn turn_key<'a>(&self, event: &'a Event) -> Option<&'a str> {
@@ -166,7 +195,29 @@ impl Harness {
             | Self::Kimi
             | Self::Devin
             | Self::Grok
-            | Self::Kiro => Some(""),
+            | Self::Kiro
+            | Self::Gemini
+            | Self::Antigravity(_) => Some(""),
+        }
+    }
+}
+
+#[derive(Clone, Copy)]
+pub(crate) enum AntigravityEvent {
+    PreInvocation,
+    PreToolUse,
+    PostToolUse,
+    Stop,
+}
+
+impl AntigravityEvent {
+    fn parse(value: &std::ffi::OsStr) -> Option<Self> {
+        match value.to_str()? {
+            "PreInvocation" => Some(Self::PreInvocation),
+            "PreToolUse" => Some(Self::PreToolUse),
+            "PostToolUse" => Some(Self::PostToolUse),
+            "Stop" => Some(Self::Stop),
+            _ => None,
         }
     }
 }
@@ -279,6 +330,12 @@ enum EventKind {
     UserPromptSubmit,
     #[serde(skip_deserializing)]
     ContinuationPrompt,
+    #[serde(skip_deserializing)]
+    ModelInvocation {
+        first: bool,
+    },
+    #[serde(skip_deserializing)]
+    Ignore,
     PromptTransformed {
         prompt: String,
     },
@@ -309,6 +366,12 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
         }
     };
     let response = handle(&harness, event);
+    let response = if matches!(harness, Harness::Antigravity(AntigravityEvent::PreToolUse)) {
+        // Delegate approval to Antigravity's normal permission policy.
+        json!({ "decision": "allow" })
+    } else {
+        response
+    };
     if matches!(harness, Harness::Kimi)
         && let Some(reason) = response["reason"].as_str()
     {
@@ -349,6 +412,9 @@ pub(crate) fn dispatch(harness: Harness) -> ExitCode {
 }
 
 fn invalid_input(harness: &Harness) -> ExitCode {
+    if matches!(harness, Harness::Antigravity(AntigravityEvent::PreToolUse)) {
+        let _ = writeln!(io::stdout().lock(), r#"{{"decision":"allow"}}"#);
+    }
     if matches!(
         harness,
         Harness::Copilot(CopilotEvent::PreToolUse)
@@ -356,6 +422,8 @@ fn invalid_input(harness: &Harness) -> ExitCode {
             | Harness::Kiro
             | Harness::Devin
             | Harness::Grok
+            | Harness::Gemini
+            | Harness::Antigravity(_)
     ) {
         // An invalid host event must not deny an edit or prompt.
         ExitCode::SUCCESS
@@ -376,7 +444,7 @@ fn handle(harness: &Harness, event: Event) -> Value {
     let edits = state.as_deref().map(|path| path.with_extension("edits"));
     match event.kind {
         EventKind::ContinuationPrompt
-            if matches!(harness, Harness::Cursor)
+            if matches!(harness, Harness::Cursor | Harness::Gemini)
                 || continuation.as_ref().is_some_and(|path| path.exists()) =>
         {
             json!({})
@@ -425,7 +493,28 @@ fn handle(harness: &Harness, event: Event) -> Value {
                 };
             }
             match take_pending(harness, &event) {
+                Some(report) if matches!(harness, Harness::Gemini) => {
+                    context_response("BeforeAgent", report)
+                }
                 Some(report) => context_response("UserPromptSubmit", report),
+                None => json!({}),
+            }
+        }
+        EventKind::Ignore => json!({}),
+        EventKind::ModelInvocation { first } => {
+            // Antigravity's native continuation resumes at a nonzero model invocation.
+            // Only a new user turn may create a baseline, even if Stop has already claimed it.
+            if first {
+                status::observe(&event.cwd);
+                clear_edit_baselines(edits.as_deref());
+                if let Some(path) = state
+                    && let Err(error) = store(&path, &turn_baseline(&event.cwd))
+                {
+                    eprintln!("latch: could not save workspace baseline: {error}");
+                }
+            }
+            match take_deferred_reports(harness, &event) {
+                Some(report) => json!({ "injectSteps": [{ "ephemeralMessage": report }] }),
                 None => json!({}),
             }
         }
@@ -460,7 +549,12 @@ fn handle(harness: &Harness, event: Event) -> Value {
                 Some(feedback) if matches!(harness, Harness::Cursor) => {
                     json!({ "additional_context": feedback.message })
                 }
-                Some(feedback) if matches!(harness, Harness::OpenHands) => {
+                Some(feedback) if matches!(harness, Harness::Gemini) => {
+                    context_response("AfterTool", feedback.message)
+                }
+                Some(feedback)
+                    if matches!(harness, Harness::OpenHands | Harness::Antigravity(_)) =>
+                {
                     defer_report(harness, &event, feedback.message);
                     json!({})
                 }
@@ -536,8 +630,11 @@ fn handle(harness: &Harness, event: Event) -> Value {
                             return json!({ "decision": "block", "reason": reason });
                         }
                     }
-                    Harness::OpenHands => {
+                    Harness::OpenHands | Harness::Gemini => {
                         return json!({ "decision": "deny", "reason": reason });
+                    }
+                    Harness::Antigravity(_) => {
+                        return json!({ "decision": "continue", "reason": reason });
                     }
                     Harness::Pi => {
                         return json!({ "systemMessage": reason, "continue": true });
@@ -550,6 +647,13 @@ fn handle(harness: &Harness, event: Event) -> Value {
             }
             if harness.defers_turn_reports() {
                 defer_report(harness, &event, feedback.message);
+                return json!({});
+            }
+            if matches!(harness, Harness::Antigravity(_)) {
+                if feedback.failed {
+                    defer_report(harness, &event, feedback.message.clone());
+                }
+                eprintln!("{}", feedback.message);
                 return json!({});
             }
             if matches!(harness, Harness::Cursor | Harness::Grok) {

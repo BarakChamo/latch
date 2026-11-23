@@ -27,6 +27,8 @@ const pluginManifests = [
   "plugins/opencode/package.json",
   "plugins/pi/package.json",
   "plugins/kimi/kimi.plugin.json",
+  "plugins/gemini/gemini-extension.json",
+  "plugins/antigravity/plugin.json",
 ];
 const sharedFiles = ["LICENSE", "plugins", ".agents/plugins", ".claude-plugin", ".cursor-plugin", ".github/plugin", "latch.schema.json"];
 const [target, destination = "dist"] = process.argv.slice(2);
@@ -91,6 +93,7 @@ function packPlatform(target) {
   mkdirSync(bin, { recursive: true });
   cpSync(join(packageRoot, executable), join(bin, executable));
   copySharedFiles(bundle);
+  packGeminiExtension(join(bundle, "plugins", "gemini"), binary, os, cpu, executable);
   if (os !== "win32") {
     bundlePluginExecutables(bundle, join(bin, executable));
     const installer = join(bundle, "install");
@@ -99,12 +102,33 @@ function packPlatform(target) {
   }
   cpSync(join(root, "distribution/native/README.md"), join(bundle, "README.md"));
   const filename = `${directory}.tar.gz`;
+  writeArchive(filename, staging, directory);
+  writeChecksum(filename);
+}
+
+function packGeminiExtension(plugin, binary, os, cpu, executable) {
+  // The native installer picks the first asset with this platform prefix. Do not share it with a checksum asset.
+  const extension = join(staging, "gemini-extension");
+  cpSync(plugin, extension, { recursive: true });
+  if (os === "win32") {
+    rmSync(join(extension, "bin", "latch"));
+    for (const path of ["gemini-extension.json", "hooks/hooks.json"]) {
+      const config = join(extension, path);
+      writeFileSync(config, readFileSync(config, "utf8").replaceAll("/bin/latch", "/bin/latch.exe"));
+    }
+  }
+  cpSync(binary, join(extension, "bin", executable));
+  chmodSync(join(extension, "bin", executable), 0o755);
+  cpSync(join(root, "LICENSE"), join(extension, "LICENSE"));
+  writeArchive(`${os}.${cpu}.gemini-extension.tar.gz`, extension, ".");
+}
+
+function writeArchive(filename, directory, entry) {
   const archiveOptions = process.platform === "darwin" ? ["--no-xattrs"] : [];
-  execFileSync("tar", [...archiveOptions, "-czf", join(output, filename), "-C", staging, directory], {
+  execFileSync("tar", [...archiveOptions, "-czf", join(output, filename), "-C", directory, entry], {
     env: { ...process.env, COPYFILE_DISABLE: "1" },
     stdio: "inherit",
   });
-  writeChecksum(filename);
 }
 
 function writeChecksum(filename) {
@@ -125,7 +149,7 @@ function bundlePluginExecutables(bundle, binary) {
     cpSync(binary, join(bin, "latch"));
   }
 
-  for (const harness of ["codex", "claude-code", "copilot", "cursor"]) {
+  for (const harness of ["codex", "claude-code", "copilot", "cursor", "gemini", "antigravity"]) {
     const plugin = join(bundle, "plugins", harness);
     cpSync(binary, join(plugin, "bin", "latch"));
   }

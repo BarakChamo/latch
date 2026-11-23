@@ -1,7 +1,7 @@
 {
   "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
   "name": "latch",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "description": "Run project checks after edits and at the end of coding-agent turns.",
   "homepage": "https://barakchamo.github.io/latch/"
 }

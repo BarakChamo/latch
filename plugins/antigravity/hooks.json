@@ -1,0 +1,38 @@
+{
+  "latch": {
+    "PreInvocation": [
+      {
+        "type": "command",
+        "command": "./bin/latch hook antigravity PreInvocation"
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "^(write_to_file|replace_file_content|multi_replace_file_content|write_file|edit_file|sed_file|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./bin/latch hook antigravity PreToolUse"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "^(write_to_file|replace_file_content|multi_replace_file_content|write_file|edit_file|sed_file|apply_patch)$",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "./bin/latch hook antigravity PostToolUse"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "type": "command",
+        "command": "./bin/latch hook antigravity Stop"
+      }
+    ]
+  }
+}

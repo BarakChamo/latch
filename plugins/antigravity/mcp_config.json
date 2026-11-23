@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "checks": {
+      "command": "./bin/latch",
+      "cwd": "${PLUGIN_ROOT}",
+      "args": [
+        "mcp",
+        "--require-project-directory"
+      ]
+    }
+  }
+}

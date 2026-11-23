@@ -2,11 +2,13 @@
 
 use crate::{config, output, run, status};
 use rmcp::model::{
-    CallToolRequestParams, CallToolResponse, CallToolResult, ContentBlock, ErrorData,
-    ListToolsResult, PaginatedRequestParams, ServerCapabilities, ServerConfig, Tool,
+    CallToolRequestParams, CallToolResponse, CallToolResult, ClientJsonRpcMessage,
+    ClientNotification, ContentBlock, ErrorData, JsonRpcMessage, ListToolsResult,
+    PaginatedRequestParams, ServerCapabilities, ServerConfig, ServerJsonRpcMessage, Tool,
     ToolAnnotations,
 };
 use rmcp::service::{RequestContext, RoleServer};
+use rmcp::transport::{Transport, async_rw::AsyncRwTransport};
 use rmcp::{ServerHandler, ServiceExt};
 use serde::Deserialize;
 use serde_json::{Map, Value, json};
@@ -189,14 +191,47 @@ impl ServerHandler for ProjectDirectory {
     }
 }
 
+struct StdioTransport(AsyncRwTransport<RoleServer, tokio::io::Stdin, tokio::io::Stdout>);
+
+impl Transport<RoleServer> for StdioTransport {
+    type Error = std::io::Error;
+
+    fn send(
+        &mut self,
+        message: ServerJsonRpcMessage,
+    ) -> impl Future<Output = Result<(), Self::Error>> + Send + 'static {
+        self.0.send(message)
+    }
+
+    async fn receive(&mut self) -> Option<ClientJsonRpcMessage> {
+        loop {
+            let message = self.0.receive().await?;
+            // Antigravity can send this before initialized. Latch uses an explicit project
+            // directory or the server working directory, so client roots do not apply.
+            if !matches!(
+                &message,
+                JsonRpcMessage::Notification(notification)
+                    if matches!(notification.notification, ClientNotification::RootsListChangedNotification(_))
+            ) {
+                return Some(message);
+            }
+        }
+    }
+
+    async fn close(&mut self) -> Result<(), Self::Error> {
+        self.0.close().await
+    }
+}
+
 pub(crate) fn dispatch(project: ProjectDirectory) -> ExitCode {
     let result = (|| -> Result<(), Box<dyn std::error::Error>> {
         tokio::runtime::Builder::new_current_thread()
             .enable_time()
             .build()?
             .block_on(async {
+                let (input, output) = rmcp::transport::stdio();
                 project
-                    .serve(rmcp::transport::stdio())
+                    .serve(StdioTransport(AsyncRwTransport::new(input, output)))
                     .await?
                     .waiting()
                     .await?;
