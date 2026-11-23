@@ -2,22 +2,30 @@
 // Launches the installed native Latch binary and preserves its output and exit status.
 
 const { spawnSync } = require("node:child_process");
+const { existsSync } = require("node:fs");
 const { dirname, join } = require("node:path");
 const { name, version, optionalDependencies } = require("./package.json");
 
-const platformPackage = `${name}-${process.platform}-${process.arch}`;
-if (!Object.hasOwn(optionalDependencies ?? {}, platformPackage)) {
-  console.error(`latch: unsupported platform ${process.platform}/${process.arch}`);
-  process.exit(1);
+const platform = `${process.platform}-${process.arch}`;
+const executable = process.platform === "win32" ? "latch.exe" : "latch";
+let binary = join(__dirname, "bin", platform, executable);
+
+if (optionalDependencies) {
+  const platformPackage = `${name}-${platform}`;
+  if (Object.hasOwn(optionalDependencies, platformPackage)) {
+    try {
+      const manifest = require.resolve(`${platformPackage}/package.json`);
+      binary = join(dirname(manifest), executable);
+    } catch (error) {
+      if (error.code !== "MODULE_NOT_FOUND") throw error;
+      console.error(`latch: install the optional package ${platformPackage}@${version} for this platform`);
+      process.exit(1);
+    }
+  }
 }
 
-let binary;
-try {
-  const manifest = require.resolve(`${platformPackage}/package.json`);
-  binary = join(dirname(manifest), process.platform === "win32" ? "latch.exe" : "latch");
-} catch (error) {
-  if (error.code !== "MODULE_NOT_FOUND") throw error;
-  console.error(`latch: install the optional package ${platformPackage}@${version} for this platform`);
+if (!existsSync(binary)) {
+  console.error(`latch: no binary for ${process.platform}/${process.arch}`);
   process.exit(1);
 }
 

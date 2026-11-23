@@ -1282,6 +1282,58 @@ fn cursor_keeps_edit_feedback_in_the_current_turn_and_allows_stop() {
 }
 
 #[test]
+fn cursor_continues_once_after_a_failed_turn_without_a_recheck() {
+    let project = Project::new();
+    project.write(
+        "latch.json",
+        r#"{"turn_end_feedback":"continue_once","hooks":{"turn_end":{
+            "commands":[["sh","-c","echo check >> ignored; echo cursor-failed; exit 1"]]
+        }}}"#,
+    );
+    project.init();
+    let send = |event, generation, loop_count, prompt: &str| {
+        let output = project.invoke_hook(
+            &["cursor"],
+            json!({
+                "hook_event_name": event,
+                "conversation_id": "cursor-session",
+                "generation_id": generation,
+                "workspace_roots": [project.root.path()],
+                "status": "completed",
+                "loop_count": loop_count,
+                "prompt": prompt,
+            }),
+        );
+        assert!(output.status.success(), "{output:?}");
+        serde_json::from_slice::<Value>(&output.stdout).unwrap()
+    };
+
+    send("beforeSubmitPrompt", "original", 0, "Make an edit");
+    project.write("tracked", "first edit");
+    let stop = send("stop", "original", 0, "");
+    let followup = stop["followup_message"].as_str().unwrap();
+    assert!(followup.contains("cursor-failed"), "{stop}");
+    assert_eq!(send("stop", "original", 0, ""), json!({}));
+
+    send("beforeSubmitPrompt", "auto", 0, followup);
+    project.write("tracked", "automatic follow-up edit");
+    assert_eq!(send("stop", "auto", 1, ""), json!({}));
+    assert_eq!(send("stop", "auto", 0, ""), json!({}));
+    assert_eq!(
+        fs::read_to_string(project.root.path().join("ignored")).unwrap(),
+        "check\n"
+    );
+
+    send("beforeSubmitPrompt", "manual", 0, "Try another edit");
+    project.write("tracked", "manual follow-up edit");
+    assert!(
+        send("stop", "manual", 0, "")["followup_message"]
+            .as_str()
+            .is_some_and(|message| message.contains("cursor-failed"))
+    );
+}
+
+#[test]
 fn devin_grok_and_kiro_render_edit_reports_in_their_native_protocols() {
     for (host, tool) in [
         ("devin", "edit"),

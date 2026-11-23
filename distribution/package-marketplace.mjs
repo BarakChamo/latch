@@ -16,6 +16,7 @@ const plugins = [
   { host: "codex", catalog: ".agents/plugins", manifest: ".codex-plugin/plugin.json" },
   { host: "claude-code", catalog: ".claude-plugin", manifest: ".claude-plugin/plugin.json" },
   { host: "copilot", catalog: ".github/plugin", manifest: "plugin.json" },
+  { host: "cursor", catalog: ".cursor-plugin", manifest: ".cursor-plugin/plugin.json" },
 ].map((plugin) => ({
   ...plugin,
   descriptor: readJson(join(root, "plugins", plugin.host, plugin.manifest)),
@@ -71,7 +72,9 @@ function writeExtensions() {
 function writePlugin({ host, catalog, manifest }) {
   const source = join(root, "plugins", host);
   const target = join(output, "plugins", host);
-  for (const path of [manifest, host === "copilot" ? "hooks.json" : "hooks/hooks.json", ".mcp.json", "bin/latch"]) {
+  const hooks = host === "copilot" ? "hooks.json" : "hooks/hooks.json";
+  const mcp = host === "cursor" ? "mcp.json" : ".mcp.json";
+  for (const path of [manifest, hooks, mcp, "bin/latch"]) {
     const destination = join(target, path);
     mkdirSync(dirname(destination), { recursive: true });
     cpSync(join(source, path), destination);

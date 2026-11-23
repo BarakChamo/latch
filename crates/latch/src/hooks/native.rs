@@ -1,6 +1,6 @@
 //! Decodes command hook payloads whose field names differ from the common lifecycle event.
 
-use super::{Event, EventKind};
+use super::{Event, EventKind, FOLLOW_UP_INTRO};
 use serde::Deserialize;
 use serde_json::{Map, Value};
 use std::{io, path::PathBuf};
@@ -85,6 +85,8 @@ struct CursorInput {
     tool_name: Option<String>,
     tool_use_id: Option<String>,
     tool_input: Option<Value>,
+    prompt: Option<String>,
+    loop_count: Option<u64>,
     status: Option<CursorStatus>,
     hook_event_name: CursorEvent,
 }
@@ -132,12 +134,20 @@ impl TryFrom<CursorInput> for Event {
             tool_use_id: input.tool_use_id,
             tool_args: input.tool_input,
             kind: match input.hook_event_name {
+                CursorEvent::BeforeSubmitPrompt
+                    if input
+                        .prompt
+                        .as_deref()
+                        .is_some_and(|prompt| prompt.starts_with(FOLLOW_UP_INTRO)) =>
+                {
+                    EventKind::ContinuationPrompt
+                }
                 CursorEvent::BeforeSubmitPrompt => EventKind::UserPromptSubmit,
                 CursorEvent::PreToolUse => EventKind::PreToolUse { tool_name: tool()? },
                 CursorEvent::PostToolUse => EventKind::PostToolUse { tool_name: tool()? },
                 CursorEvent::Stop => match input.status {
                     Some(CursorStatus::Completed) => EventKind::Stop {
-                        stop_hook_active: None,
+                        stop_hook_active: input.loop_count.map(|count| count > 0),
                         extension_can_continue: false,
                     },
                     Some(CursorStatus::Aborted | CursorStatus::Error) => EventKind::Interrupt,

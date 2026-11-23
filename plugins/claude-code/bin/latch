@@ -2,7 +2,7 @@
 # Installs the release binary for this platform and launches it for plugin hooks and tools.
 set -eu
 
-version='0.1.8'
+version='0.1.9'
 
 fail() {
   printf 'latch: %s\n' "$*" >&2

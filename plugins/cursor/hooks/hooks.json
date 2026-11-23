@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [{ "command": "\"${CURSOR_PLUGIN_ROOT}/bin/latch\" hook cursor", "timeout": 120 }],
+    "preToolUse": [{ "command": "\"${CURSOR_PLUGIN_ROOT}/bin/latch\" hook cursor", "timeout": 120 }],
+    "postToolUse": [{ "command": "\"${CURSOR_PLUGIN_ROOT}/bin/latch\" hook cursor", "timeout": 120 }],
+    "stop": [{ "command": "\"${CURSOR_PLUGIN_ROOT}/bin/latch\" hook cursor", "timeout": 120, "loop_limit": 1 }]
+  }
+}

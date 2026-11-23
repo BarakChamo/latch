@@ -376,7 +376,8 @@ fn handle(harness: &Harness, event: Event) -> Value {
     let edits = state.as_deref().map(|path| path.with_extension("edits"));
     match event.kind {
         EventKind::ContinuationPrompt
-            if continuation.as_ref().is_some_and(|path| path.exists()) =>
+            if matches!(harness, Harness::Cursor)
+                || continuation.as_ref().is_some_and(|path| path.exists()) =>
         {
             json!({})
         }
@@ -525,6 +526,7 @@ fn handle(harness: &Harness, event: Event) -> Value {
                     Harness::Codex | Harness::Grok | Harness::Kimi => {
                         return json!({ "decision": "block", "reason": reason });
                     }
+                    Harness::Cursor => return json!({ "followup_message": reason }),
                     Harness::Copilot(_) => {
                         // Older Copilot builds can omit the active flag on the follow-up Stop.
                         if continuation
@@ -551,7 +553,7 @@ fn handle(harness: &Harness, event: Event) -> Value {
                 return json!({});
             }
             if matches!(harness, Harness::Cursor | Harness::Grok) {
-                // Model-visible Stop output in these hosts starts another agent pass.
+                // Default reports stay in hook stderr so Stop lets the agent finish.
                 eprintln!("{}", feedback.message);
                 return json!({});
             }

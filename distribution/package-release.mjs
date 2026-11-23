@@ -23,11 +23,12 @@ const pluginManifests = [
   "plugins/codex/.codex-plugin/plugin.json",
   "plugins/claude-code/.claude-plugin/plugin.json",
   "plugins/copilot/plugin.json",
+  "plugins/cursor/.cursor-plugin/plugin.json",
   "plugins/opencode/package.json",
   "plugins/pi/package.json",
   "plugins/kimi/kimi.plugin.json",
 ];
-const sharedFiles = ["LICENSE", "plugins", ".agents/plugins", ".claude-plugin", ".github/plugin", "latch.schema.json"];
+const sharedFiles = ["LICENSE", "plugins", ".agents/plugins", ".claude-plugin", ".cursor-plugin", ".github/plugin", "latch.schema.json"];
 const [target, destination = "dist"] = process.argv.slice(2);
 const output = resolve(destination);
 const packageManifest = readJson(join(root, "distribution/npm/package.json"));
@@ -124,7 +125,7 @@ function bundlePluginExecutables(bundle, binary) {
     cpSync(binary, join(bin, "latch"));
   }
 
-  for (const harness of ["codex", "claude-code", "copilot"]) {
+  for (const harness of ["codex", "claude-code", "copilot", "cursor"]) {
     const plugin = join(bundle, "plugins", harness);
     cpSync(binary, join(plugin, "bin", "latch"));
   }

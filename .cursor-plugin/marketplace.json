@@ -1,0 +1,7 @@
+{
+  "name": "latch-tools",
+  "owner": { "name": "Barak Chamo" },
+  "plugins": [
+    { "name": "latch", "source": "./plugins/cursor" }
+  ]
+}

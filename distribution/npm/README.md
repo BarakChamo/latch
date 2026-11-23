@@ -1,16 +1,14 @@
 # Latch
 
-Download this wrapper and your platform’s binary tarball from
-[GitHub Releases](https://github.com/BarakChamo/latch/releases/latest).
-Install both with npm from the downloads directory. For Apple Silicon:
+Install with Node.js 18 or later.
 
 ```sh
-npm install --global --offline ./barakchamo-latch-0.1.8.tgz ./barakchamo-latch-darwin-arm64-0.1.8.tgz
+npm install -g latch-hooks
 latch --version
 ```
 
-For the standalone CLI commands and plugin setup, see the
-[Latch guide on GitHub](https://github.com/BarakChamo/latch#readme).
+Latch runs project checks after coding-agent edits or turns. Use the CLI
+directly from a terminal or CI. [Quickstart and plugin setup](https://barakchamo.github.io/latch/docs/quickstart/)
 
 ## Configuration
 

@@ -547,10 +547,9 @@ fn openhands_setup_preserves_existing_hooks_and_is_idempotent() {
 
 #[cfg(unix)]
 #[test]
-fn cursor_devin_and_kiro_install_only_when_preview_is_selected() {
+fn devin_and_kiro_install_only_when_preview_is_selected() {
     let project = tempfile::tempdir().unwrap();
     for (host, path) in [
-        ("cursor", ".cursor/hooks.json"),
         ("devin", ".devin/hooks.v1.json"),
         ("kiro", ".kiro/hooks/latch.json"),
     ] {
@@ -572,6 +571,37 @@ fn cursor_devin_and_kiro_install_only_when_preview_is_selected() {
                 .contains(&format!("hook {host}"))
         );
     }
+}
+
+#[cfg(unix)]
+#[test]
+fn cursor_setup_preserves_existing_hooks_and_accepts_legacy_preview_flag() {
+    let project = tempfile::tempdir().unwrap();
+    let hooks = project.path().join(".cursor/hooks.json");
+    fs::create_dir(hooks.parent().unwrap()).unwrap();
+    fs::write(
+        &hooks,
+        r#"{"version":1,"hooks":{"stop":[{"command":"existing-check","loop_limit":3}]}}"#,
+    )
+    .unwrap();
+    let run = |options: &[&str]| {
+        Command::new(env!("CARGO_BIN_EXE_latch"))
+            .current_dir(project.path())
+            .args(["install", "cursor"])
+            .args(options)
+            .output()
+            .unwrap()
+    };
+    assert!(run(&[]).status.success());
+    let installed = fs::read(&hooks).unwrap();
+    assert!(run(&["--preview"]).status.success());
+    assert_eq!(fs::read(&hooks).unwrap(), installed);
+    let config: serde_json::Value = serde_json::from_slice(&installed).unwrap();
+    let stop = config["hooks"]["stop"].as_array().unwrap();
+    assert_eq!(stop.len(), 2);
+    assert_eq!(stop[0]["command"], "existing-check");
+    assert_eq!(stop[0]["loop_limit"], 3);
+    assert_eq!(stop[1]["loop_limit"], 1);
 }
 
 #[test]

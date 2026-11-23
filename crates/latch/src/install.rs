@@ -29,7 +29,7 @@ impl Target {
     }
 
     pub(crate) fn is_preview(self) -> bool {
-        matches!(self, Self::Cursor | Self::Devin | Self::Kiro)
+        matches!(self, Self::Devin | Self::Kiro)
     }
 
     fn name(self) -> &'static str {
@@ -163,9 +163,14 @@ fn configure_hooks(
         Target::Cursor => {
             config.entry("version").or_insert(json!(1));
             let events = object(config, "hooks")?;
-            for event in ["beforeSubmitPrompt", "preToolUse", "postToolUse", "stop"] {
+            for event in ["beforeSubmitPrompt", "preToolUse", "postToolUse"] {
                 register(events, event, json!({ "command": command, "timeout": 120 }))?;
             }
+            register(
+                events,
+                "stop",
+                json!({ "command": command, "timeout": 120, "loop_limit": 1 }),
+            )?;
         }
         Target::Devin | Target::Grok => {
             let events = if matches!(target, Target::Grok) {

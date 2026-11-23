@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "latch": {
+      "command": "${CURSOR_PLUGIN_ROOT}/bin/latch",
+      "args": ["mcp", "--require-project-directory"]
+    }
+  }
+}

@@ -54,11 +54,11 @@ test("marketplace contains only a launcher and maps each supported platform to o
   try {
     const catalog = join(fixture.root, "marketplace");
     execFileSync(process.execPath, [packager, catalog]);
-    for (const host of ["codex", "claude-code", "copilot", "pi", "opencode"]) {
+    for (const host of ["codex", "claude-code", "copilot", "cursor", "pi", "opencode"]) {
       const directory = join(catalog, "plugins", host, "bin");
       assert.deepEqual(readdirSync(directory), ["latch"]);
       assert.equal(readFileSync(join(directory, "latch"), "utf8"), pluginLauncher(version));
-      if (["codex", "claude-code", "copilot"].includes(host)) {
+      if (["codex", "claude-code", "copilot", "cursor"].includes(host)) {
         const gitLauncher = new URL(`../plugins/${host}/bin/latch`, import.meta.url);
         assert.equal(readFileSync(gitLauncher, "utf8"), pluginLauncher(version));
       }
@@ -94,6 +94,42 @@ test("marketplace contains only a launcher and maps each supported platform to o
     const unsupported = run(fixture.launcher, [], { ...fixture.env, FIXTURE_OS: "Other" });
     assert.equal(unsupported.status, 1);
     assert.match(unsupported.stderr, /support macOS and glibc Linux/);
+  } finally {
+    rmSync(fixture.root, { recursive: true });
+  }
+});
+
+test("Cursor's native marketplace plugin launches all four hooks and its MCP tool", () => {
+  const fixture = createFixture();
+  try {
+    const catalog = join(fixture.root, "marketplace");
+    const readJson = (path) => JSON.parse(readFileSync(path, "utf8"));
+    execFileSync(process.execPath, [packager, catalog]);
+    const [entry] = readJson(join(catalog, ".cursor-plugin/marketplace.json")).plugins;
+    const plugin = join(catalog, entry.source);
+    const manifest = readJson(join(plugin, ".cursor-plugin/plugin.json"));
+    assert.equal(manifest.name, entry.name);
+    const hookConfig = readJson(join(plugin, manifest.hooks));
+    assert.equal(hookConfig.version, 1);
+    const { hooks } = hookConfig;
+    const { latch } = readJson(join(plugin, "mcp.json")).mcpServers;
+    const env = { ...fixture.env, CURSOR_PLUGIN_ROOT: plugin };
+    fixture.packageAsset("darwin-arm64");
+
+    assert.deepEqual(Object.keys(hooks), ["beforeSubmitPrompt", "preToolUse", "postToolUse", "stop"]);
+    assert.equal(hooks.stop[0].loop_limit, 1);
+    for (const [hook] of Object.values(hooks)) {
+      const output = spawnSync("/bin/sh", ["-c", hook.command], {
+        env, cwd: fixture.root, input: "hook JSON on stdin\n", encoding: "utf8",
+      });
+      assert.equal(output.status, 0, output.stderr);
+      assert.equal(output.stdout, "hook cursor\nhook JSON on stdin\n");
+    }
+    const command = latch.command.replace("${CURSOR_PLUGIN_ROOT}", plugin);
+    const mcp = run(command, latch.args, env);
+    assert.equal(mcp.status, 0, mcp.stderr);
+    assert.match(mcp.stdout, /^mcp --require-project-directory/m);
+    assert.equal(fixture.downloads().length, 2);
   } finally {
     rmSync(fixture.root, { recursive: true });
   }
