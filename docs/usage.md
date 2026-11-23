@@ -10,8 +10,8 @@ turn end when several edits should be checked together. Start with the
 
 ## Gemini CLI and Google Antigravity
 
-The native Gemini CLI and Antigravity CLI integrations are available in
-Latch v0.1.10 and later. They share the same project configuration, run checks
+Gemini CLI and Antigravity have native integrations. Use Latch v0.1.11 or
+later in Antigravity IDE. They share the same project configuration, run checks
 on changes, and expose `latch_status`, `run_turn_end`, and `search_output`.
 Both CLIs deliver edit failures in the same turn. Turn-end failures reach
 the agent on your next prompt by default. Set `turn_end_feedback` to

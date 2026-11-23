@@ -193,16 +193,17 @@ entry from your OpenHands user configuration once no project uses it.
 
 ### Gemini CLI and Antigravity
 
-Both native integrations are available in Latch v0.1.10 and later.
+These commands install the current release. Use Latch v0.1.11 or later in Antigravity IDE.
 
 | Harness | Native install |
 | --- | --- |
 | Gemini CLI | `gemini extensions install https://github.com/BarakChamo/latch` |
-| Antigravity CLI | `agy plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity` |
+| Antigravity CLI, App, and standalone IDE | `agy plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity` |
 
 Gemini CLI selects the extension for your platform and installs its bundled
-binary. The Antigravity CLI plugin downloads and verifies the matching
-binary on first use on macOS and glibc Linux.
+binary. The Antigravity command installs into the plugin directory shared
+by the CLI, App, and standalone IDE. The plugin downloads and verifies the
+matching binary on first use on macOS and glibc Linux.
 
 Open a new session in your project and ask the agent to run `latch_status`.
 Approve the tool if your harness prompts you. Both plugins also expose `run_turn_end` and `search_output`. For edit checks,
@@ -212,7 +213,9 @@ gives the report to the next prompt. Use
 automatic chance to respond, without rerunning the turn-end check.
 
 Local verification covers Gemini CLI 0.70.0 and Antigravity CLI 1.5.14 with
-a scripted model endpoint. Antigravity App and IDE sessions are unverified.
+a scripted model endpoint, plus signed-in Antigravity App 2.34.0 and standalone
+IDE 2.8.0 sessions on macOS. Managed Remote Agents cannot load locally
+installed plugins.
 Google directs individual Gemini CLI users to Antigravity.
 [Google’s Gemini CLI transition notice](https://github.com/google-gemini/gemini-cli/discussions/28017)
 [Gemini extensions](https://github.com/google-gemini/gemini-cli/blob/main/docs/extensions/reference.md) · [Antigravity plugin install](https://antigravity.google/docs/marketplace/#install-from-your-shell-agy-plugin)

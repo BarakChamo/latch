@@ -171,7 +171,8 @@ gemini extensions install https://github.com/BarakChamo/latch
 agy plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity
 ```
 
-Open a new session in your project after installing either integration.
+The Antigravity command installs Latch for the **CLI, App, and standalone IDE**.
+After installing either integration, open a new local session in your project.
 [Google harness setup and feedback](https://barakchamo.github.io/latch/docs/plugins/#gemini-cli-and-antigravity) · [Manage plugins](https://barakchamo.github.io/latch/docs/plugins/)
 
 ## Run your first check
@@ -276,7 +277,7 @@ Extract it and move the executable from `bin` into a folder on your `PATH`.
 **Cargo**
 
 ```sh
-cargo install --locked --git https://github.com/BarakChamo/latch --tag v0.1.10 latch
+cargo install --locked --git https://github.com/BarakChamo/latch --tag v0.1.11 latch
 ```
 
 Run `latch --version` to confirm the install.
@@ -298,7 +299,7 @@ The local columns show when the agent gets failures by default, except where mar
 | Kimi Code CLI | — | Next prompt | Unverified |
 | Grok Build 1.0.92 | Same turn | No model feedback | Unverified |
 | Gemini CLI | Same turn | Next prompt | Unverified |
-| Antigravity CLI | Same turn | Next prompt | Local plugins unavailable |
+| Antigravity CLI, App, and IDE | Same turn | Next prompt | Local plugins unavailable |
 
 “Next prompt” means your next message in the same session and project. Kimi 2.7.2 supports
 `continue_once` in interactive and ACP sessions. Use `report` with `kimi -p`.

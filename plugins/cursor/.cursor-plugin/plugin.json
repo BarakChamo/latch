@@ -1,6 +1,6 @@
 {
   "name": "latch",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Run project checks after edits and at the end of coding-agent turns.",
   "author": { "name": "Barak Chamo" },
   "homepage": "https://barakchamo.github.io/latch/",

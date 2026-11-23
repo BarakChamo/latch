@@ -3,6 +3,7 @@
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::collections::BTreeSet;
+use std::env;
 use std::ffi::OsString;
 use std::fs::{self, File};
 use std::io;
@@ -75,7 +76,22 @@ impl Snapshot {
 }
 
 fn git(directory: &Path, args: &[&str]) -> io::Result<Vec<u8>> {
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    let incomplete_config = env::var("GIT_CONFIG_COUNT")
+        .ok()
+        .and_then(|count| count.parse::<usize>().ok())
+        .is_some_and(|count| {
+            (0..count).any(|index| {
+                env::var_os(format!("GIT_CONFIG_KEY_{index}")).is_none()
+                    || env::var_os(format!("GIT_CONFIG_VALUE_{index}")).is_none()
+            })
+        });
+    if incomplete_config {
+        // Antigravity IDE can forward the count and names while removing the values.
+        // Git rejects the entire override in that case, including for read-only queries.
+        command.env_remove("GIT_CONFIG_COUNT");
+    }
+    let output = command
         .current_dir(directory)
         .args(["--no-optional-locks", "-c", "core.fsmonitor=false"])
         .args(args)

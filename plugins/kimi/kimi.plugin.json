@@ -1,6 +1,6 @@
 {
   "name": "latch",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Run project validation at the end of Kimi Code turns.",
   "hooks": [
     { "event": "UserPromptSubmit", "command": "./bin/latch hook kimi", "timeout": 120 },

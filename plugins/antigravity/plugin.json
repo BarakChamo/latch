@@ -2,7 +2,7 @@
   "$schema": "https://antigravity.google/schemas/v1/plugin.json",
   "name": "latch",
   "displayName": "Latch",
-  "version": "0.1.10",
+  "version": "0.1.11",
   "description": "Run project checks automatically after edits and when an agent finishes a turn.",
   "homepage": "https://barakchamo.github.io/latch/",
   "repository": "https://github.com/BarakChamo/latch",

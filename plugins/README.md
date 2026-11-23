@@ -19,6 +19,8 @@ The guides below cover the source plugins and their hook mappings.
 - [OpenHands](openhands/README.md)
 - [Kimi Code CLI](kimi/README.md)
 - [Cursor](https://barakchamo.github.io/latch/docs/plugins/#cursor)
+- [Gemini CLI](../README.md#gemini-cli)
+- [Google Antigravity CLI, App, and IDE](../README.md#google-antigravity)
 
 ## Local hook adapters
 

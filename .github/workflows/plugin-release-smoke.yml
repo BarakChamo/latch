@@ -14,6 +14,7 @@ permissions:
 jobs:
   install:
     runs-on: ubuntu-24.04
+    timeout-minutes: 5
     steps:
       - uses: actions/setup-node@v7
         with:
@@ -26,9 +27,10 @@ jobs:
           npm install --prefix "$RUNNER_TEMP/gemini" @google/gemini-cli@0.70.0
           export HOME="$RUNNER_TEMP/gemini-home"
           export GEMINI_CLI_HOME="$HOME"
-          mkdir -p "$HOME/workspace"
+          mkdir -p "$HOME/workspace" "$HOME/.gemini"
           cd "$HOME/workspace"
-          printf 'y\ny\n' | "$RUNNER_TEMP/gemini/node_modules/.bin/gemini" extensions install https://github.com/BarakChamo/latch
+          node -e 'require("node:fs").writeFileSync(process.env.HOME + "/.gemini/trustedFolders.json", JSON.stringify({ [process.cwd()]: "TRUST_FOLDER" }))'
+          printf 'y\n' | "$RUNNER_TEMP/gemini/node_modules/.bin/gemini" extensions install https://github.com/BarakChamo/latch
           test "$("$HOME/.gemini/extensions/latch/bin/latch" --version)" = "latch $LATCH_VERSION"
       - name: Install the published Antigravity plugin
         env:

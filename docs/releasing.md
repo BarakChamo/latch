@@ -60,9 +60,13 @@ Publish the matching GitHub release before pushing a version update to
 the default-branch commands in clean profiles with no Latch on `PATH`.
 
 ```sh
-npm run test:live -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz --marketplace
-npm run test:extensions -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz --marketplace
+npm run test:live -- dist/latch-0.1.11-aarch64-apple-darwin.tar.gz --marketplace
+npm run test:extensions -- dist/latch-0.1.11-aarch64-apple-darwin.tar.gz --marketplace
 ```
+
+Run the [published plugin smoke workflow](https://github.com/BarakChamo/latch/actions/workflows/plugin-release-smoke.yml)
+after publishing the release and pushing `main`. It installs Gemini and
+Antigravity from their public URLs in clean profiles.
 
 ## Verify a real harness session
 
@@ -71,8 +75,8 @@ the live test. Omit `--harness` to test Codex, Claude Code, and GitHub
 Copilot CLI together, or repeat the option to select multiple harnesses.
 
 ```sh
-npm run test:live -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz
-npm run test:live -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz --harness copilot
+npm run test:live -- dist/latch-0.1.11-aarch64-apple-darwin.tar.gz
+npm run test:live -- dist/latch-0.1.11-aarch64-apple-darwin.tar.gz --harness copilot
 ```
 
 The test installs the plugin in temporary directories, sends a
@@ -94,7 +98,7 @@ when available. The test removes its temporary files on exit.
 Install OpenCode and Pi 1.5.2 on your `PATH`, then run:
 
 ```sh
-npm run test:extensions -- dist/latch-0.1.10-aarch64-apple-darwin.tar.gz
+npm run test:extensions -- dist/latch-0.1.11-aarch64-apple-darwin.tar.gz
 ```
 
 The test runs both real CLIs against a scripted localhost model with
@@ -114,7 +118,7 @@ the checksums and includes all five binaries in one npm package.
 
 ```sh
 npm run package:npm-cli -- dist
-npm publish dist/latch-hooks-0.1.10.tgz
+npm publish dist/latch-hooks-0.1.11.tgz
 ```
 
 Verify the published package with `npm install -g latch-hooks` and
@@ -122,7 +126,7 @@ Verify the published package with `npm install -g latch-hooks` and
 registry serves the version and its tarball through the install command.
 The scoped platform artifacts are used by GitHub Releases and plugin launchers.
 
-The npm build also emits `barakchamo-latch-agent-plugins-0.1.10.tgz`, a
+The npm build also emits `barakchamo-latch-agent-plugins-0.1.11.tgz`, a
 separate Pi and OpenCode package. Publishing it to npm with public access
 makes its `pi-package` keyword discoverable in the
 [Pi package gallery](https://pi.dev/packages). Publish the corresponding

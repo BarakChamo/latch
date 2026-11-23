@@ -118,12 +118,29 @@ impl Project {
     }
 
     fn invoke_hook(&self, args: &[&str], payload: Value) -> Output {
+        self.invoke_hook_with_env(args, payload, &[])
+    }
+
+    fn invoke_hook_with_env(
+        &self,
+        args: &[&str],
+        payload: Value,
+        extra_env: &[(&str, Option<&str>)],
+    ) -> Output {
         let path = env::var_os("PATH").unwrap_or_default();
         let path = env::join_paths(
             std::iter::once(self.harness_home.path().to_path_buf()).chain(env::split_paths(&path)),
         )
         .expect("test executable search path");
-        let mut child = Command::new(env!("CARGO_BIN_EXE_latch"))
+        let mut command = Command::new(env!("CARGO_BIN_EXE_latch"));
+        for &(key, value) in extra_env {
+            if let Some(value) = value {
+                command.env(key, value);
+            } else {
+                command.env_remove(key);
+            }
+        }
+        let mut child = command
             .arg("hook")
             .args(args)
             .env("CODEX_HOME", self.harness_home.path())
@@ -1648,7 +1665,15 @@ fn antigravity_queues_edit_reports_and_preserves_the_turn_baseline() {
     let send = |event, mut fields: Value| {
         fields["conversationId"] = json!("antigravity-session");
         fields["workspacePaths"] = json!([project.root.path()]);
-        let result = project.invoke_hook(&["antigravity", event], fields);
+        let result = project.invoke_hook_with_env(
+            &["antigravity", event],
+            fields,
+            &[
+                ("GIT_CONFIG_COUNT", Some("1")),
+                ("GIT_CONFIG_KEY_0", Some("core.hooksPath")),
+                ("GIT_CONFIG_VALUE_0", None),
+            ],
+        );
         assert!(result.status.success(), "{result:?}");
         let response: Value = serde_json::from_slice(&result.stdout).unwrap();
         let stderr = String::from_utf8(result.stderr).unwrap();
