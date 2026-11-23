@@ -2,8 +2,9 @@
 
 The Pi badge comes from the [Pi press kit](https://pi.dev/press-kit).
 The other marks come from [Lobe Icons 1.106.0](https://github.com/lobehub/lobe-icons).
-Monochrome assets adapt their foreground color to the reader’s theme. Brand
-names and marks belong to their respective owners.
+The README strip renders these marks on a transparent canvas. Its monochrome
+marks use a foreground color that is visible in both GitHub themes. Brand names
+and marks belong to their respective owners.
 
 ## Lobe Icons license
 
