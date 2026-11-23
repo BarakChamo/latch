@@ -4,6 +4,7 @@ import { Card, Cards } from "fumadocs-ui/components/card";
 import { HomeLayout } from "fumadocs-ui/layouts/home";
 import Image from "next/image";
 import Link from "next/link";
+import harnessMarks from "../../../docs/assets/harnesses/row.png";
 import mark from "./icon.png";
 
 export default function Home() {
@@ -30,6 +31,19 @@ export default function Home() {
           Give your coding agent
           <span className="block text-violet-700 dark:text-violet-300">a feedback loop.</span>
         </h1>
+        <Link
+          href="/docs/hooks#where-reports-appear"
+          className="mx-auto mt-6 block w-fit max-w-full rounded"
+        >
+          <Image
+            src={harnessMarks}
+            alt="Supported harnesses: Codex, Claude Code, GitHub Copilot CLI, Cursor, OpenCode, Pi, OpenHands, Kimi Code, Grok Build, Gemini CLI, and Google Antigravity"
+            width={368}
+            height={37}
+            className="h-auto max-w-full"
+            unoptimized
+          />
+        </Link>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-fd-muted-foreground text-pretty">
           Latch runs your project’s linters, tests, and type checks after edits or turns.
           Passing checks stay quiet. Failures go back to the agent.
