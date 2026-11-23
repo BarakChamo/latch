@@ -1,0 +1,43 @@
+name: Check published native plugins
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published Latch version to expect (without v)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          package-manager-cache: false
+      - name: Install the published Gemini extension
+        env:
+          LATCH_VERSION: ${{ inputs.version }}
+        run: |
+          npm install --prefix "$RUNNER_TEMP/gemini" @google/gemini-cli@0.70.0
+          export HOME="$RUNNER_TEMP/gemini-home"
+          export GEMINI_CLI_HOME="$HOME"
+          mkdir -p "$HOME/workspace"
+          cd "$HOME/workspace"
+          printf 'y\ny\n' | "$RUNNER_TEMP/gemini/node_modules/.bin/gemini" extensions install https://github.com/BarakChamo/latch
+          test "$("$HOME/.gemini/extensions/latch/bin/latch" --version)" = "latch $LATCH_VERSION"
+      - name: Install the published Antigravity plugin
+        env:
+          LATCH_VERSION: ${{ inputs.version }}
+        run: |
+          export HOME="$RUNNER_TEMP/antigravity-home"
+          mkdir -p "$HOME/workspace"
+          cd "$HOME/workspace"
+          curl -fsSL https://antigravity.google/cli/install.sh -o "$RUNNER_TEMP/antigravity-install.sh"
+          bash "$RUNNER_TEMP/antigravity-install.sh"
+          "$HOME/.local/bin/agy" plugin install https://github.com/BarakChamo/latch/tree/main/plugins/antigravity
+          test "$("$HOME/.gemini/config/plugins/latch/bin/latch" --version)" = "latch $LATCH_VERSION"
