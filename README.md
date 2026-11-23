@@ -2,6 +2,19 @@
   <img src="apps/docs/app/latch-logo.png" width="360" alt="Latch">
 </h1>
 <p align="center"><strong>Give your coding agent a feedback loop.</strong></p>
+<p align="center">
+  <a href="#codex"><img src="docs/assets/harnesses/codex.svg" width="25" height="25" alt="Codex" title="Codex"></a>
+  <a href="#claude-code"><img src="docs/assets/harnesses/claude-code.svg" width="25" height="25" alt="Claude Code" title="Claude Code"></a>
+  <a href="#github-copilot-cli"><img src="docs/assets/harnesses/github-copilot.svg" width="25" height="25" alt="GitHub Copilot CLI" title="GitHub Copilot CLI"></a>
+  <a href="#cursor"><img src="docs/assets/harnesses/cursor.svg" width="25" height="25" alt="Cursor" title="Cursor"></a>
+  <a href="#opencode"><img src="docs/assets/harnesses/opencode.svg" width="25" height="25" alt="OpenCode" title="OpenCode"></a>
+  <a href="#pi"><img src="docs/assets/harnesses/pi.svg" width="25" height="25" alt="Pi" title="Pi"></a>
+  <a href="#openhands"><img src="docs/assets/harnesses/openhands.svg" width="25" height="25" alt="OpenHands" title="OpenHands"></a>
+  <a href="#kimi-code"><img src="docs/assets/harnesses/kimi-code.svg" width="25" height="25" alt="Kimi Code" title="Kimi Code"></a>
+  <a href="#grok-build"><img src="docs/assets/harnesses/grok-build.svg" width="25" height="25" alt="Grok Build" title="Grok Build"></a>
+  <a href="#gemini-cli"><img src="docs/assets/harnesses/gemini.svg" width="25" height="25" alt="Gemini CLI" title="Gemini CLI"></a>
+  <a href="#google-antigravity"><img src="docs/assets/harnesses/antigravity.svg" width="25" height="25" alt="Google Antigravity" title="Google Antigravity"></a>
+</p>
 <p align="center">Latch runs your project’s linters, tests, and other checks as your agent works, and brings failures back into the session.</p>
 <p align="center">
   <a href="#install-a-plugin">Install a plugin</a> ·
