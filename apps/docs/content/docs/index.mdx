@@ -11,6 +11,33 @@ standalone CLI from your terminal or CI.
 - [See what your harness supports](#compatibility) for local or hosted sessions.
 - [Try a runnable project](#examples) and see how Latch reports a failure.
 
+## Why Latch if agents already have hooks?
+
+Say you want Claude Code to lint after a turn. Its native `Stop` hook can
+run `npm run lint >&2 || exit 2` to send the error to Claude and keep it
+working. Cursor has its own `stop` hook and feedback format. A wrapper
+around `git status --porcelain` can skip a clean worktree, but an already-dirty
+worktree still triggers lint during a read-only turn.
+[Claude Code hooks](https://code.claude.com/docs/en/hooks#stop) · [Cursor hooks](https://cursor.com/docs/hooks)
+
+With the Claude Code integration enabled, put the command you already run in
+your project’s `latch.json`. The same file works with other supported agents.
+
+```json title="latch.json"
+{
+  "hooks": {
+    "turn_end": { "commands": "npm run lint" }
+  }
+}
+```
+
+Latch compares Git-visible files before and after the turn, so a Q&A turn
+skips lint even in an already-dirty worktree. Passing checks stay quiet.
+Set `failure_output` to `"compact"` to send focused diagnostics with a path
+to the full log. Hooks run automatically without a skill or prompt instructions.
+Claude sees turn-end failures on your next prompt by default, or can respond
+automatically with `continue_once`. [Output modes](/docs/configuration#failure-output-modes) · [Turn-end feedback](/docs/hooks#act-on-a-turn-end-failure) · [Claude Code cloud setup](/docs/cloud#claude-code)
+
 ## When to use Latch
 
 Use Latch when you want checks to happen consistently across agent sessions.

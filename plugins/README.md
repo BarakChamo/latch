@@ -18,6 +18,7 @@ The guides below cover the source plugins and their hook mappings.
 - [Grok Build](../README.md#grok-build)
 - [OpenHands](openhands/README.md)
 - [Kimi Code CLI](kimi/README.md)
+- [Cursor](https://barakchamo.github.io/latch/docs/plugins/#cursor)
 
 ## Local hook adapters
 
@@ -25,7 +26,7 @@ Run the command from the project with [the CLI installed](../docs/usage.md#insta
 
 | Agent | Setup |
 | --- | --- |
-| Cursor CLI (preview) | `latch install cursor --preview` |
+| Cursor CLI | `latch install cursor` with Latch v0.1.9 or later |
 | Devin CLI (preview) | `latch install devin --preview` |
 | Kiro CLI V3 (preview) | `latch install kiro --preview` |
 

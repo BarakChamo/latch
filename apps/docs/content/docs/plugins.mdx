@@ -25,6 +25,31 @@ use and reuses it from the user cache.
 For a restricted network, see [offline setup](#offline-setup) or
 [hosted workspaces](/docs/cloud).
 
+### Cursor
+
+For edit and turn-end checks, install the [standalone CLI v0.1.9 or later](/docs/cli#install-the-cli)
+and run `latch install cursor` from your project. Open a new interactive Cursor session.
+The installer adds hooks and the Latch tools alongside your existing settings.
+The generated entries point to your local Latch binary.
+
+The native plugin delivers same-turn edit feedback. Add its catalog in Cursor CLI with
+`agent plugin marketplace add https://github.com/BarakChamo/latch`.
+Open `/plugin`, select the **Marketplace** tab, and install **Latch**.
+Teams can import the same repository into a Cursor team marketplace and
+install from **Customize**. A public Cursor Marketplace listing requires
+Cursor review. [Cursor CLI plugin menu](https://cursor.com/docs/cli/reference/slash-commands) · [Cursor team marketplaces](https://cursor.com/docs/plugins#add-a-team-marketplace)
+
+To load the plugin directly from a checkout, open your project with
+`agent --plugin-dir /path/to/latch/plugins/cursor`. In Cursor desktop, copy
+the plugin folder into `~/.cursor/plugins/local/latch` and reload Cursor.
+If you previously used the preview installer, remove its Latch entries from
+`.cursor/hooks.json` and `.cursor/mcp.json` before enabling the plugin.
+[Cursor local plugins](https://cursor.com/docs/plugins#test-plugins-locally)
+
+In the interactive CLI (`2026.11.22-e9042b2`), the agent quoted a failure
+from a native edit check in the same turn. Use workspace setup for turn-end
+feedback. [Cursor feedback](/docs/hooks#cursor-feedback) · [Cursor Cloud](/docs/cloud#cursor)
+
 ### Pi
 
 Use Pi 1.5.2 or later.
@@ -171,7 +196,6 @@ From your project, use the installed `latch` command to register workspace hooks
 
 | Harness | Setup | Feedback |
 | --- | --- | --- |
-| Cursor CLI (preview) | Run `latch install cursor --preview`. | The post-tool hook returns edit diagnostics. Turn-end diagnostics go to hook stderr. |
 | Devin CLI (preview) | Run `latch install devin --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
 | Kiro CLI V3 (preview) | Run `latch install kiro --preview`. | The post-tool hook returns edit diagnostics. Failed turn reports go to the next prompt. |
 

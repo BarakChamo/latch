@@ -16,6 +16,7 @@ and verifies the Latch binary.
 | GitHub Copilot cloud agent | [`latch install cloud copilot`](#github-copilot) | Linux fixture passed. GitHub denied cloud agent access for the test account or repository. Hosted feedback is unverified. |
 | Codex Cloud | [Run the CLI in the checkout or in CI](#codex). | Managed orchestration does not run Latch command hooks. |
 | OpenHands Cloud, remote Canvas, or Enterprise | [`latch install cloud openhands`](#openhands) | Linux fixture and local Canvas verified. Hosted feedback is unverified. |
+| Cursor Cloud | [GitHub-backed Cursor team marketplace](#cursor) | Native plugin path documented by Cursor. Latch feedback is unverified in a hosted session. |
 | OpenCode, Pi, Kimi, or Grok Build on a host you control | [Install where the agent runs](#other-integrations). | Local integration verified. Managed-service delivery unverified. |
 
 [Check local compatibility](/docs/hooks#where-reports-appear) · [Verify a hosted session](#verify-a-new-environment)
@@ -86,6 +87,14 @@ The first prompt needs access to GitHub release assets. For
 restricted networks, allow the release download or run your checks in CI.
 [Standalone downloads](/docs/cli#standalone)
 
+## Cursor
+
+Cursor Cloud loads plugins from GitHub-backed team marketplaces. Once the
+Latch plugin is available to your team, enable it and start a new Cloud Agent
+in the repository that contains your `latch.json`. This requires a Cursor
+account with Cloud Agent access. Latch's hosted hook execution and feedback
+are unverified. [Cursor Cloud plugin support](https://cursor.com/help/ai-features/cloud-agents)
+
 ## Other integrations
 
 Use the regular plugin install when the harness itself runs alongside the
@@ -97,7 +106,7 @@ checkout on a VM or container you control.
 | Pi | [Install on the machine running Pi](/docs/quickstart#pi) and start Pi in the project. You can also commit the project package declaration and trust the workspace on that machine. [Pi package scope](https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md) |
 | Kimi Code | [Install on the host running Kimi Code](/docs/quickstart#kimi-code). Browser and Remote Control use that host. A local CLI with remote tools runs hooks beside the CLI, so use a CLI hosted with the checkout for automatic checks. [Kimi Remote Control](https://moonshotai.github.io/kimi-code/en/guides/web.html) · [Hook location](https://moonshotai.github.io/kimi-code/en/customization/hooks) |
 | Grok Build | [Install into Grok Build](/docs/quickstart#grok-build) on the machine you connect to. [Remote sign-in](https://docs.x.ai/build/overview) |
-| Cursor, Devin, Kiro | [Preview adapters](/docs/plugins#preview-integrations) cover local CLI setups. Use the project’s check directly or in CI on managed cloud services. |
+| Devin, Kiro | [Preview adapters](/docs/plugins#preview-integrations) cover local CLI setups. Use the project’s check directly or in CI on managed cloud services. |
 
 ## Verify a new environment
 

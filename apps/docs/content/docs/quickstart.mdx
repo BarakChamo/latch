@@ -15,7 +15,7 @@ For terminal or CI use, [start with the standalone CLI](#run-the-same-check-from
 
 Install Latch in your agent on macOS or glibc Linux (ARM64 and x64). On first use, the plugin downloads and verifies the matching Latch binary. Open a new session in your Git project after installing.
 
-[Codex](#codex) · [Claude Code](#claude-code) · [Copilot](#github-copilot-cli) · [Pi](#pi) · [OpenCode](#opencode) · [Grok](#grok-build) · [Kimi](#kimi-code) · [OpenHands](#openhands)
+[Codex](#codex) · [Claude Code](#claude-code) · [Copilot](#github-copilot-cli) · [Pi](#pi) · [OpenCode](#opencode) · [Grok](#grok-build) · [Kimi](#kimi-code) · [OpenHands](#openhands) · [Cursor](/docs/plugins#cursor)
 
 ### Codex
 
@@ -159,7 +159,14 @@ delivers failure feedback. [Report delivery by harness](/docs/hooks#where-report
 
 ## Run the same check from a terminal
 
-Install the [standalone CLI](/docs/cli#install-the-cli), then run these from your project directory.
+Install the CLI with npm:
+
+```sh
+npm install -g latch-hooks
+```
+
+You can also [download the binary](/docs/cli#standalone) or [install with Cargo](/docs/cli#cargo).
+Run `latch --version` to confirm the install, then run these from your project directory.
 
 ```sh
 latch explain turn_end

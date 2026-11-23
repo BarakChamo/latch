@@ -6,6 +6,7 @@
 <p align="center">
   <a href="#install-a-plugin">Install a plugin</a> ·
   <a href="#run-your-first-check">First check</a> ·
+  <a href="#when-to-use-latch">When to use Latch</a> ·
   <a href="#how-it-works">How it works</a> ·
   <a href="#compatibility">Compatibility</a> ·
   <a href="#install-the-standalone-cli">Standalone CLI</a> ·
@@ -30,6 +31,17 @@ agents that same feedback loop.
 - **Keep agent context focused.** Passing checks stay quiet by default.
   Latch surfaces failures with the diagnostics the agent needs to act.
 
+## When to use Latch
+
+Hooks work best with checks that finish quickly. Run a fast linter after an
+edit, or run tests for affected packages and cached checks at the end of a
+turn. Save full suites that take several minutes for CI.
+
+Latch uses Git to skip unchanged edits and turns by default, and path and
+file extension filters let you decide which checks run. Your project owns
+the commands and how they run, including which tests count as affected or
+how a tool like Turborepo caches the work.
+
 ## How it works
 
 Use Latch to catch a lint error right after an edit or see a failing test at the end of a turn. Reuse commands you already run locally or in CI, and keep them in the project so teammates can use the same checks with different agents.
@@ -45,6 +57,21 @@ Plugins map their agents’ native hooks to two shared Latch events. Available e
 - **Keep passing checks quiet.** Success is silent by default, so failures are easier to spot in the agent session.
 - **Run checks that match the change.** Filter by path or file extension so a Markdown-only edit can run Markdown lint and skip TypeScript checks.
 - **Keep failure reports short.** Compact output surfaces useful lines such as errors and assertions. The agent can retrieve more detail from a saved log without rerunning the check.
+
+### Why Latch if agents already have hooks?
+
+To run `npm run lint` when Claude Code stops, a native `Stop` hook can use
+`npm run lint >&2 || exit 2` to send a failure back to Claude and keep it
+working. A native Cursor setup uses a `stop` entry in `.cursor/hooks.json`
+with its own feedback format. A wrapper that checks `git status --porcelain`
+still runs lint during a Q&A turn if the worktree was already dirty.
+[Claude Code hooks](https://code.claude.com/docs/en/hooks#stop) · [Cursor hooks](https://cursor.com/docs/hooks)
+
+Latch handles that plumbing for supported agents. [Put your lint command in
+`latch.json`](#configure-checks) and enable the integration for your agent.
+Latch compares the worktree before and after each turn, stays quiet when lint
+passes, and can compact failures while keeping the full log. The checks run
+automatically without a skill or prompt instructions.
 
 ## Install a plugin
 
@@ -125,6 +152,13 @@ plugin loads in new local conversations.
 For OpenHands CLI, [install the standalone Latch binary](https://barakchamo.github.io/latch/docs/cli/#install-the-cli) and run
 `latch install openhands` in your Git project.
 
+### Cursor
+
+For edit and turn-end checks, install Latch v0.1.9 or later and run
+`latch install cursor` from your project. Open a new interactive Cursor session.
+The native Cursor plugin also delivers edit failures in the same turn.
+[Cursor installation and feedback](https://barakchamo.github.io/latch/docs/plugins/#cursor)
+
 [Manage plugins](https://barakchamo.github.io/latch/docs/plugins/)
 
 ## Run your first check
@@ -136,20 +170,26 @@ console script in a packaged uv project. For any other command, add it to
 
 ### Configure checks
 
-For example, if `make lint` already works in your project, put this in
-`latch.json` in the directory where you run it.
+If your project already has an npm `lint` script, put this in `latch.json` in
+the directory where you run it. Swap in any command your project already uses,
+such as `make lint` or `uv run ruff check .`.
 
 ```json
 {
   "hooks": {
     "turn_end": {
-      "commands": "make lint"
+      "commands": "npm run lint"
     }
   }
 }
 ```
 
 Use a string for one command or nested argument arrays for several commands. [Command syntax](docs/usage.md#command-syntax)
+
+In Claude Code, this runs lint after a turn that changed files. By default,
+turn-end failures reach Claude on your next prompt. Opt in to
+[`continue_once`](#give-the-agent-a-chance-to-act-on-a-failure) to let Claude
+respond automatically. [Claude Code cloud setup](https://barakchamo.github.io/latch/docs/cloud/#claude-code)
 
 Create the file by hand or use `latch config init` with the
 [standalone CLI](#install-the-standalone-cli). Explicit commands and discovered
@@ -211,9 +251,22 @@ requires Latch v0.1.4 or later for this option.
 
 ## Install the standalone CLI
 
-[Download Latch for your platform](https://barakchamo.github.io/latch/docs/cli/#install-the-cli).
-Extract the archive and put `latch` on your `PATH`. Run `latch --version`
-to confirm the install.
+**npm** (Node.js 18 or later)
+
+```sh
+npm install -g latch-hooks
+```
+
+**Binary** · [Download the archive for your platform](https://barakchamo.github.io/latch/docs/cli/#standalone).
+Extract it and move the executable from `bin` into a folder on your `PATH`.
+
+**Cargo**
+
+```sh
+cargo install --locked --git https://github.com/BarakChamo/latch --tag v0.1.9 latch
+```
+
+Run `latch --version` to confirm the install.
 
 ## Compatibility
 
@@ -224,6 +277,7 @@ The local columns show when the agent gets failures by default, except where mar
 | Codex | Same turn | Next prompt | Latch CLI or CI |
 | Claude Code | Same turn | Next prompt | Verified for single repos |
 | GitHub Copilot CLI | Same turn | Next prompt | Repository hooks · unverified |
+| Cursor CLI | Same turn | Workspace hooks · opt-in feedback | Unverified |
 | OpenCode v1 and v2 | Same turn | Next prompt | Unverified |
 | Pi | Same turn | Next model request | Unverified |
 | OpenHands CLI and SDK | Next prompt | Next prompt | Workspace hooks · unverified |
