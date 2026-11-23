@@ -22,6 +22,7 @@ jobs:
           package-manager-cache: false
       - name: Install the published Gemini extension
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           LATCH_VERSION: ${{ inputs.version }}
         run: |
           npm install --prefix "$RUNNER_TEMP/gemini" @google/gemini-cli@0.70.0
